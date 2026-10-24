@@ -55,15 +55,17 @@ func Preflight(c *config.Config) []Check {
 			return httpReachable(ctx, "https://"+host+"/v2/")
 		})
 	}
-	if s.DockerPackageURL != "" {
-		add("Docker packages", s.DockerPackageURL, func(ctx context.Context) (string, error) { return httpReachable(ctx, s.DockerPackageURL) })
-	}
-	if s.APTMirror != "" {
-		add("APT mirror", s.APTMirror, func(ctx context.Context) (string, error) { return httpReachable(ctx, s.APTMirror) })
-	}
-	if s.PyPIIndex != "" {
-		u := strings.TrimRight(s.PyPIIndex, "/") + "/ansible/"
-		add("PyPI mirror", s.PyPIIndex, func(ctx context.Context) (string, error) { return httpReachable(ctx, u) })
+	for _, m := range []struct {
+		name, url string
+		kind      config.MirrorKind
+	}{
+		{"Docker packages", s.DockerPackageURL, config.MirrorDocker},
+		{"APT mirror", s.APTMirror, config.MirrorAPT},
+		{"PyPI mirror", s.PyPIIndex, config.MirrorPyPI},
+	} {
+		if m.url != "" {
+			add(m.name, m.url, func(ctx context.Context) (string, error) { return ProbeMirror(ctx, m.kind, m.url) })
+		}
 	}
 
 	out := make([]Check, len(probes))

@@ -23,11 +23,26 @@ every download can come from mirrors inside the country.
   | Playbook git | `https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy` | `git clone` / `git pull` |
   | Ansible roles git | `https://itsjustadream.g0th.ir/` | `github.com` URLs in `requirements.yml` are rewritten with git `insteadOf`, so the playbook stays unmodified |
   | Container images | `mechatok.g0th.ir/` | `matrix_container_global_registry_prefix_override` (every image, from every registry) |
-  | Docker Engine packages | – | `docker_repo_url` (mirror of `download.docker.com/linux`) |
-  | OS packages (APT) | – | Debian/Ubuntu sources on the server are rewritten (with backups) before install |
-  | PyPI | – | Installs Ansible into a private venv if it's missing |
+  | Docker Engine packages | `https://repo.abrha.net/docker` (blackout mode) | `docker_repo_url` (mirror of `download.docker.com/linux`) |
+  | OS packages (APT) | `https://mirror.arvancloud.ir` (blackout mode) | Debian/Ubuntu sources on the server are rewritten (with backups) before install |
+  | PyPI | `https://mirror-pypi.runflare.com/simple` (blackout mode) | Installs Ansible into a private venv if it's missing |
 
-  `ctrl+t` on the Network screen tests every source.
+  `ctrl+t` on the Network screen tests every source. Mirrors are checked
+  for content, not just reachability: APT mirrors must have Ubuntu and
+  Debian security updates less than two weeks old, Docker mirrors a
+  Release file, and PyPI mirrors must list `ansible-core`.
+
+  Known mirrors in Iran (all checked October 2026); `interzone mirrors`
+  re-tests them:
+
+  | What | Mirrors |
+  |---|---|
+  | OS packages (APT) | mirror.arvancloud.ir, mirror-linux.runflare.com, mirror.iranserver.com, mirror.hostbaran.com, repo.abrha.net, mirror.mobinhost.com |
+  | Docker Engine | repo.abrha.net/docker, mirror.cdn.ir/repository/docker/linux |
+  | PyPI | mirror-pypi.runflare.com/simple, pypi.iranserver.com/repository/pypi/simple, package-mirror.liara.ir/repository/pypi/simple, mirror.abrha.net/repository/pypi/simple, mirror2.chabokan.net/pypi/simple |
+
+  The same check runs as a test:
+  `INTERZONE_MIRROR_TESTS=1 go test ./internal/deploy -run KnownMirrors -v`.
 - **Checks before it touches anything.** The Review screen logs into the
   server and checks root access, OS, CPU, Python, memory, disk and ports
   80/443/8448, then resolves every DNS record the setup needs and compares
@@ -82,6 +97,7 @@ interzone apply                # deploy with saved answers; runs the checks firs
 interzone apply --save-only    # only write the inventory
 interzone apply --config answers.json --force --quiet
 interzone check                # test mirrors, the server and DNS
+interzone mirrors              # test every known in-country mirror
 ```
 
 `apply` exits non-zero if a check fails (unless `--force`), if the run

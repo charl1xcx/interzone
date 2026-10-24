@@ -35,12 +35,14 @@ var Commands = map[string]func(args []string) error{
 	"check":    Check,
 	"bundle":   Bundle,
 	"unbundle": Unbundle,
+	"mirrors":  Mirrors,
 }
 
 const Usage = `Usage:
   interzone                 start the wizard
   interzone apply           deploy with the saved answers, no questions asked
   interzone check           test mirrors, the server and DNS
+  interzone mirrors         test every known in-country mirror
   interzone bundle          pack the playbook, roles and Ansible for offline use
   interzone unbundle FILE   install an offline bundle on this machine
 
@@ -159,6 +161,41 @@ func Check(args []string) error {
 	fs2 := deploy.ServerChecks(c)
 	printFindings(fs2)
 	if max(worst, deploy.Worst(fs2)) == deploy.Fail {
+		return ErrFailed
+	}
+	return nil
+}
+
+// Mirrors tests every known in-country mirror and shows which work.
+func Mirrors(args []string) error {
+	fs := flag.NewFlagSet("mirrors", flag.ExitOnError)
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "Usage: interzone mirrors\n\nTests every known mirror in Iran for OS packages (APT), Docker Engine and PyPI.\nAPT mirrors must serve fresh Ubuntu and Debian security updates; Docker\nmirrors a Release file; PyPI mirrors must list ansible-core.")
+	}
+	_ = fs.Parse(args)
+	fmt.Println(muted.Render("Testing " + fmt.Sprint(len(config.KnownMirrors)) + " mirrors…"))
+	titles := map[config.MirrorKind]string{
+		config.MirrorAPT: "OS packages (APT)", config.MirrorDocker: "Docker Engine packages", config.MirrorPyPI: "PyPI",
+	}
+	working := 0
+	var kind config.MirrorKind
+	for _, r := range deploy.ProbeKnownMirrors() {
+		if r.Mirror.Kind != kind {
+			kind = r.Mirror.Kind
+			fmt.Println()
+			fmt.Println(head.Render("==> " + titles[kind]))
+		}
+		icon, style := good.Render("✓"), muted
+		if r.OK {
+			working++
+		} else {
+			icon, style = bad.Render("✗"), bad
+		}
+		fmt.Printf("  %s  %-58s %s\n", icon, r.Mirror.URL, style.Render(fmt.Sprintf("%s  (%.1fs)", r.Detail, r.Took.Seconds())))
+	}
+	fmt.Println()
+	fmt.Printf("%d of %d mirrors work.\n", working, len(config.KnownMirrors))
+	if working == 0 {
 		return ErrFailed
 	}
 	return nil

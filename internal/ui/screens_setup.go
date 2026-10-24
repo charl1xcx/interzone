@@ -131,6 +131,12 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 	mode := "online"
 	if src.Blackout {
 		mode = "blackout"
+	} else {
+		// Blackout fields are cleared outside blackout mode, so switching to it
+		// starts from the known in-country mirrors.
+		src.DockerPackageURL = config.DefaultMirror(config.MirrorDocker)
+		src.APTMirror = config.DefaultMirror(config.MirrorAPT)
+		src.PyPIIndex = config.DefaultMirror(config.MirrorPyPI)
 	}
 	f := newForm(
 		choiceField("mode", "Network situation", []string{"online", "blackout"},
@@ -144,12 +150,12 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 			"Every image (docker.io, ghcr.io, quay.io…) is pulled from one registry."),
 		textField("registry", "Container registry mirror", src.RegistryPrefix, config.DefaultRegistryPrefix,
 			"Images are pulled as <mirror>/<owner>/<image>, e.g. mechatok.g0th.ir/element-hq/synapse."),
-		textField("dockerpkg", "Docker Engine package mirror", src.DockerPackageURL, "https://mirror.example.ir/docker-ce/linux",
-			"A mirror of download.docker.com/linux. Leave empty if Docker is already installed on the server."),
-		textField("apt", "OS package (APT) mirror", src.APTMirror, "https://mirror.example.ir",
-			"The server's Debian/Ubuntu sources are pointed here before installing. Original files are backed up."),
-		textField("pypi", "PyPI mirror", src.PyPIIndex, "https://mirror.example.ir/pypi/simple",
-			"Used to install Ansible on this machine if it's missing."),
+		textField("dockerpkg", "Docker Engine package mirror", src.DockerPackageURL, config.DefaultMirror(config.MirrorDocker),
+			"A mirror of download.docker.com/linux. Leave empty if Docker is already installed on the server."+mirrorHint(config.MirrorDocker)),
+		textField("apt", "OS package (APT) mirror", src.APTMirror, config.DefaultMirror(config.MirrorAPT),
+			"The server's Debian/Ubuntu sources are pointed here before installing. Original files are backed up."+mirrorHint(config.MirrorAPT)),
+		textField("pypi", "PyPI mirror", src.PyPIIndex, config.DefaultMirror(config.MirrorPyPI),
+			"Used to install Ansible on this machine if it's missing."+mirrorHint(config.MirrorPyPI)),
 	)
 	blackout := func() bool { return f.value("mode") != "blackout" }
 	f.get("registry").hidden = func() bool { return !f.get("useRegistry").on }
@@ -158,6 +164,18 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 	f.get("pypi").hidden = blackout
 	s.form = f
 	return nil
+}
+
+// mirrorHint names the other known mirrors of kind for a field's help.
+func mirrorHint(kind config.MirrorKind) string {
+	var alts []string
+	for _, m := range config.Mirrors(kind)[1:] {
+		alts = append(alts, m.URL)
+	}
+	if len(alts) == 0 {
+		return ""
+	}
+	return " Others: " + strings.Join(alts, ", ") + ". Run interzone mirrors to test them all."
 }
 
 func (s *networkScreen) leave(c *config.Config) {
