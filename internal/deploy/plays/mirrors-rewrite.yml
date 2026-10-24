@@ -1,0 +1,81 @@
+# Written by interzone; included by interzone-mirrors.yml with iz_sources.
+- name: Check which repositories the mirror carries
+  ansible.builtin.uri:
+    url: "{{ iz_os }}/{{ item.index }}"
+  register: iz_checked
+  failed_when: false
+  loop: "{{ iz_sources }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Find the source files that use each repository
+  ansible.builtin.find:
+    paths: "{{ ['/etc/apt', '/etc/apt/sources.list.d'] if iz_family == 'Debian' else ['/etc/yum.repos.d'] }}"
+    patterns: "{{ ['sources.list', '*.list', '*.sources'] if iz_family == 'Debian' else ['*.repo'] }}"
+    contains: "{{ item.item.find | default(item.item.match) }}"
+    read_whole_file: true
+  register: iz_found
+  loop: "{{ iz_checked.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+
+- name: Report repositories the mirror doesn't carry
+  ansible.builtin.debug:
+    msg: "interzone-warning: {{ item.item.item.name }} isn't on {{ iz_os }}, so {{ item.files | map(attribute='path') | join(', ') }} still download from abroad"
+  loop: "{{ iz_found.results | selectattr('matched', 'gt', 0) | rejectattr('item.status', 'equalto', 200) | list }}"
+  loop_control:
+    label: "{{ item.item.item.name }}"
+
+- name: Note the files to rewrite
+  ansible.builtin.set_fact:
+    iz_rewrite: "{{ iz_found.results | selectattr('matched', 'gt', 0) | selectattr('item.status', 'equalto', 200) | list | subelements('files') }}"
+
+# CentOS Stream ships metalinks only, with no base URL to fall back on.
+- name: Give CentOS Stream repositories base URLs
+  ansible.builtin.replace:
+    path: "{{ item.0.1.path }}"
+    regexp: '^metalink=https://mirrors\.centos\.org/metalink\?repo=centos-{{ item.1.repo }}-\$stream&.*$'
+    replace: "baseurl=https://mirror.stream.centos.org/{{ item.1.path }}"
+    backup: true
+  loop: "{{ iz_rewrite | selectattr('0.item.item.name', 'equalto', 'CentOS Stream') | list | product(iz_centos_repos) | list }}"
+  loop_control:
+    label: "{{ item.0.1.path }} {{ item.1.repo }}"
+  vars:
+    iz_centos_repos:
+      - {repo: baseos, path: "$stream/BaseOS/$basearch/os/"}
+      - {repo: appstream, path: "$stream/AppStream/$basearch/os/"}
+      - {repo: crb, path: "$stream/CRB/$basearch/os/"}
+      # epel-release comes from here
+      - {repo: extras-sig-extras-common, path: "SIGs/$stream/extras/$basearch/extras-common/"}
+
+- name: Use base URLs instead of mirror lists
+  ansible.builtin.replace:
+    path: "{{ item.1.path }}"
+    regexp: '^#\s*baseurl\s*=\s*({{ item.0.item.item.match }})'
+    replace: 'baseurl=\1'
+    backup: true
+  loop: "{{ iz_rewrite }}"
+  loop_control:
+    label: "{{ item.1.path }}"
+  when: iz_family == 'RedHat'
+
+- name: Point the sources at the mirror
+  ansible.builtin.replace:
+    path: "{{ item.1.path }}"
+    regexp: "{{ item.0.item.item.match }}"
+    replace: "{{ iz_os }}/{{ item.0.item.item.to }}"
+    backup: true
+  loop: "{{ iz_rewrite }}"
+  loop_control:
+    label: "{{ item.0.item.item.name }}: {{ item.1.path }}"
+
+- name: Turn off mirror lists where the mirror now serves the repository
+  ansible.builtin.script:
+    cmd: "interzone-mirrors-metalinks.py {{ iz_os | quote }} {{ item.1.path | quote }}"
+    executable: "{{ ansible_facts.python.executable }}"
+  register: iz_metalinks
+  changed_when: "'changed' in iz_metalinks.stdout"
+  loop: "{{ iz_rewrite }}"
+  loop_control:
+    label: "{{ item.1.path }}"
+  when: iz_family == 'RedHat'

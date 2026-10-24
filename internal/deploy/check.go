@@ -60,7 +60,7 @@ func Preflight(c *config.Config) []Check {
 		kind      config.MirrorKind
 	}{
 		{"Docker packages", s.DockerPackageURL, config.MirrorDocker},
-		{"APT mirror", s.APTMirror, config.MirrorAPT},
+		{"OS package mirror", s.APTMirror, config.MirrorOS},
 		{"PyPI mirror", s.PyPIIndex, config.MirrorPyPI},
 	} {
 		if m.url != "" {

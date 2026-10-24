@@ -72,7 +72,7 @@ func (s *welcomeScreen) view(w, h int) string {
 		"",
 		feature("◆", "Opt into anything", fmt.Sprintf("%d bridges, bots, clients and services from the playbook.", len(catalog.Components))),
 		"",
-		feature("◆", "Works during a blackout", "Git, container, Docker, APT and PyPI mirrors inside the country."),
+		feature("◆", "Works during a blackout", "Git, container, Docker, OS package and PyPI mirrors inside the country."),
 		"",
 		"",
 	}
@@ -135,7 +135,7 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 		// Blackout fields are cleared outside blackout mode, so switching to it
 		// starts from the known in-country mirrors.
 		src.DockerPackageURL = config.DefaultMirror(config.MirrorDocker)
-		src.APTMirror = config.DefaultMirror(config.MirrorAPT)
+		src.APTMirror = config.DefaultMirror(config.MirrorOS)
 		src.PyPIIndex = config.DefaultMirror(config.MirrorPyPI)
 	}
 	f := newForm(
@@ -152,8 +152,8 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 			"Images are pulled as <mirror>/<owner>/<image>, e.g. mechatok.g0th.ir/element-hq/synapse."),
 		textField("dockerpkg", "Docker Engine package mirror", src.DockerPackageURL, config.DefaultMirror(config.MirrorDocker),
 			"A mirror of download.docker.com/linux. Leave empty if Docker is already installed on the server."+mirrorHint(config.MirrorDocker)),
-		textField("apt", "OS package (APT) mirror", src.APTMirror, config.DefaultMirror(config.MirrorAPT),
-			"The server's Debian/Ubuntu sources are pointed here before installing. Original files are backed up."+mirrorHint(config.MirrorAPT)),
+		textField("apt", "OS package mirror", src.APTMirror, config.DefaultMirror(config.MirrorOS),
+			"The server's package sources (Debian, Ubuntu, AlmaLinux, Rocky, CentOS Stream, Fedora, EPEL or Arch) are pointed here before installing, for whatever the mirror carries. Original files are backed up."+mirrorHint(config.MirrorOS)),
 		textField("pypi", "PyPI mirror", src.PyPIIndex, config.DefaultMirror(config.MirrorPyPI),
 			"Used to install Ansible on this machine if it's missing."+mirrorHint(config.MirrorPyPI)),
 	)
@@ -166,16 +166,27 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 	return nil
 }
 
-// mirrorHint names the other known mirrors of kind for a field's help.
+// mirrorHint describes the known mirrors of kind for a field's help.
 func mirrorHint(kind config.MirrorKind) string {
-	var alts []string
-	for _, m := range config.Mirrors(kind)[1:] {
-		alts = append(alts, m.URL)
+	var parts []string
+	for i, m := range config.Mirrors(kind) {
+		p := m.URL
+		if len(m.Covers) > 0 {
+			names := make([]string, len(m.Covers))
+			for j, d := range m.Covers {
+				names[j] = config.DistroNames[d]
+			}
+			p += " (" + strings.Join(names, ", ") + ")"
+		}
+		if i == 0 {
+			p += " is the default"
+		}
+		parts = append(parts, p)
 	}
-	if len(alts) == 0 {
+	if len(parts) == 0 {
 		return ""
 	}
-	return " Others: " + strings.Join(alts, ", ") + ". Run interzone mirrors to test them all."
+	return " Known mirrors in Iran: " + strings.Join(parts, "; ") + ". Run interzone mirrors to test them."
 }
 
 func (s *networkScreen) leave(c *config.Config) {

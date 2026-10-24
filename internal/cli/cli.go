@@ -170,12 +170,12 @@ func Check(args []string) error {
 func Mirrors(args []string) error {
 	fs := flag.NewFlagSet("mirrors", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "Usage: interzone mirrors\n\nTests every known mirror in Iran for OS packages (APT), Docker Engine and PyPI.\nAPT mirrors must serve fresh Ubuntu and Debian security updates; Docker\nmirrors a Release file; PyPI mirrors must list ansible-core.")
+		fmt.Fprintln(fs.Output(), "Usage: interzone mirrors\n\nTests every known mirror in Iran for OS packages, Docker Engine and PyPI, and\nshows which distros each one carries. OS mirrors count for a distro only\nif its security or update indexes are fresh; PyPI mirrors must list\nansible-core.")
 	}
 	_ = fs.Parse(args)
 	fmt.Println(muted.Render("Testing " + fmt.Sprint(len(config.KnownMirrors)) + " mirrors…"))
 	titles := map[config.MirrorKind]string{
-		config.MirrorAPT: "OS packages (APT)", config.MirrorDocker: "Docker Engine packages", config.MirrorPyPI: "PyPI",
+		config.MirrorOS: "OS packages", config.MirrorDocker: "Docker Engine packages", config.MirrorPyPI: "PyPI",
 	}
 	working := 0
 	var kind config.MirrorKind

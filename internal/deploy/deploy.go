@@ -28,7 +28,7 @@ const (
 	StepPlaybook
 	StepInventory
 	StepRoles
-	StepAPT
+	StepMirrors
 	StepInstall
 	StepSelfCheck
 	StepRestart
@@ -44,7 +44,7 @@ var stepNames = map[Step]string{
 	StepPlaybook:  "Fetch playbook",
 	StepInventory: "Write configuration",
 	StepRoles:     "Install Ansible roles",
-	StepAPT:       "Point server at APT mirror",
+	StepMirrors:   "Point server at package mirrors",
 	StepInstall:   "Run the playbook",
 	StepSelfCheck: "Check that services work",
 	StepRestart:   "Restart all services",
@@ -89,7 +89,7 @@ func Plan(a Action) []Step {
 	case ActionBundle:
 		return []Step{StepAnsible, StepPlaybook, StepRoles, StepWheels, StepArchive}
 	}
-	return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepAPT, StepInstall, StepSelfCheck}
+	return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepMirrors, StepInstall, StepSelfCheck}
 }
 
 type Event struct {
@@ -213,7 +213,7 @@ func (r *Runner) run(ctx context.Context) error {
 		StepPlaybook:  r.playbook,
 		StepInventory: r.inventory,
 		StepRoles:     r.roles,
-		StepAPT:       r.apt,
+		StepMirrors:   r.mirrors,
 		StepInstall:   r.install,
 		StepSelfCheck: r.selfCheck,
 		StepRestart:   r.restart,
@@ -344,46 +344,43 @@ func (r *Runner) roles(ctx context.Context) error {
 	return r.exec(ctx, StepRoles, dir, "ansible-galaxy", "install", "-r", "requirements.yml", "-p", "roles/galaxy/", "--force")
 }
 
-const aptPlay = `- name: Point APT at the in-country mirror
-  hosts: matrix_servers
-  become: true
-  gather_facts: true
-  tasks:
-    - name: Find APT source files
-      ansible.builtin.find:
-        paths: [/etc/apt, /etc/apt/sources.list.d]
-        patterns: ["sources.list", "*.list", "*.sources"]
-      register: interzone_apt_sources
-      when: ansible_facts.os_family == 'Debian'
-
-    - name: Rewrite Debian/Ubuntu archive hosts to the mirror
-      ansible.builtin.replace:
-        path: "{{ item.path }}"
-        regexp: 'https?://(?:(?:[a-z0-9-]+\.)*(?:archive|security|ports)\.ubuntu\.com|(?:[a-z0-9-]+\.)*debian\.org)'
-        replace: "{{ interzone_apt_mirror }}"
-        backup: true
-      loop: "{{ interzone_apt_sources.files | default([]) }}"
-      when: ansible_facts.os_family == 'Debian'
-
-    - name: Warn about unsupported distributions
-      ansible.builtin.debug:
-        msg: "APT mirror skipped: {{ ansible_facts.distribution }} is not Debian-based."
-      when: ansible_facts.os_family != 'Debian'
-`
-
-func (r *Runner) apt(ctx context.Context) error {
-	mirror := strings.TrimRight(r.cfg.Sources.APTMirror, "/")
-	if mirror == "" {
-		r.skip(StepAPT, "no APT mirror configured")
+func (r *Runner) mirrors(ctx context.Context) error {
+	src := r.cfg.Sources
+	if src.APTMirror == "" && src.DockerPackageURL == "" {
+		r.skip(StepMirrors, "no OS or Docker package mirror configured")
 		return nil
 	}
-	r.begin(StepAPT)
-	play := filepath.Join(r.cfg.PlaybookDir, "inventory", "interzone-apt-mirror.yml")
-	if err := os.WriteFile(play, []byte(aptPlay), 0o644); err != nil {
+	r.begin(StepMirrors)
+	inv := filepath.Join(r.cfg.PlaybookDir, "inventory")
+	_ = os.Remove(filepath.Join(inv, "interzone-apt-mirror.yml")) // the play before v0.3
+	vars, err := json.MarshalIndent(mirrorVars(src), "", "  ")
+	if err != nil {
 		return err
 	}
-	return r.exec(ctx, StepAPT, r.cfg.PlaybookDir, "ansible-playbook", "-i", "inventory/hosts", play,
-		"-e", "interzone_apt_mirror="+mirror)
+	for name, data := range map[string][]byte{
+		"interzone-mirrors.yml":          mirrorsPlay,
+		"interzone-mirrors-rewrite.yml":  mirrorsRewrite,
+		"interzone-mirrors-metalinks.py": metalinksScript,
+		"interzone-mirrors.json":         vars,
+	} {
+		if err := os.WriteFile(filepath.Join(inv, name), data, 0o644); err != nil {
+			return err
+		}
+	}
+	warned := false
+	r.onLine = func(ev Event) {
+		if m := playWarning.FindStringSubmatch(ev.Line); m != nil {
+			warned = true
+			r.note(StepMirrors, "! "+m[1])
+		}
+	}
+	err = r.exec(ctx, StepMirrors, r.cfg.PlaybookDir, "ansible-playbook", "-i", "inventory/hosts",
+		filepath.Join(inv, "interzone-mirrors.yml"), "-e", "@"+filepath.Join(inv, "interzone-mirrors.json"))
+	r.onLine = nil
+	if err == nil && warned {
+		r.emit(Event{Step: StepMirrors, Warn: true})
+	}
+	return err
 }
 
 func (r *Runner) playbookRun(ctx context.Context, step Step, args ...string) error {

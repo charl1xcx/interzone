@@ -39,6 +39,9 @@ const probeScript = `
 . /etc/os-release 2>/dev/null
 echo "os=$PRETTY_NAME"
 echo "osid=$ID $ID_LIKE"
+echo "ver=$VERSION_ID"
+echo "codename=$VERSION_CODENAME"
+echo "ubuntu_codename=$UBUNTU_CODENAME"
 echo "arch=$(uname -m)"
 echo "uid=$(id -u)"
 echo "mem=$(awk '/MemTotal/{print int($2/1024)}' /proc/meminfo 2>/dev/null)"
@@ -188,8 +191,11 @@ func ServerChecks(c *config.Config) []Finding {
 		}
 	}
 
+	_, dockerRepo, _ := serverNeeds(facts)
 	if d := facts["docker"]; d != "" {
 		add("Docker", Pass, "%s", strings.TrimPrefix(d, "Docker version "))
+	} else if dockerRepo == nil {
+		add("Docker", Pass, "not installed yet; the playbook will install it from the distro's packages")
 	} else if c.Sources.Blackout && c.Sources.DockerPackageURL == "" {
 		add("Docker", Warn, "not installed, and no Docker package mirror is set on the Network step")
 	} else {
@@ -209,7 +215,74 @@ func ServerChecks(c *config.Config) []Finding {
 		}
 	}
 
+	out = append(out, mirrorChecks(ctx, c, facts)...)
 	return append(out, dnsChecks(ctx, c, strings.Fields(facts["ips"]))...)
+}
+
+// mirrorChecks makes sure the blackout mirrors carry this server's distro
+// and release.
+func mirrorChecks(ctx context.Context, c *config.Config, facts map[string]string) []Finding {
+	if !c.Sources.Blackout {
+		return nil
+	}
+	osNeeds, docker, why := serverNeeds(facts)
+	arch := facts["arch"]
+	var out []Finding
+	add := func(name string, l Level, detail string) {
+		out = append(out, Finding{Group: "Server", Name: name, Level: l, Detail: detail})
+	}
+
+	switch mirror := c.Sources.APTMirror; {
+	case why != "":
+		add("OS package mirror", Warn, why+"; its packages download from abroad")
+	case mirror == "":
+		add("OS package mirror", Warn, "none set; the server's packages download from abroad")
+	default:
+		var have, missing []string
+		var alts []config.Mirror
+		for _, n := range osNeeds {
+			if _, err := ProbeDistro(ctx, config.MirrorOS, mirror, n.distro, n.version, arch); err != nil {
+				missing = append(missing, name(n.distro, n.version)+" ("+err.Error()+")")
+				alts = append(alts, config.MirrorsFor(config.MirrorOS, n.distro)...)
+			} else {
+				have = append(have, name(n.distro, n.version))
+			}
+		}
+		if len(missing) == 0 {
+			add("OS package mirror", Pass, "carries "+strings.Join(have, ", "))
+		} else {
+			add("OS package mirror", Warn, "doesn't carry "+strings.Join(missing, ", ")+
+				"; those packages download from abroad. "+alternatives(alts, mirror))
+		}
+	}
+
+	if docker != nil && facts["docker"] == "" && c.Sources.DockerPackageURL != "" {
+		mirror := c.Sources.DockerPackageURL
+		if _, err := ProbeDistro(ctx, config.MirrorDocker, mirror, docker.distro, docker.version, arch); err != nil {
+			add("Docker package mirror", Fail, "Docker isn't installed and the mirror doesn't carry "+
+				name(docker.distro, docker.version)+" ("+err.Error()+"). "+
+				alternatives(config.MirrorsFor(config.MirrorDocker, docker.distro), mirror))
+		} else {
+			add("Docker package mirror", Pass, "carries "+name(docker.distro, docker.version))
+		}
+	}
+	return out
+}
+
+// alternatives suggests known mirrors other than current.
+func alternatives(ms []config.Mirror, current string) string {
+	seen := map[string]bool{strings.TrimRight(current, "/"): true}
+	var urls []string
+	for _, m := range ms {
+		if !seen[m.URL] {
+			seen[m.URL] = true
+			urls = append(urls, m.URL)
+		}
+	}
+	if len(urls) == 0 {
+		return "No mirror in Iran is known to carry it."
+	}
+	return "Known mirrors that do: " + strings.Join(urls, ", ") + "."
 }
 
 func orUnknown(s string) string {

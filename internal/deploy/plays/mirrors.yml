@@ -1,0 +1,112 @@
+# Written by interzone. Points the server's package sources at in-country
+# mirrors before the playbook installs anything, for whatever the mirror
+# carries. Safe to run again. Variables come from interzone-mirrors.json:
+#   interzone_os_mirror, interzone_docker_mirror (either may be empty)
+#   interzone_sources: {Debian: [...], RedHat: [...]}, each source being
+#     {name, match, find?, to, index}: files containing `find` (default
+#     `match`) get `match` replaced by <mirror>/<to> if <mirror>/<index>
+#     exists. Lines that report a problem start with "interzone-warning:".
+- name: Point the server at in-country mirrors
+  hosts: matrix_servers
+  become: true
+  gather_facts: true
+  vars:
+    iz_os: "{{ interzone_os_mirror | default('') }}"
+    iz_docker: "{{ interzone_docker_mirror | default('') }}"
+    iz_family: "{{ ansible_facts.os_family }}"
+    iz_release: "{{ ansible_facts.distribution_release }}"
+    iz_major: "{{ ansible_facts.distribution_major_version }}"
+    iz_arch: "{{ ansible_facts.architecture }}"
+    iz_rhel_like: "{{ iz_family == 'RedHat' and ansible_facts.distribution not in ['Fedora', 'RedHat'] }}"
+  tasks:
+    - name: Rewrite the package sources
+      ansible.builtin.include_tasks: interzone-mirrors-rewrite.yml
+      vars:
+        iz_sources: "{{ interzone_sources[iz_family] }}"
+      when: iz_os != '' and iz_family in interzone_sources
+
+    - name: Let dnf skip repositories it can't reach
+      ansible.builtin.lineinfile:
+        path: /etc/dnf/dnf.conf
+        regexp: '^skip_if_unavailable\s*='
+        line: skip_if_unavailable=True
+        insertafter: '^\[main\]'
+        backup: true
+      when: iz_os != '' and iz_family == 'RedHat'
+
+    # The playbook installs EPEL for the Docker SDK, after this play has run,
+    # so install it now and point it at the mirror too.
+    - name: Check the mirror carries EPEL
+      ansible.builtin.uri:
+        url: "{{ iz_os }}/epel/{{ iz_major }}/Everything/{{ iz_arch }}/repodata/repomd.xml"
+      register: iz_epel
+      failed_when: false
+      when: iz_os != '' and iz_rhel_like | bool
+
+    - name: Report a missing EPEL
+      ansible.builtin.debug:
+        msg: "interzone-warning: EPEL {{ iz_major }} isn't on {{ iz_os }}; the playbook needs it for python3-docker"
+      when: iz_os != '' and iz_rhel_like | bool and iz_epel.status | default(0) != 200
+
+    - name: Install the EPEL repository
+      ansible.builtin.package:
+        name: epel-release
+        state: present
+      when: iz_os != '' and iz_rhel_like | bool and iz_epel.status | default(0) == 200
+
+    - name: Rewrite EPEL's sources
+      ansible.builtin.include_tasks: interzone-mirrors-rewrite.yml
+      vars:
+        iz_sources: "{{ interzone_sources.RedHat | selectattr('name', 'equalto', 'EPEL') | list }}"
+      when: iz_os != '' and iz_rhel_like | bool and iz_epel.status | default(0) == 200
+
+    - name: Check the mirror carries Arch Linux
+      ansible.builtin.uri:
+        url: "{{ iz_os }}/archlinux/core/os/{{ iz_arch }}/core.db"
+      register: iz_archlinux
+      failed_when: false
+      when: iz_os != '' and iz_family == 'Archlinux'
+
+    - name: Put the mirror first in pacman's mirror list
+      ansible.builtin.lineinfile:
+        path: /etc/pacman.d/mirrorlist
+        line: "Server = {{ iz_os }}/archlinux/$repo/os/$arch"
+        insertbefore: BOF
+        backup: true
+      when: iz_os != '' and iz_family == 'Archlinux' and iz_archlinux.status | default(0) == 200
+
+    - name: Report a missing Arch Linux
+      ansible.builtin.debug:
+        msg: "interzone-warning: Arch Linux ({{ iz_arch }}) isn't on {{ iz_os }}, so packages still download from abroad"
+      when: iz_os != '' and iz_family == 'Archlinux' and iz_archlinux.status | default(0) != 200
+
+    - name: Report distributions without a mirror
+      ansible.builtin.debug:
+        msg: "interzone-warning: interzone can't point {{ ansible_facts.distribution }} at a mirror, so packages still download from abroad"
+      when: iz_os != '' and iz_family not in interzone_sources and iz_family != 'Archlinux'
+
+    # Docker's own .repo file names download.docker.com no matter where it
+    # was downloaded from. The playbook's Docker role only downloads it when
+    # the file is missing, so writing it here keeps installs on the mirror.
+    - name: Point the Docker repository at the mirror
+      ansible.builtin.copy:
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: "0644"
+        backup: true
+        content: |
+          [docker-ce-stable]
+          name=Docker CE Stable - $basearch
+          baseurl={{ iz_docker }}/{{ iz_docker_dist }}/$releasever/$basearch/stable
+          enabled=1
+          gpgcheck=1
+          gpgkey={{ iz_docker }}/{{ iz_docker_dist }}/gpg
+
+          [docker-ce-test]
+          name=Docker CE Test - $basearch
+          baseurl={{ iz_docker }}/{{ iz_docker_dist }}/$releasever/$basearch/test
+          enabled=0
+          gpgcheck=1
+          gpgkey={{ iz_docker }}/{{ iz_docker_dist }}/gpg
+      vars:
+        iz_docker_dist: "{{ 'fedora' if ansible_facts.distribution == 'Fedora' else 'rhel' if ansible_facts.distribution == 'RedHat' else 'centos' }}"
+      when: iz_docker != '' and iz_family == 'RedHat'

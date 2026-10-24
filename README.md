@@ -23,26 +23,61 @@ every download can come from mirrors inside the country.
   | Playbook git | `https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy` | `git clone` / `git pull` |
   | Ansible roles git | `https://itsjustadream.g0th.ir/` | `github.com` URLs in `requirements.yml` are rewritten with git `insteadOf`, so the playbook stays unmodified |
   | Container images | `mechatok.g0th.ir/` | `matrix_container_global_registry_prefix_override` (every image, from every registry) |
-  | Docker Engine packages | `https://repo.abrha.net/docker` (blackout mode) | `docker_repo_url` (mirror of `download.docker.com/linux`) |
-  | OS packages (APT) | `https://mirror.arvancloud.ir` (blackout mode) | Debian/Ubuntu sources on the server are rewritten (with backups) before install |
-  | PyPI | `https://mirror-pypi.runflare.com/simple` (blackout mode) | Installs Ansible into a private venv if it's missing |
+  | Docker Engine packages | `https://mirror.cdn.ir/repository/docker/linux` (blackout mode) | `docker_repo_url`; on RHEL-family servers interzone writes `docker-ce.repo` itself, since Docker's own file always names download.docker.com |
+  | OS packages | `https://mirror.hostbaran.com` (blackout mode) | The server's APT, dnf or pacman sources are pointed at the mirror before install (with backups), for each repository the mirror actually carries |
+  | PyPI | `https://package-mirror.liara.ir/repository/pypi/simple` (blackout mode) | Installs Ansible into a private venv if it's missing |
 
   `ctrl+t` on the Network screen tests every source. Mirrors are checked
-  for content, not just reachability: APT mirrors must have Ubuntu and
-  Debian security updates less than two weeks old, Docker mirrors a
-  Release file, and PyPI mirrors must list `ansible-core`.
+  for content, not just reachability: OS mirrors must have security or
+  update indexes less than two weeks old (a month for AlmaLinux, Rocky and
+  CentOS Stream), Docker mirrors their repository indexes, and PyPI
+  mirrors must list `ansible-core`.
+
+  **Distros in blackout mode.** Interzone reads the server's distro and
+  release and checks that the chosen mirrors carry them before deploying.
+  The OS package step handles each family the playbook supports:
+
+  | Server | OS packages | Docker | In-country mirror? |
+  |---|---|---|---|
+  | Debian | `/debian`, `/debian-security` | from the Docker mirror | ✓ |
+  | Ubuntu (x86) | `/ubuntu` | from the Docker mirror | ✓ |
+  | Ubuntu (ARM) | `/ubuntu-ports` | from the Docker mirror | none known |
+  | Raspberry Pi OS 32-bit | `/raspbian` | from the Docker mirror | none known |
+  | AlmaLinux | `/almalinux`, `/epel` | `centos` on the Docker mirror | ✓ |
+  | Rocky Linux | `/rocky`, `/epel` | `centos` on the Docker mirror | none known for Rocky; EPEL ✓ |
+  | CentOS Stream | `/centos-stream`, `/epel` | `centos` on the Docker mirror | none known for CentOS; EPEL ✓ |
+  | Fedora | `/fedora/linux` | `fedora` on the Docker mirror | none known |
+  | Arch Linux | `/archlinux` (first in pacman's mirror list) | from Arch's own repositories | ✓ |
+  | RHEL | can't be mirrored (Red Hat's CDN) | `rhel` on the Docker mirror | – |
+
+  Repositories the mirror doesn't carry keep their original sources and
+  are reported as warnings; on dnf, unreachable repositories are skipped
+  instead of failing the run.
 
   Known mirrors in Iran (all checked October 2026); `interzone mirrors`
   re-tests them:
 
-  | What | Mirrors |
-  |---|---|
-  | OS packages (APT) | mirror.arvancloud.ir, mirror-linux.runflare.com, mirror.iranserver.com, mirror.hostbaran.com, repo.abrha.net, mirror.mobinhost.com |
-  | Docker Engine | repo.abrha.net/docker, mirror.cdn.ir/repository/docker/linux |
-  | PyPI | mirror-pypi.runflare.com/simple, pypi.iranserver.com/repository/pypi/simple, package-mirror.liara.ir/repository/pypi/simple, mirror.abrha.net/repository/pypi/simple, mirror2.chabokan.net/pypi/simple |
+  | What | Mirror | Carries |
+  |---|---|---|
+  | OS packages | mirror.hostbaran.com | Ubuntu, Debian, AlmaLinux, EPEL, Arch |
+  | | repo.abrha.net | Ubuntu, Debian, AlmaLinux, EPEL |
+  | | mirror.arvancloud.ir | Ubuntu, Debian, Arch |
+  | | mirror.iranserver.com | Ubuntu, Debian, AlmaLinux |
+  | | mirror.mobinhost.com | Ubuntu, Debian, EPEL, Arch |
+  | | mirror.famaserver.com | Ubuntu, AlmaLinux, EPEL, Arch |
+  | Docker Engine | mirror.cdn.ir/repository/docker/linux | Debian, Ubuntu, Raspbian, CentOS/Alma/Rocky, RHEL, Fedora |
+  | | repo.abrha.net/docker | Debian, Ubuntu |
+  | PyPI | package-mirror.liara.ir/repository/pypi/simple, pypi.iranserver.com/repository/pypi/simple, mirror-pypi.runflare.com/simple, mirror.abrha.net/repository/pypi/simple, mirror2.chabokan.net/pypi/simple | |
 
-  The same check runs as a test:
-  `INTERZONE_MIRROR_TESTS=1 go test ./internal/deploy -run KnownMirrors -v`.
+  Tests:
+
+  ```sh
+  # every known mirror still carries what it should
+  INTERZONE_MIRROR_TESTS=1 go test ./internal/deploy -run KnownMirrors -v
+  # the OS package step against Debian, Ubuntu, AlmaLinux 9/10, Rocky,
+  # CentOS Stream, Fedora and Arch containers (needs Docker and Ansible)
+  INTERZONE_CONTAINER_TESTS=1 go test ./internal/deploy -run PlayContainers -v -timeout 30m
+  ```
 - **Checks before it touches anything.** The Review screen logs into the
   server and checks root access, OS, CPU, Python, memory, disk and ports
   80/443/8448, then resolves every DNS record the setup needs and compares
@@ -97,7 +132,7 @@ interzone apply                # deploy with saved answers; runs the checks firs
 interzone apply --save-only    # only write the inventory
 interzone apply --config answers.json --force --quiet
 interzone check                # test mirrors, the server and DNS
-interzone mirrors              # test every known in-country mirror
+interzone mirrors              # test every known in-country mirror and what it carries
 ```
 
 `apply` exits non-zero if a check fails (unless `--force`), if the run
