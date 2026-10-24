@@ -190,10 +190,13 @@ func (f *form) Update(msg tea.Msg) tea.Cmd {
 	if c == nil {
 		return nil
 	}
+	done := func() tea.Msg { return formDoneMsg{} }
 	if k, ok := msg.(tea.KeyMsg); ok {
 		switch k.String() {
 		case "tab":
-			f.move(1)
+			if !f.move(1) {
+				return done
+			}
 			return nil
 		case "shift+tab":
 			f.move(-1)
@@ -211,17 +214,31 @@ func (f *form) Update(msg tea.Msg) tea.Cmd {
 			}
 			return nil
 		}
-		if c.kind != fArea {
+		if c.kind == fArea {
+			// Enter adds a line inside the box; the arrows leave it once the
+			// cursor is on its first or last line.
+			switch k.String() {
+			case "up":
+				if c.area.Line() == 0 {
+					f.move(-1)
+					return nil
+				}
+			case "down":
+				if c.area.Line() >= c.area.LineCount()-1 {
+					if !f.move(1) {
+						return done
+					}
+					return nil
+				}
+			}
+		} else {
 			switch k.String() {
 			case "up":
 				f.move(-1)
 				return nil
-			case "down":
-				f.move(1)
-				return nil
-			case "enter":
-				if !f.move(1) {
-					return func() tea.Msg { return formDoneMsg{} }
+			case "down", "enter":
+				if !f.move(1) && k.String() == "enter" {
+					return done
 				}
 				return nil
 			}

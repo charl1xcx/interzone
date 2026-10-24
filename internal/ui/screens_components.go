@@ -290,6 +290,9 @@ func (s *settingsScreen) name() string  { return "Settings" }
 func (s *settingsScreen) title() string { return "Fill in the details" }
 func (s *settingsScreen) typing() bool  { return s.form.typing() }
 func (s *settingsScreen) keys() [][2]string {
+	if c := s.form.current(); c != nil && c.kind == fArea {
+		return [][2]string{{"enter", "new line"}, {"tab", "leave box"}, {"ctrl+n", "next step"}}
+	}
 	return [][2]string{{"tab/↑↓", "move"}, {"space", "toggle"}, {"ctrl+r", "reveal secrets"}, {"enter", "next"}}
 }
 
