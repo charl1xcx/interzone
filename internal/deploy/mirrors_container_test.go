@@ -53,13 +53,14 @@ for f in glob.glob("/etc/yum.repos.d/*.repo"):
                 if c.has_option(s, k): print(s, k, c.get(s, k).split()[0])
 EOF
 `
-	for _, tc := range []struct {
+	type testCase struct {
 		name, image, mirror, docker string
 		setup                       string   // installs Python, without touching the package sources
 		check                       string   // must succeed after the play
 		want, absent                []string // output of check must contain / must not contain
 		warn                        []string // warnings the play must print
-	}{
+	}
+	cases := []testCase{
 		{name: "debian", image: "debian:trixie", mirror: hostbaran,
 			setup: "apt-get update -qq && apt-get install -y -qq python3 >/dev/null",
 			check: aptUpdate, want: []string{"mirror.hostbaran.com/debian trixie ", "mirror.hostbaran.com/debian-security trixie-security"},
@@ -100,7 +101,31 @@ EOF
 			setup: "pacman -Sy --noconfirm --needed python >/dev/null",
 			check: "head -n1 /etc/pacman.d/mirrorlist && pacman -Syy --noconfirm",
 			want:  []string{"Server = " + mobinhost + "/archlinux/$repo/os/$arch"}},
-	} {
+	}
+	// An interzone-mirror (https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)
+	// carries only what the playbook installs, so these install it all.
+	// INTERZONE_SELFHOSTED_MIRROR is its URL as the containers see it, e.g.
+	// http://<docker0 address>:8080.
+	if m := strings.TrimRight(os.Getenv("INTERZONE_SELFHOSTED_MIRROR"), "/"); m != "" {
+		installed := func(pkgs string) string {
+			return " && " + pkgs + " >/dev/null && echo installed"
+		}
+		cases = append(cases,
+			testCase{name: "selfhosted-debian", image: "debian:trixie", mirror: m,
+				setup: "apt-get update -qq && apt-get install -y -qq python3 >/dev/null",
+				check: aptUpdate + installed("apt-get install -y -qq python3-docker python3-debian fuse git openssl systemd-timesyncd"),
+				want:  []string{m + "/debian trixie ", m + "/debian-security trixie-security", "installed"}, absent: []string{"deb.debian.org"}},
+			testCase{name: "selfhosted-ubuntu", image: "ubuntu:24.04", mirror: m,
+				setup: "apt-get update -qq && apt-get install -y -qq python3 >/dev/null",
+				check: aptUpdate + installed("apt-get install -y -qq python3-docker python3-debian fuse git openssl systemd-timesyncd"),
+				want:  []string{m + "/ubuntu noble-security", "installed"}, absent: []string{"archive.ubuntu.com", "security.ubuntu.com"}},
+			testCase{name: "selfhosted-arch", image: "archlinux:latest", mirror: m,
+				setup: "pacman -Sy --noconfirm --needed python >/dev/null",
+				check: "head -n1 /etc/pacman.d/mirrorlist" + installed("pacman -Syu --noconfirm docker docker-compose python-docker fuse3 git"),
+				want:  []string{"Server = " + m + "/archlinux/$repo/os/$arch", "installed"}},
+		)
+	}
+	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			ctr := "interzone-test-" + tc.name

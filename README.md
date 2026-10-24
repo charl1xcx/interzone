@@ -23,9 +23,9 @@ every download can come from mirrors inside the country.
   | Playbook git | `https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy` | `git clone` / `git pull` |
   | Ansible roles git | `https://itsjustadream.g0th.ir/` | `github.com` URLs in `requirements.yml` are rewritten with git `insteadOf`, so the playbook stays unmodified |
   | Container images | `mechatok.g0th.ir/` | `matrix_container_global_registry_prefix_override` (every image, from every registry) |
-  | Docker Engine packages | `https://mirror.cdn.ir/repository/docker/linux` (blackout mode) | `docker_repo_url`; on RHEL-family servers interzone writes `docker-ce.repo` itself, since Docker's own file always names download.docker.com |
-  | OS packages | `https://mirror.hostbaran.com` (blackout mode) | The server's APT, dnf or pacman sources are pointed at the mirror before install (with backups), for each repository the mirror actually carries |
-  | PyPI | `https://package-mirror.liara.ir/repository/pypi/simple` (blackout mode) | Installs Ansible into a private venv if it's missing |
+  | Docker Engine packages | `https://infamous.g0th.ir/docker` (blackout mode) | `docker_repo_url`; on RHEL-family servers interzone writes `docker-ce.repo` itself, since Docker's own file always names download.docker.com |
+  | OS packages | `https://infamous.g0th.ir` (blackout mode) | The server's APT, dnf or pacman sources are pointed at the mirror before install (with backups), for each repository the mirror actually carries |
+  | PyPI | `https://infamous.g0th.ir/pypi/simple` (blackout mode) | Installs Ansible into a private venv if it's missing |
 
   `ctrl+t` on the Network screen tests every source. Mirrors are checked
   for content, not just reachability: OS mirrors must have security or
@@ -37,12 +37,18 @@ every download can come from mirrors inside the country.
   release and checks that the chosen mirrors carry them before deploying.
   The OS package step handles each family the playbook supports:
 
+  The defaults point at infamous.g0th.ir, an
+  [interzone-mirror](https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)
+  that carries what interzone and the playbook install on Debian, Ubuntu
+  (x86 and ARM), Raspberry Pi OS and Arch. On RHEL-family and Fedora servers,
+  choose one of the public mirrors below instead.
+
   | Server | OS packages | Docker | In-country mirror? |
   |---|---|---|---|
   | Debian | `/debian`, `/debian-security` | from the Docker mirror | ✓ |
   | Ubuntu (x86) | `/ubuntu` | from the Docker mirror | ✓ |
-  | Ubuntu (ARM) | `/ubuntu-ports` | from the Docker mirror | none known |
-  | Raspberry Pi OS 32-bit | `/raspbian` | from the Docker mirror | none known |
+  | Ubuntu (ARM) | `/ubuntu-ports` | from the Docker mirror | interzone-mirror only |
+  | Raspberry Pi OS 32-bit | `/raspbian` | from the Docker mirror | interzone-mirror only |
   | AlmaLinux | `/almalinux`, `/epel` | `centos` on the Docker mirror | ✓ |
   | Rocky Linux | `/rocky`, `/epel` | `centos` on the Docker mirror | none known for Rocky; EPEL ✓ |
   | CentOS Stream | `/centos-stream`, `/epel` | `centos` on the Docker mirror | none known for CentOS; EPEL ✓ |
@@ -59,6 +65,7 @@ every download can come from mirrors inside the country.
 
   | What | Mirror | Carries |
   |---|---|---|
+  | All three | infamous.g0th.ir (default), `/docker`, `/pypi/simple` | Ubuntu, Ubuntu ARM, Debian, Raspbian, Arch; Docker for Debian, Ubuntu, Raspbian |
   | OS packages | mirror.hostbaran.com | Ubuntu, Debian, AlmaLinux, EPEL, Arch |
   | | repo.abrha.net | Ubuntu, Debian, AlmaLinux, EPEL |
   | | mirror.arvancloud.ir | Ubuntu, Debian, Arch |

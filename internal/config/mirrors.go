@@ -45,16 +45,28 @@ type Mirror struct {
 	Covers []string
 }
 
+// SelfHostedMirror is an interzone-mirror
+// (https://itsjustadream.g0th.ir/vvvomit/interzone-mirror): one host that
+// carries exactly what interzone and the playbook install on Debian, Ubuntu
+// (x86 and ARM), Raspbian and Arch, plus Docker's packages for the APT
+// distros and a PyPI index with Ansible. It is the default for all three
+// kinds; RHEL-family and Fedora servers need one of the public mirrors.
+const SelfHostedMirror = "https://infamous.g0th.ir"
+
 // KnownMirrors lists public mirrors hosted in Iran, best first. Each one
 // was checked in October 2026 to be in Iran and to serve fresh packages
 // for the distros it covers; `interzone mirrors` and the network tests in
 // internal/deploy re-check them.
 //
-// No mirror in Iran was found for Ubuntu ARM (ubuntu-ports), Raspbian,
-// Rocky Linux, CentOS Stream or Fedora. Runflare's Linux mirror
+// Apart from interzone-mirror, no mirror in Iran was found for Ubuntu ARM
+// (ubuntu-ports), Raspbian, Rocky Linux, CentOS Stream or Fedora. Runflare's Linux mirror
 // (mirror-linux.runflare.com) carried Ubuntu, Debian, AlmaLinux, EPEL and
 // Arch but started answering "402 Insufficient credit" in October 2026.
 var KnownMirrors = []Mirror{
+	{MirrorOS, "interzone-mirror", SelfHostedMirror, []string{Ubuntu, UbuntuPorts, Debian, Raspbian, Arch}},
+	{MirrorDocker, "interzone-mirror", SelfHostedMirror + "/docker", []string{Debian, Ubuntu, Raspbian}},
+	{MirrorPyPI, "interzone-mirror", SelfHostedMirror + "/pypi/simple", nil},
+
 	{MirrorOS, "Hostbaran", "https://mirror.hostbaran.com", []string{Ubuntu, Debian, AlmaLinux, EPEL, Arch}},
 	{MirrorOS, "Abrha", "https://repo.abrha.net", []string{Ubuntu, Debian, AlmaLinux, EPEL}},
 	{MirrorOS, "ArvanCloud", "https://mirror.arvancloud.ir", []string{Ubuntu, Debian, Arch}},

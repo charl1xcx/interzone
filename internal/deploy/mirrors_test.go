@@ -65,10 +65,12 @@ func TestCatalog(t *testing.T) {
 			}
 		}
 	}
-	// The default Docker mirror should work for every distro that installs
-	// Docker from download.docker.com.
-	if got := len(config.Mirrors(config.MirrorDocker)[0].Covers); got != len(RefVersions[config.MirrorDocker]) {
-		t.Errorf("default Docker mirror covers %d distros, want all %d", got, len(RefVersions[config.MirrorDocker]))
+	// Every distro that installs Docker from download.docker.com should have
+	// some known Docker mirror.
+	for d := range RefVersions[config.MirrorDocker] {
+		if len(config.MirrorsFor(config.MirrorDocker, d)) == 0 {
+			t.Errorf("no known Docker mirror covers %s", d)
+		}
 	}
 }
 
