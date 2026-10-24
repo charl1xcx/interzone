@@ -16,16 +16,39 @@ import (
 
 // ── Welcome ────────────────────────────────────────────────────────
 
-type welcomeScreen struct{ loaded bool }
+type welcomeScreen struct {
+	loaded    bool
+	installed bool // a previous run set up this server
+	domain    string
+	choice    int // 0: manage, 1: change the setup
+}
 
-func (s *welcomeScreen) name() string                 { return "Welcome" }
-func (s *welcomeScreen) title() string                { return "" }
-func (s *welcomeScreen) enter(*config.Config) tea.Cmd { return nil }
-func (s *welcomeScreen) leave(*config.Config)         {}
-func (s *welcomeScreen) typing() bool                 { return false }
-func (s *welcomeScreen) keys() [][2]string            { return [][2]string{{"enter", "begin"}} }
+func (s *welcomeScreen) name() string  { return "Welcome" }
+func (s *welcomeScreen) title() string { return "" }
+func (s *welcomeScreen) enter(c *config.Config) tea.Cmd {
+	s.installed, s.domain = c.Installed(), c.Domain
+	return nil
+}
+func (s *welcomeScreen) leave(*config.Config) {}
+func (s *welcomeScreen) typing() bool         { return false }
+func (s *welcomeScreen) keys() [][2]string {
+	if s.installed {
+		return [][2]string{{"↑↓", "choose"}, {"enter", "continue"}}
+	}
+	return [][2]string{{"enter", "begin"}}
+}
 func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
-	if k, ok := msg.(tea.KeyMsg); ok && (k.String() == "enter" || k.String() == " ") {
+	k, ok := msg.(tea.KeyMsg)
+	if !ok {
+		return nil
+	}
+	switch k.String() {
+	case "up", "k", "down", "j", "tab", "shift+tab":
+		s.choice = 1 - s.choice
+	case "enter", " ":
+		if s.installed && s.choice == 0 {
+			return func() tea.Msg { return gotoMsg("Manage") }
+		}
 		return nav(1)
 	}
 	return nil
@@ -33,7 +56,7 @@ func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 
 func (s *welcomeScreen) view(w, h int) string {
 	feature := func(icon, title, text string) string {
-		return sPink.Render(icon) + " " + sTitle.Render(title) + "\n  " + sMuted.Render(text)
+		return sPink.Render(icon) + "  " + sTitle.Render(title) + "\n   " + sMuted.Render(text)
 	}
 	head := lipgloss.JoinVertical(lipgloss.Center,
 		gradientLines(strings.TrimPrefix(logo, "\n")),
@@ -44,15 +67,34 @@ func (s *welcomeScreen) view(w, h int) string {
 	parts := []string{
 		head,
 		"",
+		"",
 		feature("◆", "Pick any homeserver", "Synapse, Continuwuity, Tuwunel, Conduit or Dendrite."),
+		"",
 		feature("◆", "Opt into anything", fmt.Sprintf("%d bridges, bots, clients and services from the playbook.", len(catalog.Components))),
+		"",
 		feature("◆", "Works during a blackout", "Git, container, Docker, APT and PyPI mirrors inside the country."),
 		"",
+		"",
 	}
-	if s.loaded {
-		parts = append(parts, sGood.Render("✓ Picked up your previous answers."), "")
+	switch {
+	case s.installed:
+		opt := func(i int, title, desc string) string {
+			if i == s.choice {
+				return sAccent.Render("▌ ◉  ") + sTitle.Render(title) + "\n" + sAccent.Render("▌") + "    " + sMuted.Render(desc)
+			}
+			return "  " + sFaint.Render("○  ") + sMuted.Render(title) + "\n" + "     " + sFaint.Render(desc)
+		}
+		parts = append(parts,
+			sGood.Render("✓ This computer already set up ")+sTitle.Render(s.domain),
+			"", "",
+			opt(0, "Manage the server", "Update, check, restart, add users, back up, view logs."),
+			"",
+			opt(1, "Change the setup", "Walk through the wizard again with your saved answers."))
+	case s.loaded:
+		parts = append(parts, sGood.Render("✓ Picked up your previous answers."), "", "", sAccent.Render("Press enter to begin ›"))
+	default:
+		parts = append(parts, sAccent.Render("Press enter to begin ›"))
 	}
-	parts = append(parts, sAccent.Render("Press enter to begin ›"))
 	block := lipgloss.JoinVertical(lipgloss.Left, parts...)
 	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, block)
 }
@@ -167,8 +209,8 @@ func (s *networkScreen) update(msg tea.Msg) tea.Cmd {
 
 func (s *networkScreen) view(w, h int) string {
 	results := s.checksView(w)
-	formH := h - lipgloss.Height(results) - 1
-	return s.form.View(w, formH) + "\n\n" + results
+	formH := h - lipgloss.Height(results) - 2
+	return s.form.View(w, formH) + "\n\n\n" + results
 }
 
 func (s *networkScreen) checksView(w int) string {
@@ -239,7 +281,12 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 
 func (s *serverScreen) leave(c *config.Config) {
 	f := s.form
-	c.Domain = strings.ToLower(strings.TrimPrefix(f.value("domain"), "matrix."))
+	c.Domain = strings.ToLower(f.value("domain"))
+	// People often type the homeserver's own name; the base domain is what
+	// follows "matrix." (but "matrix.org" itself is a base domain).
+	if rest, ok := strings.CutPrefix(c.Domain, "matrix."); ok && strings.Contains(rest, ".") {
+		c.Domain = rest
+	}
 	c.Target = config.Target{
 		Mode: f.value("mode"), Host: f.value("host"), User: f.value("user"),
 		Port: f.value("port"), SSHKey: f.value("key"), BecomePass: f.value("become"),
@@ -292,30 +339,32 @@ func (s *homeserverScreen) update(msg tea.Msg) tea.Cmd {
 }
 
 func (s *homeserverScreen) view(w, h int) string {
-	cardW := min(w, 76)
-	compact := h < len(catalog.Homeservers)*5
+	full := s.cards(w, false)
+	if lipgloss.Height(full) <= h {
+		return full
+	}
+	// Short screen: only the selected homeserver gets a card.
+	return s.cards(w, true)
+}
+
+func (s *homeserverScreen) cards(w int, compact bool) string {
+	cardW := min(w, 84)
+	card := sPanel.Padding(0, 2).Width(cardW - 2)
 	var cards []string
 	for i, hs := range catalog.Homeservers {
-		name := sTitle.Render(hs.Name)
-		tag := sMuted.Render("  " + hs.Tagline)
-		style := sPanel.Width(cardW - 2)
-		if i == s.sel {
-			style = sPanelFocus.Width(cardW - 2)
-			name = sAccent.Render("◉ ") + gradient(hs.Name)
-		} else {
-			name = sFaint.Render("○ ") + name
-		}
-		body := name + tag
-		if !compact || i == s.sel {
-			body += "\n" + sSub.Render(hs.Description)
-		}
-		if compact && i != s.sel {
-			cards = append(cards, "  "+sMuted.Render("○ ")+sMuted.Render(hs.Name)+tag)
+		tag := sMuted.Render("   " + hs.Tagline)
+		if i != s.sel && compact {
+			cards = append(cards, "   "+sFaint.Render("○  ")+sMuted.Render(hs.Name)+tag)
 			continue
 		}
-		cards = append(cards, style.Render(body))
+		style, name := card, sFaint.Render("○  ")+sTitle.Render(hs.Name)
+		if i == s.sel {
+			style, name = card.BorderForeground(cPurple), sAccent.Render("◉  ")+gradient(hs.Name)
+		}
+		desc := sSub.Width(cardW - 9).Render(hs.Description)
+		cards = append(cards, style.Render(name+tag+"\n   "+strings.ReplaceAll(desc, "\n", "\n   ")))
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, cards...)
+	return strings.Join(cards, "\n\n")
 }
 
 // ── SSL ────────────────────────────────────────────────────────────
@@ -372,9 +421,9 @@ func (s *sslScreen) update(msg tea.Msg) tea.Cmd { return s.form.Update(msg) }
 
 func (s *sslScreen) view(w, h int) string {
 	mode := s.form.value("mode")
-	info := sPanel.Width(min(w, 80) - 2).Render(sSub.Render(sslExplain[mode]))
+	info := sPanel.Padding(1, 2).Width(min(w, maxFormWidth) - 2).Render(sSub.Render(sslExplain[mode]))
 	if s.blackout && mode == "letsencrypt" {
-		info += "\n" + sWarn.Render("⚠ You chose blackout mode: Let's Encrypt will fail without international internet.")
+		info += "\n\n" + sWarn.Render("⚠ You chose blackout mode: Let's Encrypt will fail without international internet.")
 	}
-	return s.form.View(w, h-lipgloss.Height(info)-1) + "\n\n" + info
+	return s.form.View(w, h-lipgloss.Height(info)-2) + "\n\n\n" + info
 }

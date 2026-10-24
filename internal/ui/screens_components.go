@@ -154,40 +154,13 @@ func (s *componentsScreen) view(w, h int) string {
 				}
 			}
 		}
-		label := fmt.Sprintf("%s %d/%d", cat, on, n)
+		label := cat + "  " + fmt.Sprintf("%d/%d", on, n)
 		if i == s.cat && s.filter.Value() == "" {
-			tabs = append(tabs, lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 1).Render(label))
+			tabs = append(tabs, lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(label))
 		} else {
-			tabs = append(tabs, sMuted.Padding(0, 1).Render(label))
+			tabs = append(tabs, sMuted.Padding(0, 2).Render(label))
 		}
 	}
-	tabLine := tabStrip(tabs, s.cat, w-14)
-
-	top := tabLine
-	if s.filtering || s.filter.Value() != "" {
-		top = s.filter.View()
-	}
-
-	items := s.items()
-	s.cursor = max(0, min(s.cursor, len(items)-1))
-
-	detail := s.detail(items, w)
-	listH := max(3, h-lipgloss.Height(top)-lipgloss.Height(detail)-2)
-	if s.cursor < s.offset {
-		s.offset = s.cursor
-	}
-	if s.cursor >= s.offset+listH {
-		s.offset = s.cursor - listH + 1
-	}
-
-	var rows []string
-	for i := s.offset; i < len(items) && i < s.offset+listH; i++ {
-		rows = append(rows, s.row(items[i], i == s.cursor, w))
-	}
-	if len(items) == 0 {
-		rows = append(rows, sMuted.Render("  nothing matches"))
-	}
-	list := lipgloss.NewStyle().Height(listH).Render(strings.Join(rows, "\n"))
 
 	count := 0
 	for _, c := range catalog.Components {
@@ -195,8 +168,58 @@ func (s *componentsScreen) view(w, h int) string {
 			count++
 		}
 	}
-	total := sMuted.Render(fmt.Sprintf("%d selected", count))
-	return lipgloss.JoinVertical(lipgloss.Left, top+"  "+total, "", list, detail)
+	total := badge(fmt.Sprintf("%d selected", count), cMint)
+
+	top := tabStrip(tabs, s.cat, w-lipgloss.Width(total)-4)
+	if s.filtering || s.filter.Value() != "" {
+		top = s.filter.View()
+	}
+	top += strings.Repeat(" ", max(2, w-lipgloss.Width(top)-lipgloss.Width(total))) + total
+
+	items := s.items()
+	s.cursor = max(0, min(s.cursor, len(items)-1))
+	listH := max(3, h-lipgloss.Height(top)-1)
+
+	if len(items) == 0 {
+		return top + "\n\n" + sMuted.Render("   nothing matches")
+	}
+
+	// Items are separated by a blank line and differ in height (the current
+	// one shows its full description), so scroll by whole items.
+	blocks := make([]string, len(items))
+	for i, it := range items {
+		blocks[i] = s.row(it, i == s.cursor, w)
+	}
+	used := func(from, to int) int {
+		n := 0
+		for i := from; i <= to; i++ {
+			n += lipgloss.Height(blocks[i]) + 1
+		}
+		return n - 1
+	}
+	s.offset = min(s.offset, s.cursor)
+	for s.offset < s.cursor && used(s.offset, s.cursor) > listH {
+		s.offset++
+	}
+	var rows []string
+	n := 0
+	for i := s.offset; i < len(items); i++ {
+		bh := lipgloss.Height(blocks[i])
+		if n > 0 && n+bh+1 > listH {
+			break
+		}
+		if n > 0 {
+			rows = append(rows, "")
+			n++
+		}
+		rows = append(rows, blocks[i])
+		n += bh
+	}
+	list := strings.Join(rows, "\n")
+	if s.offset > 0 {
+		list = sFaint.Render("   ▲ more") + "\n" + list
+	}
+	return top + "\n\n" + list
 }
 
 // tabStrip fits the tabs on one line, keeping the current tab visible and
@@ -230,15 +253,16 @@ func tabStrip(tabs []string, cur, w int) string {
 	return left + strings.Join(tabs[lo:hi], "") + right
 }
 
+// row renders one component: a name line with tags and a description.
+// The current one gets a full description plus its DNS name and docs.
 func (s *componentsScreen) row(c catalog.Component, cur bool, w int) string {
 	box := sFaint.Render("○")
 	if s.selected[c.ID] {
 		box = sGood.Render("●")
 	}
-	name := c.Name
-	style := sTitle
-	if !cur {
-		style = lipgloss.NewStyle().Foreground(cText)
+	style := lipgloss.NewStyle().Foreground(cText)
+	if cur {
+		style = sTitle
 	}
 	var tags []string
 	if !s.available(c) {
@@ -255,28 +279,37 @@ func (s *componentsScreen) row(c catalog.Component, cur bool, w int) string {
 	if s.filter.Value() != "" {
 		tags = append(tags, sFaint.Render(c.Category))
 	}
-	pointer := "  "
+	bar := "   "
 	if cur {
-		pointer = sAccent.Render("› ")
+		bar = sAccent.Render("▌") + "  "
 	}
-	line := pointer + box + " " + style.Render(name)
+	line := bar + box + "  " + style.Render(c.Name)
 	if len(tags) > 0 {
-		line += "  " + strings.Join(tags, sFaint.Render(" · "))
+		line += "    " + strings.Join(tags, sFaint.Render("  ·  "))
 	}
-	return truncateANSI(line, w)
-}
+	lines := []string{truncateANSI(line, w)}
 
-func (s *componentsScreen) detail(items []catalog.Component, w int) string {
-	if len(items) == 0 {
-		return ""
+	pad := bar + "   "
+	textW := max(20, w-lipgloss.Width(pad)-1)
+	if !cur {
+		lines = append(lines, pad+sFaint.Render(truncate(c.Description, textW)))
+		return strings.Join(lines, "\n")
 	}
-	c := items[s.cursor]
-	body := sTitle.Render(c.Name) + "\n" + sSub.Render(c.Description)
+	desc := sSub.Width(textW).Render(c.Description)
+	for _, l := range strings.Split(desc, "\n") {
+		lines = append(lines, pad+l)
+	}
+	var meta []string
 	if c.Subdomain != "" {
-		body += "\n" + sMuted.Render("Needs DNS: ") + sPink.Render(c.Subdomain+".<domain>")
+		meta = append(meta, sMuted.Render("DNS ")+sPink.Render(c.Subdomain+".<domain>"))
 	}
-	body += "\n" + sFaint.Render("docs/"+c.Doc)
-	return sPanel.Width(w - 2).Render(body)
+	if c.Doc != "" {
+		meta = append(meta, sFaint.Render("docs/"+c.Doc))
+	}
+	if len(meta) > 0 {
+		lines = append(lines, truncateANSI(pad+strings.Join(meta, sFaint.Render("   ·   ")), w))
+	}
+	return strings.Join(lines, "\n")
 }
 
 // ── Settings ───────────────────────────────────────────────────────

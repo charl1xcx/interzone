@@ -30,7 +30,7 @@ var (
 	sBad     = lipgloss.NewStyle().Foreground(cRed)
 	sPink    = lipgloss.NewStyle().Foreground(cPink)
 	sKey     = lipgloss.NewStyle().Foreground(cPurple).Bold(true)
-	sSection = lipgloss.NewStyle().Foreground(cPink).Bold(true).MarginTop(1)
+	sSection = lipgloss.NewStyle().Foreground(cPink).Bold(true)
 
 	sPanel = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).

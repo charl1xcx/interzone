@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	"interzone/internal/catalog"
 )
@@ -59,6 +62,9 @@ type Config struct {
 
 	AdminUser     string
 	AdminPassword string
+	// CloseRegistration turns off the open registration Conduit, Continuwuity
+	// and Tuwunel need for creating the first account.
+	CloseRegistration bool
 
 	GenericSecret    string
 	PostgresPassword string
@@ -74,7 +80,8 @@ func Dir() string {
 	return ".interzone"
 }
 
-func path() string { return filepath.Join(Dir(), "config.json") }
+// Path is where the wizard keeps its answers.
+func Path() string { return filepath.Join(Dir(), "config.json") }
 
 func Default() *Config {
 	data, _ := os.UserHomeDir()
@@ -112,13 +119,22 @@ func Default() *Config {
 
 // Load returns the saved configuration, or defaults on first run.
 func Load() (*Config, bool) {
-	b, err := os.ReadFile(path())
+	c, err := LoadFile(Path())
 	if err != nil {
 		return Default(), false
 	}
+	return c, true
+}
+
+// LoadFile reads a configuration file written by Save or SaveFile.
+func LoadFile(file string) (*Config, error) {
+	b, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
 	c := Default()
 	if err := json.Unmarshal(b, c); err != nil {
-		return Default(), false
+		return nil, err
 	}
 	if c.Components == nil {
 		c.Components = map[string]bool{}
@@ -126,19 +142,40 @@ func Load() (*Config, bool) {
 	if c.Values == nil {
 		c.Values = map[string]string{}
 	}
-	return c, true
+	return c, nil
 }
 
 // Save writes the configuration with owner-only permissions since it holds secrets.
-func (c *Config) Save() error {
-	if err := os.MkdirAll(Dir(), 0o700); err != nil {
+func (c *Config) Save() error { return c.SaveFile(Path()) }
+
+func (c *Config) SaveFile(file string) error {
+	if err := os.MkdirAll(filepath.Dir(file), 0o700); err != nil {
 		return err
 	}
 	b, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path(), b, 0o600)
+	return os.WriteFile(file, b, 0o600)
+}
+
+// Installed reports whether a previous run wrote this server's inventory.
+func (c *Config) Installed() bool {
+	if c.Domain == "" {
+		return false
+	}
+	_, err := os.Stat(filepath.Join(c.PlaybookDir, "inventory", "host_vars", c.HostName(), "vars.yml"))
+	return err == nil
+}
+
+// RegistrationOpen reports whether the homeserver currently lets anyone
+// with the token (or anyone at all, for Conduit) create an account.
+func (c *Config) RegistrationOpen() bool {
+	switch c.Homeserver {
+	case "conduit", "continuwuity", "tuwunel":
+		return !c.CloseRegistration
+	}
+	return false
 }
 
 // Enabled reports whether a component is active for the chosen homeserver.
@@ -193,8 +230,26 @@ func (c *Config) Missing() []string {
 			}
 			if f.Required && c.Values[f.Var] == "" {
 				out = append(out, comp.Name+": "+f.Label)
+			} else if f.Kind == catalog.YAML && c.Values[f.Var] != "" {
+				if err := yaml.Unmarshal([]byte(c.Values[f.Var]), new(any)); err != nil {
+					out = append(out, comp.Name+": "+f.Label+" isn't valid YAML ("+yamlError(err)+")")
+				}
 			}
 		}
 	}
+	if extra := strings.TrimSpace(c.ExtraYAML); extra != "" {
+		var m map[string]any
+		if err := yaml.Unmarshal([]byte(extra), &m); err != nil {
+			out = append(out, "Settings: extra vars.yml lines aren't valid YAML ("+yamlError(err)+")")
+		}
+	}
 	return out
+}
+
+// yamlError shortens yaml.v3's messages, e.g. "line 2: could not find expected ':'".
+func yamlError(err error) string {
+	if _, ok := err.(*yaml.TypeError); ok {
+		return "expected lines like key: value"
+	}
+	return strings.TrimPrefix(err.Error(), "yaml: ")
 }

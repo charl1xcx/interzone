@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -22,22 +23,34 @@ import (
 
 // ── Review ─────────────────────────────────────────────────────────
 
-type startDeployMsg struct{ saveOnly bool }
+type startDeployMsg struct{ opts deploy.Options }
+
+type serverChecksMsg []deploy.Finding
 
 type reviewScreen struct {
-	cfg     *config.Config
-	missing []string
-	vp      viewport.Model
-	yaml    string
+	cfg      *config.Config
+	missing  []string
+	vp       viewport.Model
+	yaml     string
+	checks   []deploy.Finding
+	checking bool
+	verbose  bool // list passed checks too
+	confirm  bool // enter was pressed once despite failed checks
+	spin     spinner.Model
 }
 
-func newReviewScreen() *reviewScreen { return &reviewScreen{vp: viewport.New(0, 0)} }
+func newReviewScreen() *reviewScreen {
+	sp := spinner.New()
+	sp.Spinner = spinner.MiniDot
+	sp.Style = sAccent
+	return &reviewScreen{vp: viewport.New(0, 0), spin: sp}
+}
 
 func (s *reviewScreen) name() string  { return "Review" }
 func (s *reviewScreen) title() string { return "Everything look right?" }
 func (s *reviewScreen) typing() bool  { return false }
 func (s *reviewScreen) keys() [][2]string {
-	k := [][2]string{{"↑↓", "scroll vars.yml"}, {"s", "save files only"}}
+	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"↑↓", "scroll vars.yml"}, {"s", "save files only"}}
 	if len(s.missing) == 0 {
 		k = append([][2]string{{"enter", "deploy"}}, k...)
 	}
@@ -48,6 +61,7 @@ func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
 	c.FillGenerated()
 	s.missing = c.Missing()
+	s.confirm = false
 	cert, key := "<generated during deploy>", "<generated during deploy>"
 	if c.SSL.Mode == "custom" {
 		cert, key = c.SSL.CertPath, c.SSL.KeyPath
@@ -55,21 +69,55 @@ func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
 	s.yaml = c.VarsYAML(config.MigrationVersion(c.PlaybookDir), cert, key)
 	s.vp.SetContent(highlightYAML(s.yaml))
 	s.vp.GotoTop()
-	return nil
+	return s.runChecks()
+}
+
+func (s *reviewScreen) runChecks() tea.Cmd {
+	if s.checking || s.cfg.Domain == "" || (s.cfg.Target.Mode == "ssh" && s.cfg.Target.Host == "") {
+		return nil
+	}
+	s.checking = true
+	cfg := *s.cfg
+	return tea.Batch(s.spin.Tick, func() tea.Msg { return serverChecksMsg(deploy.ServerChecks(&cfg)) })
 }
 
 func (s *reviewScreen) leave(*config.Config) {}
 
 func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
-	if k, ok := msg.(tea.KeyMsg); ok {
-		switch k.String() {
+	switch m := msg.(type) {
+	case serverChecksMsg:
+		s.checking = false
+		s.checks = m
+		return nil
+	case spinner.TickMsg:
+		if s.checking {
+			var cmd tea.Cmd
+			s.spin, cmd = s.spin.Update(m)
+			return cmd
+		}
+		return nil
+	case tea.KeyMsg:
+		key := m.String()
+		if key != "enter" && key != "d" {
+			s.confirm = false
+		}
+		switch key {
 		case "enter", "d":
-			if len(s.missing) == 0 {
-				return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{} })
+			if len(s.missing) > 0 {
+				return nil
 			}
-			return nil
+			if deploy.Worst(s.checks) == deploy.Fail && !s.confirm {
+				s.confirm = true
+				return nil
+			}
+			return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{deploy.Options{Action: deploy.ActionInstall}} })
 		case "s":
-			return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{saveOnly: true} })
+			return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{deploy.Options{Action: deploy.ActionSaveOnly}} })
+		case "c":
+			return s.runChecks()
+		case "v":
+			s.verbose = !s.verbose
+			return nil
 		}
 	}
 	var cmd tea.Cmd
@@ -96,7 +144,7 @@ func (s *reviewScreen) view(w, h int) string {
 		where = c.Target.User + "@" + c.Target.Host
 	}
 	kv := func(k, v string) string {
-		return lipgloss.NewStyle().Width(14).Render(sMuted.Render(k)) + sTitle.Render(v)
+		return lipgloss.NewStyle().Width(16).Render(sMuted.Render(k)) + sTitle.Render(v)
 	}
 	summary := []string{
 		kv("Domain", c.Domain),
@@ -107,6 +155,16 @@ func (s *reviewScreen) view(w, h int) string {
 		kv("Images from", map[bool]string{true: c.Sources.RegistryPrefix, false: "upstream registries"}[c.Sources.UseRegistry]),
 	}
 
+	wide := w >= 110
+	lw := w
+	if wide {
+		lw = w * 3 / 5
+	}
+
+	gap := []string{"", ""}
+	if h < 34 {
+		gap = []string{""} // short terminal: keep the vars.yml preview usable
+	}
 	var status []string
 	if len(s.missing) > 0 {
 		status = append(status, sBad.Render(fmt.Sprintf("✗ %d required setting(s) missing. Go back with esc:", len(s.missing))))
@@ -117,25 +175,87 @@ func (s *reviewScreen) view(w, h int) string {
 			}
 			status = append(status, sBad.Render("  • ")+m)
 		}
+	} else if s.confirm {
+		status = append(status, sWarn.Render("⚠ Some checks failed. Press enter again to deploy anyway."))
+	} else if deploy.Worst(s.checks) == deploy.Fail {
+		status = append(status, sWarn.Render("! Settings are complete, but some checks below failed."))
 	} else {
 		status = append(status, sGood.Render("✓ Ready to deploy."))
 	}
-	status = append(status, "", sTitle.Render("DNS records pointing at your server:"))
-	for _, r := range c.DNSRecords() {
-		status = append(status, sPink.Render("  ◆ ")+r)
-	}
+	status = append(status, gap...)
+	status = append(status, s.checksView(lw-2)...)
 
-	left := lipgloss.JoinVertical(lipgloss.Left, append(summary, append([]string{""}, status...)...)...)
-	if w >= 110 {
-		lw := 46
+	left := lipgloss.JoinVertical(lipgloss.Left, append(summary, append(gap, status...)...)...)
+	if wide {
 		s.vp.Width = w - lw - 4
-		s.vp.Height = h - 2
-		right := sPanel.Width(w - lw - 2).Render(sMuted.Render("vars.yml preview") + "\n" + s.vp.View())
+		s.vp.Height = h - 4
+		right := sPanel.Width(w - lw - 2).Render(sMuted.Render("vars.yml preview") + "\n\n" + s.vp.View())
 		return lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(lw).Render(left), right)
 	}
 	s.vp.Width = w - 4
-	s.vp.Height = max(3, h-lipgloss.Height(left)-3)
-	return left + "\n" + sPanel.Width(w-2).Render(s.vp.View())
+	s.vp.Height = h - lipgloss.Height(left) - 4
+	if s.vp.Height < 3 {
+		return left
+	}
+	return left + "\n\n" + sPanel.Width(w-2).Render(s.vp.View())
+}
+
+// checksView lists the pre-deploy checks. Passed server checks collapse
+// into one line unless details are on; problems are always spelled out.
+func (s *reviewScreen) checksView(w int) []string {
+	head := sTitle.Render("Pre-deploy checks")
+	if s.checking {
+		head += "  " + s.spin.View() + sMuted.Render(" checking the server and DNS…")
+	}
+	lines := []string{head, ""}
+	if s.checks == nil {
+		for _, r := range s.cfg.DNSRecords() {
+			lines = append(lines, sFaint.Render("  ○  ")+r)
+		}
+		return lines
+	}
+	nameW, dnsW := 18, 18
+	for _, f := range s.checks {
+		if f.Group == "DNS" {
+			dnsW = max(dnsW, min(34, len(f.Name)+2))
+		}
+	}
+	for _, g := range []string{"Server", "DNS"} {
+		passed := 0
+		var rows []string
+		for _, f := range s.checks {
+			if f.Group != g {
+				continue
+			}
+			if f.Level == deploy.Pass && !s.verbose && g == "Server" {
+				passed++
+				continue
+			}
+			icon, style := sGood.Render("✓"), sMuted
+			switch f.Level {
+			case deploy.Warn:
+				icon, style = sWarn.Render("!"), sWarn
+			case deploy.Fail:
+				icon, style = sBad.Render("✗"), sBad
+			}
+			name := lipgloss.NewStyle().Width(nameW).Render(sTitle.Render(truncate(f.Name, nameW-2)))
+			if g == "DNS" {
+				name = lipgloss.NewStyle().Width(dnsW).Render(sTitle.Render(truncate(f.Name, dnsW-2)))
+			}
+			pad := 5 + lipgloss.Width(name)
+			detail := style.Width(max(16, w-pad)).Render(f.Detail)
+			if f.Level == deploy.Pass {
+				detail = style.Render(truncate(f.Detail, max(8, w-pad)))
+			}
+			detail = strings.ReplaceAll(detail, "\n", "\n"+strings.Repeat(" ", pad))
+			rows = append(rows, "  "+icon+"  "+name+detail)
+		}
+		if passed > 0 {
+			rows = append([]string{"  " + sGood.Render("✓") + "  " + sMuted.Render(fmt.Sprintf("%d server checks passed", passed)) + sFaint.Render("  (v for details)")}, rows...)
+		}
+		lines = append(lines, rows...)
+	}
+	return lines
 }
 
 func indexOf(xs []string, v string) int {
@@ -191,21 +311,25 @@ const (
 	done
 	skipped
 	failed
+	warned
 )
 
 type deployScreen struct {
 	cfg      *config.Config
+	opts     deploy.Options
 	running  bool
 	finished bool
-	saveOnly bool
 	err      error
+	result   *deploy.Result
 	cancel   context.CancelFunc
 	events   <-chan deploy.Event
 
-	states  []stepState
+	plan    []deploy.Step
+	states  map[deploy.Step]stepState
 	task    string
 	tasks   int
 	fails   int
+	lastErr string // message of the most recent failed task
 	started time.Time
 	elapsed time.Duration
 
@@ -228,17 +352,30 @@ func newDeployScreen() *deployScreen {
 	}
 }
 
+var actionTitles = map[deploy.Action][3]string{ // running, done, failed
+	deploy.ActionInstall:   {"Deploying…", "Your Matrix server is live ✨", "Deployment stopped"},
+	deploy.ActionSaveOnly:  {"Writing configuration…", "Configuration saved", "Couldn't write the configuration"},
+	deploy.ActionSelfCheck: {"Checking services…", "Self-check finished", "Self-check couldn't run"},
+	deploy.ActionRestart:   {"Restarting services…", "Services restarted", "Restart failed"},
+	deploy.ActionRegister:  {"Registering the user…", "User registered", "Couldn't register the user"},
+	deploy.ActionBackup:    {"Backing up…", "Backup saved", "Backup failed"},
+	deploy.ActionLogs:      {"Fetching logs…", "Logs", "Couldn't fetch logs"},
+}
+
 func (s *deployScreen) name() string { return "Deploy" }
 func (s *deployScreen) title() string {
+	t := actionTitles[s.opts.Action]
 	switch {
 	case s.running:
-		return "Deploying…"
+		return t[0]
 	case s.err != nil:
-		return "Deployment stopped"
-	case s.finished && s.saveOnly:
-		return "Configuration saved"
+		return t[2]
+	case s.finished && s.result != nil && len(s.result.Problems) > 0 && s.opts.Action == deploy.ActionInstall:
+		return "Installed, but some services aren't answering"
+	case s.finished && s.result != nil && len(s.result.Problems) > 0:
+		return "Self-check found problems"
 	case s.finished:
-		return "Your Matrix server is live ✨"
+		return t[1]
 	}
 	return "Deploy"
 }
@@ -260,22 +397,24 @@ func (s *deployScreen) abort() {
 	s.appendLog(sWarn.Render("aborting… (waiting for the current command to stop)"))
 }
 
-func (s *deployScreen) start(saveOnly bool) tea.Cmd {
+func (s *deployScreen) start(opts deploy.Options) tea.Cmd {
 	ctx, cancel := context.WithCancel(context.Background())
 	s.cancel = cancel
-	s.saveOnly = saveOnly
-	s.running, s.finished, s.err = true, false, nil
-	s.states = make([]stepState, len(deploy.StepNames))
-	s.task, s.tasks, s.fails = "", 0, 0
+	s.opts = opts
+	s.running, s.finished, s.err, s.result = true, false, nil, nil
+	s.plan = deploy.Plan(opts.Action)
+	s.states = map[deploy.Step]stepState{}
+	s.task, s.tasks, s.fails, s.lastErr = "", 0, 0, ""
 	s.log = nil
 	s.follow = true
 	s.started = time.Now()
+	s.elapsed = 0
 	if s.logFile != nil {
 		s.logFile.Close()
 	}
 	_ = os.MkdirAll(config.Dir(), 0o700)
 	s.logFile, _ = os.OpenFile(s.logPath(), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
-	s.events = deploy.Start(ctx, s.cfg, deploy.Options{SaveOnly: saveOnly})
+	s.events = deploy.Start(ctx, s.cfg, opts)
 	return tea.Batch(s.spin.Tick, s.wait(), tick())
 }
 
@@ -303,7 +442,7 @@ func (s *deployScreen) appendLog(line string) {
 func (s *deployScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case startDeployMsg:
-		return s.start(m.saveOnly)
+		return s.start(m.opts)
 	case tickMsg:
 		if s.running {
 			s.elapsed = time.Since(s.started)
@@ -325,8 +464,8 @@ func (s *deployScreen) update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		switch m.String() {
 		case "r":
-			if !s.running {
-				return s.start(s.saveOnly)
+			if !s.running && s.plan != nil {
+				return s.start(s.opts)
 			}
 		case "end", "G":
 			s.follow = true
@@ -341,38 +480,41 @@ func (s *deployScreen) update(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+func (s *deployScreen) finishActive(to stepState) {
+	for st, v := range s.states {
+		if v == active {
+			s.states[st] = to
+		}
+	}
+}
+
 func (s *deployScreen) handle(ev deploy.Event) {
 	if ev.Line != "" && s.logFile != nil {
 		fmt.Fprintln(s.logFile, ev.Line)
 	}
 	switch {
+	case ev.Plan != nil:
+		s.plan = ev.Plan
+		return
 	case ev.Err != nil:
 		s.err = ev.Err
 		s.running = false
-		for i, st := range s.states {
-			if st == active {
-				s.states[i] = failed
-			}
-		}
+		s.finishActive(failed)
 		s.appendLog(sBad.Render("✗ " + ev.Err.Error()))
 		return
 	case ev.Done:
 		s.finished = true
 		s.running = false
+		s.result = ev.Result
 		s.elapsed = time.Since(s.started)
-		for i, st := range s.states {
-			if st == active {
-				s.states[i] = done
-			}
-		}
+		s.finishActive(done)
 		return
 	case ev.Started:
-		for i := range s.states {
-			if s.states[i] == active {
-				s.states[i] = done
-			}
-		}
+		s.finishActive(done)
 		s.states[ev.Step] = active
+		return
+	case ev.Warn:
+		s.states[ev.Step] = warned
 		return
 	case ev.Skipped:
 		s.states[ev.Step] = skipped
@@ -386,6 +528,15 @@ func (s *deployScreen) handle(ev deploy.Event) {
 	}
 	if ev.Failed {
 		s.fails++
+		s.lastErr = ev.Line
+		if _, js, ok := strings.Cut(ev.Line, "=> "); ok {
+			var v struct {
+				Msg string `json:"msg"`
+			}
+			if json.Unmarshal([]byte(js), &v) == nil && v.Msg != "" {
+				s.lastErr = v.Msg
+			}
+		}
 	}
 	s.appendLog(styleLogLine(ev.Line, ev.Failed))
 }
@@ -404,21 +555,19 @@ func styleLogLine(l string, failed bool) string {
 		return sFaint.Render(l)
 	case strings.HasPrefix(l, "$ "):
 		return sPink.Render(l)
-	case strings.Contains(l, "...ignoring"):
-		return sMuted.Render(l)
 	}
 	return sMuted.Render(l)
 }
 
 func (s *deployScreen) view(w, h int) string {
-	if s.states == nil {
+	if s.plan == nil {
 		return sMuted.Render("Waiting to start…")
 	}
 	var steps []string
-	for i, name := range deploy.StepNames {
+	for _, st := range s.plan {
 		var icon string
 		style := sMuted
-		switch s.states[i] {
+		switch s.states[st] {
 		case pending:
 			icon = sFaint.Render("○")
 			style = sFaint
@@ -433,20 +582,27 @@ func (s *deployScreen) view(w, h int) string {
 		case failed:
 			icon = sBad.Render("✗")
 			style = sBad
+		case warned:
+			icon = sWarn.Render("!")
+			style = sWarn
 		}
-		steps = append(steps, icon+" "+style.Render(name))
+		steps = append(steps, icon+"  "+style.Render(st.String()))
 	}
-	stepsCol := lipgloss.NewStyle().Width(32).Render(strings.Join(steps, "\n"))
+	sep := "\n"
+	if h >= 30 {
+		sep = "\n\n" // room to spare: space the steps out
+	}
+	stepsCol := lipgloss.NewStyle().Width(36).Render(strings.Join(steps, sep))
 
 	nDone := 0
-	for _, st := range s.states {
-		if st == done || st == skipped {
+	for _, st := range s.plan {
+		if v := s.states[st]; v == done || v == skipped || v == warned {
 			nDone++
 		}
 	}
-	s.bar.Width = max(10, w-36)
+	s.bar.Width = max(10, w-40)
 	stats := []string{
-		s.bar.ViewAs(float64(nDone) / float64(len(s.states))),
+		s.bar.ViewAs(float64(nDone) / float64(len(s.plan))),
 		"",
 		sMuted.Render("elapsed  ") + sTitle.Render(s.elapsed.Round(time.Second).String()),
 		sMuted.Render("tasks    ") + sTitle.Render(fmt.Sprint(s.tasks)),
@@ -455,16 +611,20 @@ func (s *deployScreen) view(w, h int) string {
 		stats = append(stats, sMuted.Render("errors   ")+sBad.Render(fmt.Sprint(s.fails)))
 	}
 	if s.task != "" && s.running {
-		stats = append(stats, "", sPink.Render("▸ ")+truncate(s.task, w-40))
+		stats = append(stats, "", sPink.Render("▸ ")+truncate(s.task, w-44))
 	}
-	top := lipgloss.JoinHorizontal(lipgloss.Top, stepsCol, "  ", strings.Join(stats, "\n"))
+	top := lipgloss.JoinHorizontal(lipgloss.Top, stepsCol, "    ", strings.Join(stats, "\n"))
 
 	var result string
 	if s.finished || s.err != nil {
 		result = s.resultView(w)
 	}
 
-	logH := max(3, h-lipgloss.Height(top)-lipgloss.Height(result)-3)
+	gaps := 1 // blank lines between the sections below
+	if result != "" {
+		gaps = 2
+	}
+	logH := max(3, h-lipgloss.Height(top)-lipgloss.Height(result)-gaps-3)
 	s.vp.Width = w - 4
 	s.vp.Height = logH
 	lines := make([]string, len(s.log))
@@ -482,23 +642,54 @@ func (s *deployScreen) view(w, h int) string {
 		parts = append(parts, result)
 	}
 	parts = append(parts, logBox)
-	return strings.Join(parts, "\n")
+	return strings.Join(parts, "\n\n")
 }
 
 func (s *deployScreen) resultView(w int) string {
 	c := s.cfg
+	panel := func(color lipgloss.TerminalColor, lines ...string) string {
+		return sPanel.BorderForeground(color).Width(w - 2).Render(strings.Join(lines, "\n"))
+	}
 	if s.err != nil {
-		body := sBad.Render("✗ "+s.err.Error()) + "\n" +
-			sMuted.Render("Full log: ") + s.logPath() + "\n" +
-			sMuted.Render("Fix the problem (esc goes back to the settings) and press ") + sKey.Render("r") + sMuted.Render(" to try again.")
-		return sPanel.BorderForeground(cRed).Width(w - 2).Render(body)
+		hint := "Fix the problem (esc goes back) and press "
+		lines := []string{sBad.Render("✗ " + s.err.Error())}
+		if s.lastErr != "" {
+			lines = append(lines, sMuted.Render(truncate(s.lastErr, 3*(w-6))))
+		}
+		return panel(cRed, append(lines,
+			sMuted.Render("Full log: ")+s.logPath(),
+			sMuted.Render(hint)+sKey.Render("r")+sMuted.Render(" to try again."))...)
 	}
-	inv := filepath.Join(c.PlaybookDir, "inventory")
-	if s.saveOnly {
-		body := sGood.Render("✓ Files written to ") + inv + "\n" +
-			sMuted.Render("Deploy later with: ") + sTitle.Render("cd "+c.PlaybookDir+" && ansible-playbook -i inventory/hosts setup.yml --tags=install-all,ensure-matrix-users-created,start")
-		return sPanel.BorderForeground(cMint).Width(w - 2).Render(body)
+	res := s.result
+	if res == nil {
+		res = &deploy.Result{}
 	}
+	switch s.opts.Action {
+	case deploy.ActionSaveOnly:
+		inv := filepath.Join(c.PlaybookDir, "inventory")
+		return panel(cMint,
+			sGood.Render("✓ Files written to ")+inv,
+			sMuted.Render("Deploy later with: ")+sTitle.Render("cd "+c.PlaybookDir+" && ansible-playbook -i inventory/hosts setup.yml --tags=install-all,ensure-matrix-users-created,start"))
+	case deploy.ActionSelfCheck:
+		color := lipgloss.TerminalColor(cMint)
+		if len(res.Problems) > 0 {
+			color = cAmber
+		}
+		return panel(color, checkSummary(res))
+	case deploy.ActionRestart:
+		return panel(cMint, sGood.Render("✓ Every service was restarted in "+s.elapsed.Round(time.Second).String()+"."))
+	case deploy.ActionRegister:
+		return panel(cMint,
+			sGood.Render("✓ Registered ")+sTitle.Render("@"+s.opts.User.Name+":"+c.Domain),
+			sMuted.Render("Password  ")+sTitle.Render(s.opts.User.Password)+sMuted.Render("   (shown once; it isn't saved)"))
+	case deploy.ActionBackup:
+		return panel(cMint,
+			sGood.Render("✓ Database dump saved to ")+sTitle.Render(res.File),
+			sMuted.Render("Restore it with the playbook's import-postgres tag (docs/importing-postgres.md)."))
+	case deploy.ActionLogs:
+		return ""
+	}
+
 	scheme := "https://"
 	if c.SSL.Mode == "none" {
 		scheme = "http://"
@@ -512,12 +703,40 @@ func (s *deployScreen) resultView(w int) string {
 	case "synapse", "dendrite":
 		lines = append(lines, sMuted.Render("Admin       ")+sTitle.Render("@"+c.AdminUser+":"+c.Domain)+sMuted.Render("  (password saved in "+config.Dir()+")"))
 	case "continuwuity", "tuwunel":
-		lines = append(lines, sMuted.Render("Register your first account with token ")+sTitle.Render(c.AdminPassword))
+		if c.RegistrationOpen() {
+			lines = append(lines, sMuted.Render("Register your first account with token ")+sTitle.Render(c.AdminPassword)+sMuted.Render(", then close registration from Manage."))
+		}
 	case "conduit":
-		lines = append(lines, sWarn.Render("Registration is open: create your account now, then disable it."))
+		if c.RegistrationOpen() {
+			lines = append(lines, sWarn.Render("Registration is open: create your account now, then close it from Manage."))
+		}
 	}
 	if c.SSL.Mode == "selfsigned" {
 		lines = append(lines, sWarn.Render("Self-signed certificate: import "+filepath.Join(config.Dir(), "ssl", c.Domain, "cert.pem")+" on your devices."))
 	}
-	return sPanel.BorderForeground(cMint).Width(w - 2).Render(strings.Join(lines, "\n"))
+	if len(res.Passed) > 0 || len(res.Problems) > 0 {
+		lines = append(lines, "", checkSummary(res))
+	}
+	color := lipgloss.TerminalColor(cMint)
+	if len(res.Problems) > 0 {
+		color = cAmber
+	}
+	return panel(color, lines...)
+}
+
+// checkSummary lists self-check results: what answered and what didn't.
+func checkSummary(res *deploy.Result) string {
+	var lines []string
+	if len(res.Passed) > 0 {
+		lines = append(lines, sGood.Render("✓ Working: ")+sMuted.Render(strings.Join(res.Passed, ", ")))
+	}
+	for _, p := range res.Problems {
+		lines = append(lines, sBad.Render("✗ ")+p)
+	}
+	if len(res.Problems) > 0 {
+		lines = append(lines, sFaint.Render("The self-check stops at the first failure; fix it and run it again from Manage."))
+	} else if len(res.Passed) == 0 {
+		lines = append(lines, sMuted.Render("Nothing to check for the enabled services."))
+	}
+	return strings.Join(lines, "\n")
 }

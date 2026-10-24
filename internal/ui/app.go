@@ -33,6 +33,8 @@ type App struct {
 	step    int
 	w, h    int
 	status  string
+
+	deployBack int // where esc leads from the Deploy screen
 }
 
 func New(cfg *config.Config, loaded bool) *App {
@@ -47,18 +49,38 @@ func New(cfg *config.Config, loaded bool) *App {
 		&settingsScreen{},
 		newReviewScreen(),
 		newDeployScreen(),
+		newManageScreen(), // not a wizard step: reached from Welcome
 	}
+	a.deployBack = a.index("Review")
 	return a
 }
+
+func (a *App) index(name string) int {
+	for i, s := range a.screens {
+		if s.name() == name {
+			return i
+		}
+	}
+	return 0
+}
+
+// wizard is the screens shown in the stepper, Welcome and Manage excluded.
+func (a *App) wizard() []screen { return a.screens[1:a.index("Manage")] }
 
 func (a *App) Init() tea.Cmd { return a.screens[0].enter(a.cfg) }
 
 func (a *App) cur() screen { return a.screens[a.step] }
 
 func (a *App) go_(dir int) tea.Cmd {
-	n := a.step + dir
-	if n < 0 || n >= len(a.screens) {
+	return a.jump(a.step + dir)
+}
+
+func (a *App) jump(n int) tea.Cmd {
+	if n < 0 || n >= len(a.screens) || n == a.step {
 		return nil
+	}
+	if a.screens[n].name() == "Deploy" {
+		a.deployBack = a.step
 	}
 	a.cur().leave(a.cfg)
 	if err := a.cfg.Save(); err != nil {
@@ -75,7 +97,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case navMsg:
 		return a, a.go_(int(m))
 	case formDoneMsg:
+		if ms, ok := a.cur().(*manageScreen); ok {
+			return a, ms.update(m)
+		}
 		return a, a.go_(1)
+	case gotoMsg:
+		return a, a.jump(a.index(string(m)))
+	case runActionMsg:
+		cmd := a.jump(a.index("Deploy"))
+		return a, tea.Batch(cmd, func() tea.Msg { return startDeployMsg{m.opts} })
 	case tea.KeyMsg:
 		a.status = ""
 		ds, deploying := a.cur().(*deployScreen)
@@ -95,14 +125,17 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if cs, ok := a.cur().(*componentsScreen); ok && (cs.filtering || cs.filter.Value() != "") {
 				break
 			}
-			return a, a.go_(-1)
+			if ms, ok := a.cur().(*manageScreen); ok && ms.inSubview() {
+				break
+			}
+			return a, a.back()
 		case "ctrl+n", "pgdown":
-			if a.step < len(a.screens)-2 {
+			if a.step >= 1 && a.step < a.index("Review") {
 				return a, a.go_(1)
 			}
 		case "ctrl+p", "pgup":
 			if !(deploying && ds.running) {
-				return a, a.go_(-1)
+				return a, a.back()
 			}
 		case "ctrl+s":
 			a.cur().leave(a.cfg)
@@ -123,6 +156,18 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, a.cur().update(msg)
 }
 
+// back leaves the current screen: Deploy returns to where it was started
+// from and Manage to Welcome.
+func (a *App) back() tea.Cmd {
+	switch a.cur().name() {
+	case "Deploy":
+		return a.jump(a.deployBack)
+	case "Manage":
+		return a.jump(0)
+	}
+	return a.go_(-1)
+}
+
 func (a *App) View() string {
 	if a.w == 0 {
 		return ""
@@ -132,11 +177,24 @@ func (a *App) View() string {
 	stepper := a.stepper(w)
 	footer := a.footer(w)
 
+	// The body panel's border takes 2 rows; its padding takes padY rows on
+	// each side, and the title plus a blank line take two more.
 	bodyH := a.h - lipgloss.Height(header) - lipgloss.Height(stepper) - lipgloss.Height(footer) - 2
-	inner := w - 4
+	padY, padX := 1, 3
+	if bodyH < 24 {
+		padY = 0
+	}
+	if w < 80 {
+		padX = 1
+	}
+	inner := w - 2 - 2*padX
 	title := sTitle.Render(a.cur().title())
-	content := a.cur().view(inner, max(3, bodyH-3))
-	body := sPanelFocus.Width(w - 2).Height(max(3, bodyH)).Render(title + "\n\n" + content)
+	contentH := max(3, bodyH-2*padY-2)
+	content := a.cur().view(inner, contentH)
+	if lines := strings.Split(content, "\n"); len(lines) > contentH {
+		content = strings.Join(lines[:contentH], "\n") // never push the header off screen
+	}
+	body := sPanelFocus.Padding(padY, padX).Width(w - 2).Height(max(3, bodyH)).Render(title + "\n\n" + content)
 
 	return lipgloss.JoinVertical(lipgloss.Left, header, stepper, body, footer)
 }
@@ -152,33 +210,28 @@ func (a *App) header(w int) string {
 }
 
 func (a *App) stepper(w int) string {
-	var parts []string
-	for i, s := range a.screens[1:] {
+	if a.cur().name() == "Manage" || (a.cur().name() == "Deploy" && a.deployBack == a.index("Manage")) {
+		return " " + sAccent.Render("◆ Manage") + sMuted.Render("  "+a.cfg.Domain)
+	}
+	var parts, dots []string
+	for i, s := range a.wizard() {
 		idx := i + 1
 		switch {
 		case idx == a.step:
 			parts = append(parts, sAccent.Render("◉ "+s.name()))
+			dots = append(dots, sAccent.Render("◉"))
 		case idx < a.step:
 			parts = append(parts, sGood.Render("●")+sMuted.Render(" "+s.name()))
+			dots = append(dots, sGood.Render("●"))
 		default:
 			parts = append(parts, sFaint.Render("○ "+s.name()))
+			dots = append(dots, sFaint.Render("○"))
 		}
 	}
-	line := " " + strings.Join(parts, sFaint.Render(" ─ "))
+	line := " " + strings.Join(parts, sFaint.Render("  ─  "))
 	if lipgloss.Width(line) > w {
 		// Too narrow: show dots plus the current step's name.
-		var dots []string
-		for i := range a.screens[1:] {
-			switch {
-			case i+1 == a.step:
-				dots = append(dots, sAccent.Render("◉"))
-			case i+1 < a.step:
-				dots = append(dots, sGood.Render("●"))
-			default:
-				dots = append(dots, sFaint.Render("○"))
-			}
-		}
-		line = " " + strings.Join(dots, " ")
+		line = " " + strings.Join(dots, "  ")
 		if a.step > 0 {
 			line += "  " + sAccent.Render(a.cur().name())
 		}
@@ -195,7 +248,10 @@ func (a *App) footer(w int) string {
 		parts = append(parts, sKey.Render("esc")+" "+sMuted.Render("back"))
 	}
 	parts = append(parts, sKey.Render("ctrl+c")+" "+sMuted.Render("quit"))
-	line := " " + strings.Join(parts, sFaint.Render(" · "))
+	line := " " + strings.Join(parts, sFaint.Render("   ·   "))
+	if lipgloss.Width(line) > w {
+		line = " " + strings.Join(parts, sFaint.Render(" · "))
+	}
 	if a.status != "" {
 		line = " " + a.status
 	}

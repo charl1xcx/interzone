@@ -269,25 +269,35 @@ func (f *form) Update(msg tea.Msg) tea.Cmd {
 	return cmd
 }
 
+// maxFormWidth keeps inputs and help text at a comfortable reading width.
+const maxFormWidth = 96
+
 // View renders the form inside height lines, scrolled so the focused field stays visible.
 func (f *form) View(width, height int) string {
+	width = min(width, maxFormWidth)
 	f.width = width
 	var lines []string
 	focusStart, focusEnd := 0, 0
+	first := true
 	for i, fl := range f.fields {
 		if !fl.visible() {
 			continue
 		}
-		if fl.section != "" {
-			lines = append(lines, strings.Split(sSection.Render("◆ "+fl.section), "\n")...)
-		}
 		start := len(lines)
+		switch {
+		case fl.section != "":
+			if !first {
+				lines = append(lines, "", "")
+				start = len(lines)
+			}
+			lines = append(lines, sectionHeading(fl.section, width), "")
+		case !first:
+			lines = append(lines, "")
+		}
+		first = false
 		lines = append(lines, strings.Split(f.renderField(fl, i == f.focus, width), "\n")...)
 		if i == f.focus {
 			focusStart, focusEnd = start, len(lines)
-			if fl.section != "" {
-				focusStart -= 2 // keep the heading and its margin in view
-			}
 		}
 	}
 	if len(lines) <= height {
@@ -303,25 +313,37 @@ func (f *form) View(width, height int) string {
 	top = max(0, min(top, len(lines)-height))
 	view := lines[top : top+height]
 	if top > 0 {
-		view[0] = sFaint.Render(strings.Repeat("─", 3) + " ▲ more ")
+		view[0] = sFaint.Render("  ▲ more above")
 	}
 	if top+height < len(lines) {
-		view[len(view)-1] = sFaint.Render(strings.Repeat("─", 3) + " ▼ more ")
+		view[len(view)-1] = sFaint.Render("  ▼ more below")
 	}
 	return strings.Join(view, "\n")
 }
 
+// sectionHeading renders "◆ Title ───────" across the form.
+func sectionHeading(title string, width int) string {
+	head := sSection.Render("◆ " + title)
+	rule := width - lipgloss.Width(head) - 1
+	if rule < 3 {
+		return head
+	}
+	return head + " " + sFaint.Render(strings.Repeat("─", rule))
+}
+
 func (f *form) renderField(fl *field, focused bool, width int) string {
-	bar := sFaint.Render("  ")
+	bar := "   "
 	label := sMuted.Render(fl.label)
+	prompt := sFaint.Render("› ")
 	if focused {
-		bar = sAccent.Render("▌ ")
+		bar = sAccent.Render("▌") + "  "
 		label = sTitle.Render(fl.label)
+		prompt = sAccent.Render("› ")
 	}
 	if fl.required {
 		label += sPink.Render(" *")
 	}
-	inner := width - 4
+	inner := width - 5
 	var body string
 	switch fl.kind {
 	case fToggle:
@@ -329,7 +351,11 @@ func (f *form) renderField(fl *field, focused bool, width int) string {
 		if fl.on {
 			box = sGood.Render("●")
 		}
-		return bar + box + " " + label + helpLine(fl, focused, bar)
+		state := sFaint.Render("off")
+		if fl.on {
+			state = sGood.Render("on")
+		}
+		return bar + box + "  " + label + "  " + state + helpLine(fl, focused, bar, inner)
 	case fChoice:
 		var parts []string
 		for i, c := range fl.choices {
@@ -338,33 +364,35 @@ func (f *form) renderField(fl *field, focused bool, width int) string {
 				name = fl.labels[i]
 			}
 			if i == fl.choice {
-				parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Padding(0, 1).Render(name))
+				parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(name))
 			} else {
-				parts = append(parts, sMuted.Padding(0, 1).Render(name))
+				parts = append(parts, sMuted.Padding(0, 2).Render(name))
 			}
 		}
-		body = strings.Join(parts, " ")
+		body = strings.Join(parts, "  ")
 	case fArea:
 		fl.area.SetWidth(max(20, inner))
 		body = fl.area.View()
 	default:
-		fl.input.Width = max(10, inner-2)
+		fl.input.Width = max(10, inner-3)
 		v := fl.input.View()
 		if !focused && fl.input.Value() == "" && fl.required {
 			v = sBad.Render("required")
 		}
-		body = v
+		body = prompt + v
 	}
 	out := bar + label + "\n"
 	for _, l := range strings.Split(body, "\n") {
-		out += bar + "  " + l + "\n"
+		out += bar + l + "\n"
 	}
-	return strings.TrimRight(out, "\n") + helpLine(fl, focused, bar)
+	return strings.TrimRight(out, "\n") + helpLine(fl, focused, bar, inner)
 }
 
-func helpLine(fl *field, focused bool, bar string) string {
+// helpLine wraps the focused field's help text under it.
+func helpLine(fl *field, focused bool, bar string, width int) string {
 	if fl.help == "" || !focused {
 		return ""
 	}
-	return "\n" + bar + "  " + lipgloss.NewStyle().Foreground(cMuted).Italic(true).Render(fl.help)
+	help := lipgloss.NewStyle().Foreground(cMuted).Italic(true).Width(max(20, width)).Render(fl.help)
+	return "\n" + bar + strings.ReplaceAll(help, "\n", "\n"+bar)
 }

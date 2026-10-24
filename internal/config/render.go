@@ -187,13 +187,23 @@ tls:
 		w.block("matrix_user_creator_users_additional", fmt.Sprintf("- username: %s\n  initial_password: %s\n  initial_type: admin",
 			Quote(c.AdminUser), Quote(c.AdminPassword)))
 	case "continuwuity", "tuwunel":
+		if c.CloseRegistration {
+			w.comment("Registration was closed from interzone's Manage menu.")
+			w.raw("matrix_"+c.Homeserver+"_config_allow_registration", "false")
+			break
+		}
 		w.comment("These servers can't create users from Ansible. Register the first account")
-		w.comment("from any client using this token, then turn registration off again.")
+		w.comment("from any client using this token, then close registration from interzone.")
 		w.raw("matrix_"+c.Homeserver+"_config_allow_registration", "true")
 		w.str("matrix_"+c.Homeserver+"_config_registration_token", c.AdminPassword)
 	case "conduit":
+		if c.CloseRegistration {
+			w.comment("Registration was closed from interzone's Manage menu.")
+			w.raw("matrix_conduit_allow_registration", "false")
+			break
+		}
 		w.comment("Conduit can't create users from Ansible. Registration is open until you")
-		w.comment("create your account; re-run interzone afterwards to close it.")
+		w.comment("create your account; close it afterwards from interzone's Manage menu.")
 		w.raw("matrix_conduit_allow_registration", "true")
 	}
 
