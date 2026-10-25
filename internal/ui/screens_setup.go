@@ -58,7 +58,7 @@ func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 }
 
 func (s *welcomeScreen) view(w, h int) string {
-	tw := min(w, 72) // text width
+	tw := min(w, 84) // text width
 	// wrap renders text tw wide with every line after indent.
 	wrap := func(st lipgloss.Style, indent, text string) string {
 		t := st.Width(max(10, tw-lipgloss.Width(indent))).Render(text)
@@ -74,7 +74,7 @@ func (s *welcomeScreen) view(w, h int) string {
 	head := lipgloss.JoinVertical(lipgloss.Center,
 		brand,
 		"",
-		sSub.Width(tw).Align(lipgloss.Center).Render("Your own Matrix server, set up with matrix-docker-ansible-deploy, without editing a single YAML file."),
+		sSub.Width(min(tw, 66)).Align(lipgloss.Center).Render("Your own Matrix server, set up with matrix-docker-ansible-deploy, without editing a single YAML file."),
 	)
 	features := []string{
 		feature("◆", "Pick any homeserver", "Synapse, Continuwuity, Tuwunel, Conduit or Dendrite."),

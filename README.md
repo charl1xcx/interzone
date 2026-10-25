@@ -36,10 +36,16 @@ every download can come from mirrors inside the country.
 
 | | |
 |---|---|
-| ![Choosing a homeserver](docs/screenshots/homeserver.png) | ![Picking bridges, clients and services](docs/screenshots/components.png) |
-| **Choose a homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite. | **Pick components:** 82 bridges, bots, clients and services. |
+| ![The Server step](docs/screenshots/server.png) | ![Choosing a homeserver](docs/screenshots/homeserver.png) |
+| **Server:** where it runs, where downloads come from, HTTPS and networking, in one form. | **Homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite. |
+| ![Picking bridges, clients and services](docs/screenshots/components.png) | ![Filling in the components' settings](docs/screenshots/settings.png) |
+| **Components:** 82 bridges, bots, clients and services. | **…and their settings** on the step's second page. |
 | ![The Manage menu](docs/screenshots/manage.png) | ![Fine-tuning the playbook's roles](docs/screenshots/tuning.png) |
 | **Manage the server:** updates, users, backups, rollback, logs and more. | **Fine-tune:** search and change the settings of every playbook role. |
+
+![The compact layout on a phone-sized terminal](docs/screenshots/phone.png)
+
+**On a phone** (Termux or any narrow terminal) the compact layout drops the sidebar; the menu opens from the top right.
 
 ## Community
 
