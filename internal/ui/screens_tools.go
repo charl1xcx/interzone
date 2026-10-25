@@ -566,6 +566,12 @@ func (s *usersScreen) saveToken(t string) {
 }
 
 func (s *usersScreen) loginForm() {
+	if deploy.UsesMAS(s.cfg) {
+		u := textField("user", "Admin username", s.login.User, "admin",
+			"Your account on "+s.cfg.Domain+". Accounts live in MAS here, so no password is needed: interzone gets an admin session from MAS on the server.")
+		s.form, s.mode = newForm(u), usersLogin
+		return
+	}
 	u := textField("user", "Admin username", s.login.User, "admin", "An account with server-admin rights on "+s.cfg.Domain+".")
 	pw := secretField("pass", "Password", "", "Only kept until interzone exits; the session it opens is saved.")
 	s.form, s.mode = newForm(u, pw), usersLogin
@@ -622,6 +628,10 @@ func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 		switch s.mode {
 		case usersLogin:
 			s.login.User, s.login.Password, s.login.Token = s.form.value("user"), s.form.value("pass"), ""
+			if s.cfg.AdminUser == "" && s.login.User != "" {
+				s.cfg.AdminUser = s.login.User // offered next time
+				_ = s.cfg.Save()
+			}
 			s.mode = usersList
 			return s.reload()
 		case usersNew:
@@ -693,6 +703,9 @@ func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 		if u.ID == "" {
 			break
 		}
+		if u.Deactivated && deploy.UsesMAS(s.cfg) {
+			return ask(&userOp{desc: u.ID + " reactivated with their old password", user: u.ID, body: map[string]any{"deactivated": false}})
+		}
 		if u.Deactivated {
 			pw := config.RandomPassword(16)
 			return ask(&userOp{desc: u.ID + " reactivated", user: u.ID, body: map[string]any{"deactivated": false, "password": pw}, password: pw})
@@ -724,6 +737,9 @@ func (s *usersScreen) view(w, h int) string {
 	switch s.mode {
 	case usersLogin:
 		head := sWarn.Render("Signing in as "+s.login.User+" didn't work") + "\n" + sMuted.Render(errString(s.err)) + "\n\n"
+		if s.login.User == "" {
+			head = sSub.Render("Which account should interzone act as?") + "\n\n"
+		}
 		return head + s.form.View(w, h-4)
 	case usersNew:
 		return s.form.View(w, h)

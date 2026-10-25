@@ -60,6 +60,8 @@ def call(method, path, body=None, token=None):
             err = {}
         raise Failed({"error": err.get("error") or ("HTTP %d" % e.code), "errcode": err.get("errcode", ""), "path": path.split("?")[0]})
 def login():
+    if req.get("mas"):
+        raise Failed({"error": "the session was refused", "errcode": "M_UNKNOWN_TOKEN", "path": "/token"})
     return call("POST", "/_matrix/client/v3/login", {"type": "m.login.password", "identifier": {"type": "m.id.user", "user": req["admin"]}, "password": req["password"], "initial_device_display_name": "interzone"})["access_token"]
 def run(tok):
     if req["op"] == "logout":
@@ -118,36 +120,57 @@ func adminCall(ctx context.Context, c *config.Config, login *AdminLogin, req map
 	if c.Homeserver != "synapse" {
 		return nil, fmt.Errorf("user admin needs Synapse's admin API")
 	}
-	req["admin"], req["password"], req["token"] = login.User, login.Password, login.Token
-	res, err := runPlayJSON(ctx, c, "admin", adminPlay, map[string]any{"interzone_request": req, "interzone_script": adminScript})
-	if err != nil {
-		switch {
-		case strings.Contains(err.Error(), "No such container"):
-			return nil, fmt.Errorf("Synapse isn't running on the server")
-		case strings.HasPrefix(err.Error(), "interzone request:"):
-			// no_log hides the reason; it can only be the file write.
-			return nil, fmt.Errorf("couldn't write to /matrix on the server: is Matrix installed there, and can the SSH user become root?")
+	mas := UsesMAS(c)
+	if mas && login.Token == "" {
+		if err := masSession(ctx, c, login); err != nil {
+			return nil, err
 		}
+	}
+	out, e, err := adminRun(ctx, c, login, req, mas)
+	if err == nil && mas && e.Errcode == "M_UNKNOWN_TOKEN" {
+		// The session ended (MAS was reset, or the user signed it out): get a new one.
+		if err := masSession(ctx, c, login); err != nil {
+			return nil, err
+		}
+		out, e, err = adminRun(ctx, c, login, req, mas)
+	}
+	if err != nil {
 		return nil, err
 	}
-	out := strings.TrimSpace(res["interzone admin"].String("stdout"))
-	var e struct {
-		Error, Errcode, Path, Token string
-	}
-	if json.Unmarshal([]byte(out), &e) != nil {
-		return nil, fmt.Errorf("unexpected answer from the admin API: %.200s", out)
-	}
-	if e.Token != "" {
-		login.Token = e.Token
-	}
 	if e.Error != "" {
-		if strings.HasSuffix(e.Path, "/login") {
+		if strings.HasSuffix(e.Path, "/login") || e.Path == "/token" {
 			login.Token = ""
 			return nil, ErrAdminLogin{e.Error}
 		}
 		return nil, fmt.Errorf("%s", e.Error)
 	}
-	return json.RawMessage(out), nil
+	return out, nil
+}
+
+type adminError struct{ Error, Errcode, Path, Token string }
+
+func adminRun(ctx context.Context, c *config.Config, login *AdminLogin, req map[string]any, mas bool) (json.RawMessage, adminError, error) {
+	var e adminError
+	req["admin"], req["password"], req["token"], req["mas"] = login.User, login.Password, login.Token, mas
+	res, err := runPlayJSON(ctx, c, "admin", adminPlay, map[string]any{"interzone_request": req, "interzone_script": adminScript})
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), "No such container"):
+			return nil, e, fmt.Errorf("Synapse isn't running on the server")
+		case strings.HasPrefix(err.Error(), "interzone request:"):
+			// no_log hides the reason; it can only be the file write.
+			return nil, e, fmt.Errorf("couldn't write to /matrix on the server: is Matrix installed there, and can the SSH user become root?")
+		}
+		return nil, e, err
+	}
+	out := strings.TrimSpace(res["interzone admin"].String("stdout"))
+	if json.Unmarshal([]byte(out), &e) != nil {
+		return nil, e, fmt.Errorf("unexpected answer from the admin API: %.200s", out)
+	}
+	if e.Token != "" {
+		login.Token = e.Token
+	}
+	return json.RawMessage(out), e, nil
 }
 
 // ListUsers returns every account on the server, deactivated ones included.
@@ -155,6 +178,13 @@ func ListUsers(ctx context.Context, c *config.Config, login *AdminLogin) ([]Matr
 	out, err := adminCall(ctx, c, login, map[string]any{"op": "list"})
 	if err != nil {
 		return nil, err
+	}
+	var admins map[string]bool
+	if UsesMAS(c) {
+		// MAS decides who may act as a server admin, not Synapse.
+		if admins, err = masAdmins(ctx, c); err != nil {
+			return nil, err
+		}
 	}
 	var v struct {
 		Users []struct {
@@ -171,7 +201,11 @@ func ListUsers(ctx context.Context, c *config.Config, login *AdminLogin) ([]Matr
 	}
 	users := make([]MatrixUser, 0, len(v.Users))
 	for _, u := range v.Users {
-		users = append(users, MatrixUser{ID: u.Name, DisplayName: u.DisplayName, Admin: truthy(u.Admin),
+		admin := truthy(u.Admin)
+		if admins != nil {
+			admin = admins[localpart(u.Name)]
+		}
+		users = append(users, MatrixUser{ID: u.Name, DisplayName: u.DisplayName, Admin: admin,
 			Deactivated: truthy(u.Deactivated), Created: msTime(u.Created), LastSeen: msTime(u.LastSeen)})
 	}
 	return users, nil
@@ -180,13 +214,16 @@ func ListUsers(ctx context.Context, c *config.Config, login *AdminLogin) ([]Matr
 // UpdateUser changes an account: {"admin": true}, {"deactivated": true},
 // {"password": "…", "logout_devices": true}.
 func UpdateUser(ctx context.Context, c *config.Config, login *AdminLogin, userID string, body map[string]any) error {
+	if UsesMAS(c) {
+		return masUpdate(ctx, c, userID, body)
+	}
 	_, err := adminCall(ctx, c, login, map[string]any{"op": "update", "user": userID, "body": body})
 	return err
 }
 
 // Logout ends the admin session, removing interzone's device.
 func Logout(ctx context.Context, c *config.Config, login *AdminLogin) {
-	if login.Token != "" {
+	if login.Token != "" && !UsesMAS(c) {
 		_, _ = adminCall(ctx, c, login, map[string]any{"op": "logout"})
 		login.Token = ""
 	}
