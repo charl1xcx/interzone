@@ -1,0 +1,40 @@
+ ◢◤ interzone                 ONLINE   ≡ menu
+ ◉  ○  ○  ○  ○  Server
+──────────────────────────────────────────────
+ Tell me about your server                    
+                                              
+ ▌  Base domain *                             
+ ▌  › example.org                             
+ ▌  User IDs look like @alice:<domain>.       
+ ▌  Point matrix.<domain> at your server.     
+                                              
+    Install where?                            
+      This machine                            
+      A remote server over SSH                
+                                              
+    sudo password                             
+    ›                                         
+                                              
+                                              
+ ◆ Downloads ──────────────────────────────── 
+                                              
+    Network situation                         
+      Normal internet                         
+      Blackout: in-country mirrors only       
+                                              
+    Playbook git repository                   
+    › https://itsjustadream.g0th.ir/spant…    
+                                              
+    Git mirror for Ansible roles              
+    › https://itsjustadream.g0th.ir/          
+                                              
+    ●  Pull container images from a mirror    
+       on                                     
+   ▼ more below                               
+                                              
+ ctrl+t tests the download sources            
+                                              
+──────────────────────────────────────────────
+ ↑↓ move · ←→ choose · space toggle
+ ctrl+t test sources · ctrl+r reveal
+ enter next · esc back · ctrl+c quit

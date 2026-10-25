@@ -1,0 +1,40 @@
+ ◢◤ interzone                 ONLINE   ≡ menu
+ ●  ●  ◉  ○  ○  Components
+──────────────────────────────────────────────
+ Pick what you want on your server            
+                                              
+     Core services  2/6   ›       5 selected  
+                                              
+ ▌  ●  Coturn TURN server    needs settings   
+ ▌     Relays voice/video calls for users     
+ ▌     behind NAT. Strongly recommended.      
+ ▌     docs/configuring-playbook-turn.md      
+                                              
+    ●  Exim email relay    needs settings     
+       Lets services send email (password re… 
+                                              
+    ○  Serve the base domain                  
+       Host a simple page and .well-known fi… 
+                                              
+    ○  Dynamic DNS (ddclient)                 
+       needs settings  ·  Keep DNS records u… 
+                                              
+    ○  Use external PostgreSQL                
+       needs settings  ·  Use your own Postg… 
+                                              
+    ○  Report anonymous usage stats           
+       Send anonymous statistics to matrix.o… 
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+──────────────────────────────────────────────
+ ←→ category · ↑↓ move · space toggle
+ / search · enter next · esc back
+ ctrl+c quit

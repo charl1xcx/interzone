@@ -1,0 +1,40 @@
+ ◢◤ interzone                 ONLINE   ≡ menu
+
+──────────────────────────────────────────────
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+     ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀    
+      █  █ ▀█  █  ██▄ █▀▄ ▄▀  █▄█ █ ▀█ ██▄    
+                                              
+ Your own Matrix server, set up with matrix-  
+   docker-ansible-deploy, without editing a   
+              single YAML file.               
+                                              
+                                              
+ ◆  Pick any homeserver                       
+    Synapse, Continuwuity, Tuwunel, Conduit   
+    or Dendrite.                              
+                                              
+ ◆  Opt into anything                         
+    82 bridges, bots, clients and services    
+    from the playbook.                        
+                                              
+ ◆  Works during a blackout                   
+    Git, container, Docker, OS package and    
+    PyPI mirrors inside the country.          
+                                              
+                                              
+ ✓ Picked up your previous answers.           
+                                              
+                                              
+ Press enter to begin ›                       
+                                              
+                                              
+                                              
+                                              
+──────────────────────────────────────────────
+ enter begin · s servers · ctrl+c quit

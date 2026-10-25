@@ -1,0 +1,40 @@
+ ◢◤ interzone                ONLINE   ✕ close
+ ◆ Menu
+──────────────────────────────────────────────
+ ▸ Setup                                      
+                                              
+ ▾ Manage example.org                         
+ ▌ ◆ Overview                                 
+   · Users                                    
+   · Dashboard                                
+   · Updates                                  
+   · Scheduled backups                        
+   · Restore                                  
+   · Rollback                                 
+   · Fine-tune                                
+   · Move server                              
+   · Servers                                  
+                                              
+ ▸ Servers                                    
+                                              
+ ◫ layout: auto (compact)                     
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+──────────────────────────────────────────────
+ esc close · ctrl+c quit

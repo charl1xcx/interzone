@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▾ Setup                ││                                                                                            │
+│ ▌ ◉ Server             ││   Tell me about your server                                                                │
+│   ○ Homeserver         ││                                                                                            │
+│   ○ Components         ││   ▌  Base domain *                                                                         │
+│   ○ Review             ││   ▌  › example.org                                                                         │
+│   ○ Deploy             ││   ▌  User IDs look like @alice:<domain>. Point matrix.<domain> at your server.             │
+│                        ││                                                                                            │
+│ ▸ Manage example.org   ││      Install where?                                                                        │
+│                        ││        This machine      A remote server over SSH                                          │
+│ ▸ Servers              ││                                                                                            │
+│                        ││      sudo password                                                                         │
+│                        ││      ›                                                                                     │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
+│                        ││                                                                                            │
+│                        ││      Network situation                                                                     │
+│                        ││        Normal internet      Blackout: in-country mirrors only                              │
+│                        ││                                                                                            │
+│                        ││      Playbook git repository                                                               │
+│                        ││      › https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy               │
+│                        ││                                                                                            │
+│                        ││      Git mirror for Ansible roles                                                          │
+│                        ││      › https://itsjustadream.g0th.ir/                                                      │
+│                        ││                                                                                            │
+│                        ││      ●  Pull container images from a mirror  on                                            │
+│                        ││                                                                                            │
+│                        ││     ▼ more below                                                                           │
+│                        ││                                                                                            │
+│                        ││   Press ctrl+t to test that every download source is reachable from here.                  │
+│ ◫ layout: auto (wide)  ││                                                                                            │
+│ ctrl+b ‹ fold          ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ move · ←→ choose · space toggle · ctrl+t test sources · ctrl+r reveal · enter next · esc back · ctrl+c quit         

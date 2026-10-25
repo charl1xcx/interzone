@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Manage example.org                                                                       │
+│ ▾ Manage example.org   ││                                                                                            │
+│ ▌ ◆ Overview           ││   ▌  ◆  Update the server  u                                                               │
+│   · Users              ││   ▌     Pull the latest playbook and roles, then re-run the install with your saved        │
+│   · Dashboard          ││   ▌     answers. Also applies any changes you made in the setup.                           │
+│   · Updates            ││      ◆  Check services  c                                                                  │
+│   · Scheduled backups  ││         Run the playbook's self-check: makes sure the homeserver, federation and client…   │
+│   · Restore            ││      ◆  Restart all services  r                                                            │
+│   · Rollback           ││         Restart every Matrix service on the server.                                        │
+│   · Fine-tune          ││      ◆  Add a user  a                                                                      │
+│   · Move server        ││         Register a new account, optionally as a server administrator.                      │
+│   · Servers            ││      ◆  Manage users  m                                                                    │
+│                        ││         List every account; reset passwords, grant or remove admin rights, deactivate o…   │
+│ ▸ Servers              ││      ◆  Server dashboard  d                                                                │
+│                        ││         Load, memory, disk space, certificate expiry and the state of every container.     │
+│                        ││      ◆  See what an update brings  n                                                       │
+│                        ││         Fetch the playbook without installing and list the new commits and component ve…   │
+│                        ││      ◆  Check container images  i                                                          │
+│                        ││         Make sure every image the install needs can be pulled from your registry mirror…   │
+│                        ││      ◆  Back up the database  b                                                            │
+│                        ││         Dump the bundled Postgres database and copy it to /home/demo/.local/share/inter…   │
+│                        ││      ◆  Scheduled backups  s                                                               │
+│                        ││         Have the server dump its database on a timer by itself, keeping the newest few.    │
+│                        ││      ◆  Restore a backup  e                                                                │
+│                        ││         Replace the database with one of the dumps in /home/demo/.local/share/interzone…   │
+│                        ││      ◆  Roll back  z                                                                       │
+│                        ││         Go back to the playbook commit and answers of an earlier successful deploy.        │
+│                        ││      ◆  View logs  l                                                                       │
+│                        ││         Follow the log of any Matrix service as it's written.                              │
+│ ◫ layout: auto (wide)  ││      ◆  Fine-tune the roles  f                                                             │
+│ ctrl+b ‹ fold          ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         

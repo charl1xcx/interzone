@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▾ Setup                ││                                                                                            │
+│   ● Server             ││   Pick what you want on your server                                                        │
+│   ● Homeserver         ││                                                                                            │
+│ ▌ ◉ Components         ││       Core services  2/6    Clients  2/7    Authentication  1/9   ›          5 selected    │
+│   ○ Review             ││                                                                                            │
+│   ○ Deploy             ││   ▌  ●  Coturn TURN server    needs settings                                               │
+│                        ││   ▌     Relays voice/video calls for users behind NAT. Strongly recommended.               │
+│ ▸ Manage example.org   ││   ▌     docs/configuring-playbook-turn.md                                                  │
+│                        ││                                                                                            │
+│ ▸ Servers              ││      ●  Exim email relay    needs settings                                                 │
+│                        ││         Lets services send email (password resets, notifications).                         │
+│                        ││                                                                                            │
+│                        ││      ○  Serve the base domain                                                              │
+│                        ││         Host a simple page and .well-known files on <domain> itself (only if nothing el…   │
+│                        ││                                                                                            │
+│                        ││      ○  Dynamic DNS (ddclient)    needs settings                                           │
+│                        ││         Keep DNS records updated when your server has a changing IP.                       │
+│                        ││                                                                                            │
+│                        ││      ○  Use external PostgreSQL    needs settings                                          │
+│                        ││         Use your own Postgres server instead of the bundled one.                           │
+│                        ││                                                                                            │
+│                        ││      ○  Report anonymous usage stats                                                       │
+│                        ││         Send anonymous statistics to matrix.org (needs internet).                          │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ layout: auto (wide)  ││                                                                                            │
+│ ctrl+b ‹ fold          ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ←→ category   ·   ↑↓ move   ·   space toggle   ·   / search   ·   enter next   ·   esc back   ·   ctrl+c quit          

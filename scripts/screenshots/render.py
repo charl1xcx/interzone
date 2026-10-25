@@ -1,0 +1,121 @@
+# render.py IN.ans OUT.png [WIDTH]
+#     Draws a tmux "capture-pane -e" dump as a terminal window. With WIDTH the
+#     image is scaled to that many pixels and reduced to 256 colours, as the
+#     README's screenshots are.
+# render.py --join OUT.png A.png B.png …
+#     Puts already rendered windows side by side (docs/screenshots/phone.png).
+#
+# Needs Pillow, fontTools and the DejaVu and Noto symbol fonts.
+import re, sys
+from PIL import Image, ImageDraw, ImageFont
+from fontTools.ttLib import TTFont
+
+SIZE = 26
+FONTS = ["/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/TTF/DejaVuSansMono-Bold.ttf"]
+FALLBACK = ["/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/noto/NotoSansSymbols2-Regular.ttf", "/usr/share/fonts/noto/NotoSansMath-Regular.ttf"]
+BG, FG = (21, 19, 30), (220, 216, 235)
+
+reg = ImageFont.truetype(FONTS[0], SIZE)
+bold = ImageFont.truetype(FONTS[1], SIZE)
+cmap = TTFont(FONTS[0]).getBestCmap()
+fb = [(ImageFont.truetype(p, SIZE), TTFont(p).getBestCmap()) for p in FALLBACK]
+asc, desc = reg.getmetrics()
+CW, CH = round(reg.getlength("M")), asc + desc + 2
+
+def font_for(ch, b):
+    if ord(ch) in cmap:
+        return bold if b else reg
+    for f, cm in fb:
+        if ord(ch) in cm:
+            return f
+    return reg
+
+def draw_cell(d, ch, px, py, fg):
+    """Draws block and box characters as shapes so neighbours join up."""
+    mx, my = px + CW // 2, py + CH // 2
+    r, b = px + CW - 1, py + CH - 1
+    blocks = {"█": (px, py, r, b), "▀": (px, py, r, my - 1), "▄": (px, my, r, b), "▌": (px, py, mx - 1, b)}
+    if ch in blocks:
+        d.rectangle(blocks[ch], fill=fg); return True
+    # box drawing: which of up, down, left, right the line reaches
+    arms = {"│": "ud", "─": "lr", "╭": "dr", "╮": "dl", "╰": "ur", "╯": "ul", "┬": "dlr", "┴": "ulr", "├": "udr", "┤": "udl", "┼": "udlr"}
+    if ch not in arms:
+        return False
+    a = arms[ch]
+    if "u" in a: d.rectangle([mx - 1, py, mx, my], fill=fg)
+    if "d" in a: d.rectangle([mx - 1, my, mx, b], fill=fg)
+    if "l" in a: d.rectangle([px, my - 1, mx, my], fill=fg)
+    if "r" in a: d.rectangle([mx, my - 1, r, my], fill=fg)
+    return True
+
+def finish(img, out, width=None):
+    if width:
+        img = img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
+    img = img.convert("RGB").quantize(256, dither=Image.Dither.NONE)
+    img.save(out, optimize=True)
+    print(out, img.size)
+
+if sys.argv[1] == "--join":
+    parts = [Image.open(p).convert("RGB") for p in sys.argv[3:]]
+    GAP = 40
+    out = Image.new("RGB", (sum(p.width for p in parts) + GAP * (len(parts) - 1), max(p.height for p in parts)), (13, 12, 19))
+    x = 0
+    for p in parts:
+        out.paste(p, (x, 0)); x += p.width + GAP
+    finish(out, sys.argv[2])
+    sys.exit()
+
+lines = open(sys.argv[1], encoding="utf-8").read().rstrip("\n").split("\n")
+cells = []  # rows of (ch, fg, bg, bold)
+sgr = re.compile(r"\x1b\[([0-9;]*)m")
+for line in lines:
+    fg, bg, b = FG, None, False
+    row, i = [], 0
+    while i < len(line):
+        m = sgr.match(line, i)
+        if m:
+            ps = [int(x) if x else 0 for x in m.group(1).split(";")] if m.group(1) else [0]
+            j = 0
+            while j < len(ps):
+                p = ps[j]
+                if p == 0: fg, bg, b = FG, None, False
+                elif p == 1: b = True
+                elif p == 22: b = False
+                elif p == 39: fg = FG
+                elif p == 49: bg = None
+                elif p in (38, 48) and j + 4 < len(ps) + 0 and ps[j+1] == 2:
+                    c = tuple(ps[j+2:j+5])
+                    if p == 38: fg = c
+                    else: bg = c
+                    j += 4
+                elif p in (38, 48) and ps[j+1] == 5:
+                    j += 2
+                j += 1
+            i = m.end(); continue
+        if line[i] == "\x1b":  # other escapes
+            m2 = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]").match(line, i)
+            i = m2.end() if m2 else i + 1; continue
+        row.append((line[i], fg, bg, b)); i += 1
+    cells.append(row)
+
+cols = max(len(r) for r in cells); rows = len(cells)
+PAD, BAR = 36, 54
+W, H = cols * CW + 2 * PAD, rows * CH + 2 * PAD + BAR
+img = Image.new("RGBA", (W + 80, H + 80), (0, 0, 0, 0))
+d = ImageDraw.Draw(img)
+ox, oy = 40, 40
+d.rounded_rectangle([ox, oy, ox + W, oy + H], 18, fill=BG + (255,), outline=(58, 54, 80, 255), width=2)
+for k, c in enumerate([(255, 95, 86), (255, 189, 46), (39, 201, 63)]):
+    x = ox + 28 + k * 30
+    d.ellipse([x, oy + 20, x + 16, oy + 36], fill=c)
+tx, ty = ox + PAD, oy + BAR + PAD // 2
+for y, row in enumerate(cells):
+    for x, (ch, fg, bg, b) in enumerate(row):
+        px, py = tx + x * CW, ty + y * CH
+        if bg: d.rectangle([px, py, px + CW - 1, py + CH - 1], fill=bg)
+        if ch != " ":
+            # block and box characters stretch over the whole cell so they join
+            if draw_cell(d, ch, px, py, fg): continue
+            d.text((px, py + 1), ch, font=font_for(ch, b), fill=fg)
+bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
+finish(Image.alpha_composite(bg, img), sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else None)

@@ -1,0 +1,40 @@
+ ◢◤ interzone                 ONLINE   ≡ menu
+ ●  ●  ◉  ○  ○  Components
+──────────────────────────────────────────────
+ Fill in the details                          
+                                              
+ ◆ Your admin account ─────────────────────── 
+                                              
+ ▌  Admin username                            
+ ▌  › admin                                   
+ ▌  Created automatically after install.      
+                                              
+    Admin password                            
+    › ••••••••••••••••••••                    
+                                              
+                                              
+ ◆ Coturn TURN server ─────────────────────── 
+                                              
+    Public IP address(es)                     
+    › comma, separated, values                
+                                              
+                                              
+ ◆ Exim email relay ───────────────────────── 
+                                              
+    Sender address                            
+    ›                                         
+                                              
+    ○  Relay through another SMTP server  off 
+                                              
+                                              
+ ◆ Advanced ───────────────────────────────── 
+                                              
+    Extra vars.yml lines                      
+    │                                         
+    │                                         
+    │                                         
+                                              
+──────────────────────────────────────────────
+ tab/↑↓ move · space toggle
+ ctrl+r reveal secrets · enter next · esc back
+ ctrl+c quit

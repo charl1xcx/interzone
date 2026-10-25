@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▾ Setup                ││                                                                                            │
+│   ● Server             ││   Fill in the details                                                                      │
+│   ● Homeserver         ││                                                                                            │
+│ ▌ ◉ Components         ││   ◆ Your admin account ─────────────────────────────────────────────────────────────────   │
+│   ○ Review             ││                                                                                            │
+│   ○ Deploy             ││   ▌  Admin username                                                                        │
+│                        ││   ▌  › admin                                                                               │
+│ ▸ Manage example.org   ││   ▌  Created automatically after install.                                                  │
+│                        ││                                                                                            │
+│ ▸ Servers              ││      Admin password                                                                        │
+│                        ││      › ••••••••••••••••••••                                                                │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││   ◆ Coturn TURN server ─────────────────────────────────────────────────────────────────   │
+│                        ││                                                                                            │
+│                        ││      Public IP address(es)                                                                 │
+│                        ││      › comma, separated, values                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││   ◆ Exim email relay ───────────────────────────────────────────────────────────────────   │
+│                        ││                                                                                            │
+│                        ││      Sender address                                                                        │
+│                        ││      ›                                                                                     │
+│                        ││                                                                                            │
+│                        ││      ○  Relay through another SMTP server  off                                             │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││   ◆ Advanced ───────────────────────────────────────────────────────────────────────────   │
+│                        ││                                                                                            │
+│                        ││      Extra vars.yml lines                                                                  │
+│ ◫ layout: auto (wide)  ││     ▼ more below                                                                           │
+│ ctrl+b ‹ fold          ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ tab/↑↓ move   ·   space toggle   ·   ctrl+r reveal secrets   ·   enter next   ·   esc back   ·   ctrl+c quit           

@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▾ Setup                ││                                                                                            │
+│   ● Server             ││   Choose your homeserver                                                                   │
+│ ▌ ◉ Homeserver         ││                                                                                            │
+│   ○ Components         ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│   ○ Review             ││   │  ◉  Synapse   the reference server · recommended                                 │     │
+│   ○ Deploy             ││   │     Most complete and best supported implementation. Every component in this     │     │
+│                        ││   │     tool works with it.                                                          │     │
+│ ▸ Manage example.org   ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││                                                                                            │
+│ ▸ Servers              ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ○  Continuwuity   lightweight Rust server                                       │     │
+│                        ││   │     Community fork of conduwuit. Low memory use; some Synapse-only extras are    │     │
+│                        ││   │     hidden.                                                                      │     │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││                                                                                            │
+│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ○  Tuwunel   lightweight Rust server                                            │     │
+│                        ││   │     Enterprise-backed successor of conduwuit. Low memory use; some Synapse-only  │     │
+│                        ││   │     extras are hidden.                                                           │     │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││                                                                                            │
+│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ○  Conduit   minimal Rust server                                                │     │
+│                        ││   │     The original Conduit. Very small footprint, fewer features.                  │     │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││                                                                                            │
+│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ○  Dendrite   second-gen Go server                                              │     │
+│                        ││   │     In maintenance mode upstream. Only pick this if you know you need it.        │     │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│ ◫ layout: auto (wide)  ││                                                                                            │
+│ ctrl+b ‹ fold          ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ select   ·   enter choose   ·   esc back   ·   ctrl+c quit                                                          
