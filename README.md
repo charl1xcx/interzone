@@ -172,6 +172,9 @@ Need help, found a bug, or just like the project? Join the Matrix space
   - **Users** (Synapse): list accounts, reset passwords, grant or remove
     admin rights, deactivate and reactivate, through the admin API from
     inside the Synapse container. Nothing needs to be exposed publicly.
+    With MAS (Matrix Authentication Service), accounts are changed with
+    `mas-cli` in its container instead, and signing in needs only the
+    admin's username: MAS issues the session.
   - **Dashboard:** load, memory, disks, the backup timer, certificate expiry
     for every hostname, and each container's state, CPU and memory.
     The Dashboard, Users and the logs' service list open with what they
