@@ -17,13 +17,16 @@ func Import(args []string) error {
 	fs := flag.NewFlagSet("import", flag.ExitOnError)
 	name := fs.String("name", "", "name for the server in interzone (default: from the domain)")
 	dry := fs.Bool("dry-run", false, "show what would be imported and save nothing")
+	fresh := fs.Bool("new", false, "add it as another server even if one for the same domain is saved")
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), `Usage: interzone import [options] PATH
 
 Takes over a server set up with matrix-docker-ansible-deploy by hand. PATH is
 the playbook checkout, its inventory directory, or the server's vars.yml.
 Nothing on the server changes, and the original files stay as they are: a
-checkout is copied for interzone to work in.
+checkout is copied for interzone to work in. Importing a domain that's
+already saved updates that server's answers (the old ones are kept as
+<server>.json.before-import) instead of adding another.
 
 Options:`)
 		fs.PrintDefaults()
@@ -38,23 +41,42 @@ Options:`)
 	if err != nil {
 		return err
 	}
+	dest, update, err := im.Destination(*name)
+	if *fresh && *name == "" {
+		dest, update, err = config.SuggestName(im.Config.Domain), false, nil
+	}
+	if err != nil {
+		return err
+	}
 	printImport(im)
 	if *dry {
 		fmt.Println()
-		fmt.Println(muted.Render("Dry run: nothing saved."))
+		if update {
+			fmt.Println(muted.Render("Dry run: nothing saved. It would update server " + dest + "."))
+		} else {
+			fmt.Println(muted.Render("Dry run: nothing saved. It would be saved as server " + dest + "."))
+		}
 		return nil
 	}
-	if *name == "" {
-		*name = config.SuggestName(im.Config.Domain)
+	if update {
+		err = im.Update(dest)
+	} else {
+		err = im.Save(dest)
 	}
-	if err := im.Save(*name); err != nil {
+	if err != nil {
 		return err
 	}
-	if err := config.SetActive(*name); err != nil {
+	if err := config.SetActive(dest); err != nil {
 		return err
 	}
 	fmt.Println()
-	fmt.Println(good.Render("✓ Saved as server " + *name + " and made it the active one."))
+	if update {
+		fmt.Println(good.Render("✓ Updated server " + dest + " from it and made it the active one."))
+		fmt.Println(muted.Render("  Its playbook copy, download sources and backup schedule stay as they were;"))
+		fmt.Println(muted.Render("  the answers from before are in " + config.ProfilePath(dest) + ".before-import."))
+		return nil
+	}
+	fmt.Println(good.Render("✓ Saved as server " + dest + " and made it the active one."))
 	if im.PlaybookDir != "" {
 		fmt.Println(muted.Render("  The playbook was copied to " + im.Config.PlaybookDir + "; " + im.PlaybookDir + " is untouched."))
 	}

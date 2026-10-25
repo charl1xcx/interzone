@@ -651,28 +651,111 @@ func (im *Import) Save(name string) error {
 		if _, err := os.Stat(c.PlaybookDir); err == nil {
 			return fmt.Errorf("%s already exists; move it away first", c.PlaybookDir)
 		}
-		if err := os.MkdirAll(filepath.Dir(c.PlaybookDir), 0o755); err != nil {
+		if err := im.copyPlaybook(c); err != nil {
 			return err
 		}
-		if out, err := exec.Command("cp", "-a", im.PlaybookDir, c.PlaybookDir).CombinedOutput(); err != nil {
-			_ = os.RemoveAll(c.PlaybookDir)
-			return fmt.Errorf("copying the playbook: %s", strings.TrimSpace(string(out)))
+	}
+	return im.keep(name, c)
+}
+
+// copyPlaybook copies the imported checkout to c.PlaybookDir.
+func (im *Import) copyPlaybook(c *Config) error {
+	if err := os.MkdirAll(filepath.Dir(c.PlaybookDir), 0o755); err != nil {
+		return err
+	}
+	if out, err := exec.Command("cp", "-a", im.PlaybookDir, c.PlaybookDir).CombinedOutput(); err != nil {
+		_ = os.RemoveAll(c.PlaybookDir)
+		return fmt.Errorf("copying the playbook: %s", strings.TrimSpace(string(out)))
+	}
+	// interzone looks for the inventory under matrix.<domain>.
+	want := filepath.Join(c.PlaybookDir, "inventory", "host_vars", c.HostName(), "vars.yml")
+	if _, err := os.Stat(want); os.IsNotExist(err) {
+		b, err := os.ReadFile(im.VarsFile)
+		if err == nil {
+			err = os.MkdirAll(filepath.Dir(want), 0o700)
 		}
-		// interzone looks for the inventory under matrix.<domain>.
-		want := filepath.Join(c.PlaybookDir, "inventory", "host_vars", c.HostName(), "vars.yml")
-		if _, err := os.Stat(want); os.IsNotExist(err) {
-			b, err := os.ReadFile(im.VarsFile)
-			if err == nil {
-				err = os.MkdirAll(filepath.Dir(want), 0o700)
-			}
-			if err == nil {
-				err = os.WriteFile(want, b, 0o600)
-			}
-			if err != nil {
-				return err
-			}
+		if err == nil {
+			err = os.WriteFile(want, b, 0o600)
+		}
+		if err != nil {
+			return err
 		}
 	}
+	return nil
+}
+
+// Destination is where the import goes: the server called name, or with
+// no name the saved server for the same domain, else a new one named
+// after the domain. update reports that an existing server is replaced.
+func (im *Import) Destination(name string) (dest string, update bool, err error) {
+	if name == "" {
+		if ex := im.Existing(); ex != "" {
+			return ex, true, nil
+		}
+		return SuggestName(im.Config.Domain), false, nil
+	}
+	if err := ValidProfileName(name); err != nil {
+		return "", false, err
+	}
+	c, err := LoadFile(ProfilePath(name))
+	switch {
+	case err != nil || c.Domain == "":
+		return name, false, nil
+	case !strings.EqualFold(c.Domain, im.Config.Domain):
+		return "", false, fmt.Errorf("there is already a server called %s, for %s", name, c.Domain)
+	}
+	return name, true, nil
+}
+
+// Existing names the saved server for the same domain, if there is one:
+// importing that vars.yml again updates it instead of adding a server.
+func (im *Import) Existing() string {
+	for _, p := range Profiles() {
+		if p.Domain != "" && strings.EqualFold(p.Domain, im.Config.Domain) {
+			return p.Name
+		}
+	}
+	return ""
+}
+
+// Update replaces the answers of the saved server name with the import's.
+// What vars.yml doesn't hold stays as it was: the playbook copy, where
+// downloads come from, scheduled backups, a held rollback and interzone's
+// admin session, plus how the server is reached when there's no inventory.
+// The answers from before are kept next to the server's file.
+func (im *Import) Update(name string) error {
+	path := ProfilePath(name)
+	old, err := LoadFile(path)
+	if err != nil {
+		return err
+	}
+	c := im.Config
+	c.PlaybookDir, c.Sources, c.Backups, c.PinnedCommit = old.PlaybookDir, old.Sources, old.Backups, old.PinnedCommit
+	if im.HostsFile == "" {
+		c.Target = old.Target
+	}
+	if c.AdminUser == "" {
+		c.AdminUser, c.AdminPassword = old.AdminUser, old.AdminPassword
+	}
+	if c.AdminUser == old.AdminUser {
+		c.AdminToken = old.AdminToken
+	}
+	if b, err := os.ReadFile(path); err == nil {
+		if err := os.WriteFile(path+".before-import", b, 0o600); err != nil {
+			return err
+		}
+	}
+	if _, err := os.Stat(c.PlaybookDir); os.IsNotExist(err) && im.PlaybookDir != "" {
+		if err := im.copyPlaybook(c); err != nil {
+			return err
+		}
+	}
+	return im.keep(name, c)
+}
+
+// keep saves c as server name, with the imported files under imported/name
+// for reference.
+func (im *Import) keep(name string, c *Config) error {
 	keep := filepath.Join(Dir(), "imported", name)
 	if err := os.MkdirAll(keep, 0o700); err != nil {
 		return err

@@ -210,3 +210,70 @@ func TestVarChanges(t *testing.T) {
 		t.Errorf("flat: %+v", got)
 	}
 }
+
+// Importing the same server again updates it instead of adding another.
+func TestImportTwiceUpdates(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("XDG_DATA_HOME", t.TempDir())
+	t.Setenv("INTERZONE_SERVER", "")
+	vars := "matrix_domain: example.org\nmatrix_homeserver_implementation: synapse\n" +
+		"matrix_homeserver_generic_secret_key: 'gen'\npostgres_connection_password: 'pg'\n"
+	hosts := "[matrix_servers]\nmatrix.example.org ansible_host=1.2.3.4 ansible_ssh_user=root\n"
+	dir := mdadLayout(t, vars, hosts)
+
+	// A first server that is something else, so the import gets a name of its own.
+	other := Default()
+	other.Domain = "other.net"
+	if err := other.SaveFile(ProfilePath(DefaultProfile)); err != nil {
+		t.Fatal(err)
+	}
+
+	im, err := ImportMDAD(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, update, err := im.Destination("")
+	if err != nil || update {
+		t.Fatalf("first import: %s %v %v", name, update, err)
+	}
+	if err := im.Save(name); err != nil {
+		t.Fatal(err)
+	}
+	saved, _ := LoadFile(ProfilePath(name))
+	saved.Backups.Enabled = true // set in interzone afterwards
+	saved.Sources.RegistryPrefix = "registry.example/"
+	if err := saved.SaveFile(ProfilePath(name)); err != nil {
+		t.Fatal(err)
+	}
+
+	again := mdadLayout(t, vars+"matrix_bridge_mautrix_whatsapp_enabled: true\n", hosts)
+	im, err = ImportMDAD(again, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name2, update, err := im.Destination("")
+	if err != nil || !update || name2 != name {
+		t.Fatalf("second import goes to %s (update %v, %v), want %s updated", name2, update, err, name)
+	}
+	if err := im.Update(name2); err != nil {
+		t.Fatal(err)
+	}
+	if n := len(Profiles()); n != 2 {
+		t.Errorf("%d servers after importing twice, want 2", n)
+	}
+	c, _ := LoadFile(ProfilePath(name))
+	if !c.Components["whatsapp"] {
+		t.Error("the new vars.yml wasn't applied")
+	}
+	if !c.Backups.Enabled || c.Sources.RegistryPrefix != "registry.example/" || c.PlaybookDir != saved.PlaybookDir {
+		t.Errorf("interzone's own settings were lost: %+v", c)
+	}
+	if _, err := os.Stat(ProfilePath(name) + ".before-import"); err != nil {
+		t.Error("the old answers weren't kept")
+	}
+
+	// Naming another server's name is refused rather than overwriting it.
+	if _, _, err := im.Destination(DefaultProfile); err == nil {
+		t.Error("importing over a server for another domain should be refused")
+	}
+}
