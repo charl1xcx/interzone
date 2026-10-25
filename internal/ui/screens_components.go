@@ -14,6 +14,10 @@ import (
 )
 
 // ── Components ─────────────────────────────────────────────────────
+//
+// Two pages in one step: the list to pick from, then the settings the
+// picked components (and the admin account) need. enter on the list opens
+// the settings; esc there returns to the list.
 
 type componentsScreen struct {
 	cfg       *config.Config
@@ -23,6 +27,9 @@ type componentsScreen struct {
 	offset    int
 	filter    textinput.Model
 	filtering bool
+
+	details  bool // the settings page is shown
+	settings settingsScreen
 }
 
 func newComponentsScreen() *componentsScreen {
@@ -34,10 +41,49 @@ func newComponentsScreen() *componentsScreen {
 	return &componentsScreen{filter: in}
 }
 
-func (s *componentsScreen) name() string  { return "Components" }
-func (s *componentsScreen) title() string { return "Pick what you want on your server" }
-func (s *componentsScreen) typing() bool  { return s.filtering }
+func (s *componentsScreen) name() string { return "Components" }
+func (s *componentsScreen) title() string {
+	if s.details {
+		return s.settings.title()
+	}
+	return "Pick what you want on your server"
+}
+func (s *componentsScreen) typing() bool {
+	if s.details {
+		return s.settings.typing()
+	}
+	return s.filtering
+}
+func (s *componentsScreen) handlesEsc() bool { return s.details }
+func (s *componentsScreen) activeForm() *form {
+	if s.details {
+		return s.settings.form
+	}
+	return nil
+}
+
+// openDetails shows the settings page.
+func (s *componentsScreen) openDetails() tea.Cmd {
+	if !s.details {
+		s.leave(s.cfg)
+		s.details = true
+		return s.settings.enter(s.cfg)
+	}
+	return nil
+}
+
+// nextPage is ctrl+n: from the list it opens the settings page.
+func (s *componentsScreen) nextPage() (tea.Cmd, bool) {
+	if s.details {
+		return nil, false
+	}
+	return s.openDetails(), true
+}
+
 func (s *componentsScreen) keys() [][2]string {
+	if s.details {
+		return s.settings.keys()
+	}
 	if s.filtering {
 		return [][2]string{{"type", "search"}, {"↑↓", "move"}, {"space", "toggle"}, {"enter", "done"}}
 	}
@@ -46,6 +92,7 @@ func (s *componentsScreen) keys() [][2]string {
 
 func (s *componentsScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
+	s.details = false
 	s.selected = map[string]bool{}
 	for k, v := range c.Components {
 		s.selected[k] = v
@@ -54,6 +101,9 @@ func (s *componentsScreen) enter(c *config.Config) tea.Cmd {
 }
 
 func (s *componentsScreen) leave(c *config.Config) {
+	if s.details {
+		s.settings.leave(c)
+	}
 	c.Components = s.selected
 	c.FillGenerated()
 }
@@ -79,6 +129,14 @@ func (s *componentsScreen) available(c catalog.Component) bool {
 }
 
 func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
+	if s.details {
+		if k, ok := msg.(tea.KeyMsg); ok && k.String() == "esc" {
+			s.settings.leave(s.cfg)
+			s.details = false
+			return nil
+		}
+		return s.settings.update(msg)
+	}
 	k, ok := msg.(tea.KeyMsg)
 	if !ok {
 		return nil
@@ -137,12 +195,15 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 		s.filter.SetValue("")
 		return s.filter.Focus()
 	case "enter":
-		return nav(1)
+		return s.openDetails()
 	}
 	return nil
 }
 
 func (s *componentsScreen) view(w, h int) string {
+	if s.details {
+		return s.settings.view(w, h)
+	}
 	// Category tabs.
 	var tabs []string
 	for i, cat := range catalog.Categories {
@@ -324,6 +385,8 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 }
 
 // ── Settings ───────────────────────────────────────────────────────
+//
+// The second page of Components.
 
 type settingsScreen struct {
 	form *form

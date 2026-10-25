@@ -115,11 +115,15 @@ func (s *welcomeScreen) view(w, h int) string {
 	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, block)
 }
 
-// ── Network & mirrors ──────────────────────────────────────────────
+// ── Server ─────────────────────────────────────────────────────────
+//
+// One form for where everything goes and comes from: the server, where
+// downloads come from (normal internet or in-country mirrors), HTTPS
+// certificates, and networking.
 
 type checksMsg []deploy.Check
 
-type networkScreen struct {
+type serverScreen struct {
 	cfg      *config.Config
 	form     *form
 	checks   []deploy.Check
@@ -127,26 +131,46 @@ type networkScreen struct {
 	spin     spinner.Model
 }
 
-func newNetworkScreen() *networkScreen {
+func newServerScreen() *serverScreen {
 	sp := spinner.New()
 	sp.Spinner = spinner.MiniDot
 	sp.Style = sAccent
-	return &networkScreen{spin: sp}
+	return &serverScreen{spin: sp}
 }
 
-func (s *networkScreen) name() string  { return "Network" }
-func (s *networkScreen) title() string { return "Where should everything be downloaded from?" }
-func (s *networkScreen) typing() bool  { return s.form.typing() }
-func (s *networkScreen) keys() [][2]string {
-	return [][2]string{{"↑↓", "move"}, {"←→", "choose"}, {"ctrl+t", "test sources"}, {"enter", "next"}}
+func (s *serverScreen) name() string  { return "Server" }
+func (s *serverScreen) title() string { return "Tell me about your server" }
+func (s *serverScreen) typing() bool  { return s.form.typing() }
+func (s *serverScreen) keys() [][2]string {
+	return [][2]string{{"↑↓", "move"}, {"←→", "choose"}, {"space", "toggle"}, {"ctrl+t", "test sources"}, {"ctrl+r", "reveal"}, {"enter", "next"}}
 }
 
-func (s *networkScreen) enter(c *config.Config) tea.Cmd {
+var sslModes = []string{"letsencrypt", "selfsigned", "custom", "none"}
+var sslLabels = []string{"Let's Encrypt", "Self-signed", "My own certificate", "No HTTPS"}
+var sslExplain = map[string]string{
+	"letsencrypt": "Free, trusted certificates issued automatically. Needs access to letsencrypt.org, so it won't work during a blackout.",
+	"selfsigned":  "interzone generates a 10-year wildcard certificate locally. Works fully offline; clients will have to trust it manually.",
+	"custom":      "Use a certificate you already have (e.g. from a national CA). Point to the PEM files on this machine.",
+	"none":        "Plain HTTP. Only if another reverse proxy in front of this server terminates TLS.",
+}
+
+func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
+	t := c.Target
+	domain := textField("domain", "Base domain", c.Domain, "example.com",
+		"User IDs look like @alice:<domain>. Point matrix.<domain> at your server.")
+	domain.required = true
+	host := textField("host", "Server address", t.Host, "203.0.113.10 or server.example.com", "IP or hostname reachable over SSH.")
+	host.required = true
+	sudoHelp := "Needed if you're not root and sudo asks for a password. Leave empty otherwise."
+	if os.Geteuid() == 0 {
+		sudoHelp = "You're root here, so this is only used for SSH targets."
+	}
+
 	src := c.Sources
-	mode := "online"
+	netMode := "online"
 	if src.Blackout {
-		mode = "blackout"
+		netMode = "blackout"
 	} else {
 		// Blackout fields are cleared outside blackout mode, so switching to it
 		// starts from the known in-country mirrors.
@@ -154,9 +178,24 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 		src.APTMirror = config.DefaultMirror(config.MirrorOS)
 		src.PyPIIndex = config.DefaultMirror(config.MirrorPyPI)
 	}
+	sslMode := c.SSL.Mode
+	if src.Blackout && sslMode == "letsencrypt" {
+		sslMode = "selfsigned"
+	}
+
 	f := newForm(
-		choiceField("mode", "Network situation", []string{"online", "blackout"},
-			[]string{"Normal internet", "Blackout: in-country mirrors only"}, mode,
+		domain,
+		choiceField("mode", "Install where?", []string{"local", "ssh"},
+			[]string{"This machine", "A remote server over SSH"}, t.Mode,
+			"Run interzone on the server itself, or from your computer over SSH."),
+		host,
+		textField("user", "SSH user", t.User, "root", ""),
+		textField("port", "SSH port", t.Port, "22", ""),
+		textField("key", "SSH private key", t.SSHKey, "~/.ssh/id_ed25519", "Leave empty to use your SSH agent or default key."),
+		secretField("become", "sudo password", t.BecomePass, sudoHelp),
+
+		choiceField("net", "Network situation", []string{"online", "blackout"},
+			[]string{"Normal internet", "Blackout: in-country mirrors only"}, netMode,
 			"Blackout mode adds mirrors for Docker Engine, OS packages and PyPI."),
 		textField("git", "Playbook git repository", src.PlaybookGit, config.DefaultPlaybookGit,
 			"Where matrix-docker-ansible-deploy is cloned from."),
@@ -172,14 +211,45 @@ func (s *networkScreen) enter(c *config.Config) tea.Cmd {
 			"The server's package sources (Debian, Ubuntu, AlmaLinux, Rocky, CentOS Stream, Fedora, EPEL or Arch) are pointed here before installing, for whatever the mirror carries. Original files are backed up."+mirrorHint(config.MirrorOS)),
 		textField("pypi", "PyPI mirror", src.PyPIIndex, config.DefaultMirror(config.MirrorPyPI),
 			"Used to install Ansible on this machine if it's missing."+mirrorHint(config.MirrorPyPI)),
+
+		choiceField("ssl", "Certificate source", sslModes, sslLabels, sslMode, ""),
+		textField("ssl.email", "Contact email for Let's Encrypt", c.SSL.ACMEEmail, "you@example.com", "Optional. Used for expiry warnings."),
+		textField("ssl.cert", "Certificate (fullchain PEM)", c.SSL.CertPath, "/path/to/fullchain.pem", ""),
+		textField("ssl.key", "Private key (PEM)", c.SSL.KeyPath, "/path/to/privkey.pem", ""),
+
+		toggleField("federation", "Federate with other Matrix servers", c.Federation,
+			"Turn off for a private server that never talks to the outside world."),
+		toggleField("ipv6", "Enable IPv6 networking for containers", c.IPv6, "Only if your server has working IPv6."),
 	)
-	blackout := func() bool { return f.value("mode") != "blackout" }
+	remote := func() bool { return f.value("mode") != "ssh" }
+	for _, k := range []string{"host", "user", "port", "key"} {
+		f.get(k).hidden = remote
+	}
+	online := func() bool { return f.value("net") != "blackout" }
 	f.get("registry").hidden = func() bool { return !f.get("useRegistry").on }
-	f.get("dockerpkg").hidden = blackout
-	f.get("apt").hidden = blackout
-	f.get("pypi").hidden = blackout
+	f.get("dockerpkg").hidden = online
+	f.get("apt").hidden = online
+	f.get("pypi").hidden = online
+	f.get("ssl.email").hidden = func() bool { return f.value("ssl") != "letsencrypt" }
+	custom := func() bool { return f.value("ssl") != "custom" }
+	f.get("ssl.cert").hidden, f.get("ssl.key").hidden = custom, custom
+	f.get("ssl.cert").required, f.get("ssl.key").required = true, true
+	f.get("net").section = "Downloads"
+	f.get("ssl").section = "HTTPS certificates"
+	f.get("federation").section = "Networking"
 	s.form = f
+	s.explainSSL()
 	return nil
+}
+
+// explainSSL makes the certificate choice's help describe the picked one.
+func (s *serverScreen) explainSSL() {
+	mode := s.form.value("ssl")
+	help := sslExplain[mode]
+	if mode == "letsencrypt" && s.form.value("net") == "blackout" {
+		help += " ⚠ You chose blackout mode: Let's Encrypt will fail without international internet."
+	}
+	s.form.get("ssl").help = help
 }
 
 // mirrorHint describes the known mirrors of kind for a field's help.
@@ -205,10 +275,32 @@ func mirrorHint(kind config.MirrorKind) string {
 	return " Known mirrors in Iran: " + strings.Join(parts, "; ") + ". Run interzone mirrors to test them."
 }
 
-func (s *networkScreen) leave(c *config.Config) {
+func (s *serverScreen) leave(c *config.Config) {
+	f := s.form
+	c.Domain = strings.ToLower(f.value("domain"))
+	// People often type the homeserver's own name; the base domain is what
+	// follows "matrix." (but "matrix.org" itself is a base domain).
+	if rest, ok := strings.CutPrefix(c.Domain, "matrix."); ok && strings.Contains(rest, ".") {
+		c.Domain = rest
+	}
+	c.Target = config.Target{
+		Mode: f.value("mode"), Host: f.value("host"), User: f.value("user"),
+		Port: f.value("port"), SSHKey: f.value("key"), BecomePass: f.value("become"),
+	}
+	if c.Target.User == "" {
+		c.Target.User = "root"
+	}
+	s.leaveSources(c)
+	c.SSL = config.SSL{Mode: f.value("ssl"), ACMEEmail: f.value("ssl.email"),
+		CertPath: f.value("ssl.cert"), KeyPath: f.value("ssl.key")}
+	c.Federation = f.get("federation").on
+	c.IPv6 = f.get("ipv6").on
+}
+
+func (s *serverScreen) leaveSources(c *config.Config) {
 	f := s.form
 	c.Sources = config.Sources{
-		Blackout:         f.value("mode") == "blackout",
+		Blackout:         f.value("net") == "blackout",
 		PlaybookGit:      f.value("git"),
 		RolesGitBase:     f.value("roles"),
 		UseRegistry:      f.get("useRegistry").on,
@@ -225,7 +317,7 @@ func (s *networkScreen) leave(c *config.Config) {
 	}
 }
 
-func (s *networkScreen) update(msg tea.Msg) tea.Cmd {
+func (s *serverScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case checksMsg:
 		s.checking = false
@@ -241,29 +333,33 @@ func (s *networkScreen) update(msg tea.Msg) tea.Cmd {
 	case tea.KeyMsg:
 		if m.String() == "ctrl+t" && !s.checking {
 			cfg := config.Default()
-			s.leave(cfg)
+			s.leaveSources(cfg)
 			s.checking = true
 			s.checks = nil
 			return tea.Batch(s.spin.Tick, func() tea.Msg { return checksMsg(deploy.Preflight(cfg)) })
 		}
 	}
 	cmd := s.form.Update(msg)
-	s.cfg.Sources.Blackout = s.form.value("mode") == "blackout" // keeps the header badge live
+	s.cfg.Sources.Blackout = s.form.value("net") == "blackout" // keeps the header badge live
+	s.explainSSL()
 	return cmd
 }
 
-func (s *networkScreen) view(w, h int) string {
+func (s *serverScreen) view(w, h int) string {
 	results := s.checksView(w)
 	formH := h - lipgloss.Height(results) - 2
-	return s.form.View(w, formH) + "\n\n\n" + results
+	return s.form.View(w, formH) + "\n\n" + results
 }
 
-func (s *networkScreen) checksView(w int) string {
+func (s *serverScreen) checksView(w int) string {
 	if s.checking {
 		return s.spin.View() + sMuted.Render(" testing every source…")
 	}
 	if s.checks == nil {
-		return sMuted.Render("Press ") + keyLink("ctrl+t") + sMuted.Render(" to test that every source is reachable from here.")
+		if w < 72 {
+			return keyLink("ctrl+t") + sMuted.Render(" tests the download sources")
+		}
+		return sMuted.Render("Press ") + keyLink("ctrl+t") + sMuted.Render(" to test that every download source is reachable from here.")
 	}
 	var lines []string
 	for _, c := range s.checks {
@@ -276,75 +372,6 @@ func (s *networkScreen) checksView(w int) string {
 	}
 	return strings.Join(lines, "\n")
 }
-
-// ── Server ─────────────────────────────────────────────────────────
-
-type serverScreen struct{ form *form }
-
-func newServerScreen() *serverScreen { return &serverScreen{} }
-
-func (s *serverScreen) name() string  { return "Server" }
-func (s *serverScreen) title() string { return "Tell me about your server" }
-func (s *serverScreen) typing() bool  { return s.form.typing() }
-func (s *serverScreen) keys() [][2]string {
-	return [][2]string{{"↑↓", "move"}, {"←→", "choose"}, {"space", "toggle"}, {"ctrl+r", "reveal"}, {"enter", "next"}}
-}
-
-func (s *serverScreen) enter(c *config.Config) tea.Cmd {
-	t := c.Target
-	domain := textField("domain", "Base domain", c.Domain, "example.com",
-		"User IDs look like @alice:<domain>. Point matrix.<domain> at your server.")
-	domain.required = true
-	host := textField("host", "Server address", t.Host, "203.0.113.10 or server.example.com", "IP or hostname reachable over SSH.")
-	host.required = true
-	sudoHelp := "Needed if you're not root and sudo asks for a password. Leave empty otherwise."
-	if os.Geteuid() == 0 {
-		sudoHelp = "You're root here, so this is only used for SSH targets."
-	}
-	f := newForm(
-		domain,
-		choiceField("mode", "Install where?", []string{"local", "ssh"},
-			[]string{"This machine", "A remote server over SSH"}, t.Mode,
-			"Run interzone on the server itself, or from your computer over SSH."),
-		host,
-		textField("user", "SSH user", t.User, "root", ""),
-		textField("port", "SSH port", t.Port, "22", ""),
-		textField("key", "SSH private key", t.SSHKey, "~/.ssh/id_ed25519", "Leave empty to use your SSH agent or default key."),
-		secretField("become", "sudo password", t.BecomePass, sudoHelp),
-		toggleField("federation", "Federate with other Matrix servers", c.Federation,
-			"Turn off for a private server that never talks to the outside world."),
-		toggleField("ipv6", "Enable IPv6 networking for containers", c.IPv6, "Only if your server has working IPv6."),
-	)
-	remote := func() bool { return f.value("mode") != "ssh" }
-	for _, k := range []string{"host", "user", "port", "key"} {
-		f.get(k).hidden = remote
-	}
-	f.get("federation").section = "Networking"
-	s.form = f
-	return nil
-}
-
-func (s *serverScreen) leave(c *config.Config) {
-	f := s.form
-	c.Domain = strings.ToLower(f.value("domain"))
-	// People often type the homeserver's own name; the base domain is what
-	// follows "matrix." (but "matrix.org" itself is a base domain).
-	if rest, ok := strings.CutPrefix(c.Domain, "matrix."); ok && strings.Contains(rest, ".") {
-		c.Domain = rest
-	}
-	c.Target = config.Target{
-		Mode: f.value("mode"), Host: f.value("host"), User: f.value("user"),
-		Port: f.value("port"), SSHKey: f.value("key"), BecomePass: f.value("become"),
-	}
-	if c.Target.User == "" {
-		c.Target.User = "root"
-	}
-	c.Federation = f.get("federation").on
-	c.IPv6 = f.get("ipv6").on
-}
-
-func (s *serverScreen) update(msg tea.Msg) tea.Cmd { return s.form.Update(msg) }
-func (s *serverScreen) view(w, h int) string       { return s.form.View(w, h) }
 
 // ── Homeserver ─────────────────────────────────────────────────────
 
@@ -410,65 +437,4 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 		cards = append(cards, markLines("hs:"+strconv.Itoa(i), style.Render(name+tag+"\n   "+strings.ReplaceAll(desc, "\n", "\n   "))))
 	}
 	return strings.Join(cards, "\n\n")
-}
-
-// ── SSL ────────────────────────────────────────────────────────────
-
-type sslScreen struct {
-	form     *form
-	blackout bool
-}
-
-func newSSLScreen() *sslScreen { return &sslScreen{} }
-
-func (s *sslScreen) name() string  { return "Certificates" }
-func (s *sslScreen) title() string { return "How should HTTPS certificates be handled?" }
-func (s *sslScreen) typing() bool  { return s.form.typing() }
-func (s *sslScreen) keys() [][2]string {
-	return [][2]string{{"←→", "choose"}, {"↑↓", "move"}, {"enter", "next"}}
-}
-
-var sslModes = []string{"letsencrypt", "selfsigned", "custom", "none"}
-var sslLabels = []string{"Let's Encrypt", "Self-signed", "My own certificate", "No HTTPS"}
-var sslExplain = map[string]string{
-	"letsencrypt": "Free, trusted certificates issued automatically. Needs access to letsencrypt.org, so it won't work during a blackout.",
-	"selfsigned":  "interzone generates a 10-year wildcard certificate locally. Works fully offline; clients will have to trust it manually.",
-	"custom":      "Use a certificate you already have (e.g. from a national CA). Point to the PEM files on this machine.",
-	"none":        "Plain HTTP. Only if another reverse proxy in front of this server terminates TLS.",
-}
-
-func (s *sslScreen) enter(c *config.Config) tea.Cmd {
-	s.blackout = c.Sources.Blackout
-	mode := c.SSL.Mode
-	if s.blackout && mode == "letsencrypt" {
-		mode = "selfsigned"
-	}
-	f := newForm(
-		choiceField("mode", "Certificate source", sslModes, sslLabels, mode, ""),
-		textField("email", "Contact email for Let's Encrypt", c.SSL.ACMEEmail, "you@example.com", "Optional. Used for expiry warnings."),
-		textField("cert", "Certificate (fullchain PEM)", c.SSL.CertPath, "/path/to/fullchain.pem", ""),
-		textField("key", "Private key (PEM)", c.SSL.KeyPath, "/path/to/privkey.pem", ""),
-	)
-	f.get("email").hidden = func() bool { return f.value("mode") != "letsencrypt" }
-	custom := func() bool { return f.value("mode") != "custom" }
-	f.get("cert").hidden, f.get("key").hidden = custom, custom
-	f.get("cert").required, f.get("key").required = true, true
-	s.form = f
-	return nil
-}
-
-func (s *sslScreen) leave(c *config.Config) {
-	c.SSL = config.SSL{Mode: s.form.value("mode"), ACMEEmail: s.form.value("email"),
-		CertPath: s.form.value("cert"), KeyPath: s.form.value("key")}
-}
-
-func (s *sslScreen) update(msg tea.Msg) tea.Cmd { return s.form.Update(msg) }
-
-func (s *sslScreen) view(w, h int) string {
-	mode := s.form.value("mode")
-	info := sPanel.Padding(1, 2).Width(min(w, maxFormWidth) - 2).Render(sSub.Render(sslExplain[mode]))
-	if s.blackout && mode == "letsencrypt" {
-		info += "\n\n" + sWarn.Render("⚠ You chose blackout mode: Let's Encrypt will fail without international internet.")
-	}
-	return s.form.View(w, h-lipgloss.Height(info)-2) + "\n\n\n" + info
 }

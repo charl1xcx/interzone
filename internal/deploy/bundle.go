@@ -175,7 +175,7 @@ Copy this file to the machine you deploy from (it needs no internet), then:
     ./interzone-bundle/interzone
 
 Container images are not included: point interzone at a registry mirror
-inside your network (Network step, "Container registry mirror").
+inside your network (Server step, "Container registry mirror").
 `
 
 func addFile(tw *tar.Writer, src, name string) error {

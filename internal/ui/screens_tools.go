@@ -231,7 +231,7 @@ func (s *historyScreen) enter(c *config.Config) tea.Cmd {
 }
 func (s *historyScreen) keys() [][2]string {
 	if s.confirm {
-		return [][2]string{{"y", "roll back"}, {"esc", "cancel"}}
+		return [][2]string{{"enter", "roll back"}, {"esc", "cancel"}}
 	}
 	return [][2]string{{"↑↓", "select"}, {"enter", "roll back to this"}}
 }
@@ -243,11 +243,14 @@ func (s *historyScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	if s.confirm {
 		switch k.String() {
-		case "y":
+		case "y", "enter":
 			s.confirm = false
 			return s.rollback(s.list[s.cursor])
 		case "esc", "n":
 			s.confirm = false
+		default: // moving away cancels
+			s.confirm = false
+			s.cursor = cursorKey(k.String(), s.cursor, len(s.list))
 		}
 		return nil
 	}
@@ -290,7 +293,7 @@ func (s *historyScreen) view(w, h int) string {
 			sWarn.Render("Roll back to "+d.Time.Local().Format("2006-01-02 15:04")+"?"),
 			sSub.Render("The playbook goes back to "+d.Commit[:min(10, len(d.Commit))]+" and your answers to the ones used then (today's are kept in config.before-rollback.json). The database is backed up first."),
 			sSub.Render("Newer homeserver versions may have changed the database in ways an older one can't read; if it fails to start, restore the backup taken now with Manage › Restore."),
-			"", keyLink("y")+sMuted.Render(" roll back   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			"", keyLink("enter")+sMuted.Render(" again to roll back   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	return out
 }
@@ -318,7 +321,7 @@ func (s *restoreScreen) enter(c *config.Config) tea.Cmd {
 }
 func (s *restoreScreen) keys() [][2]string {
 	if s.confirm {
-		return [][2]string{{"y", "restore"}, {"esc", "cancel"}}
+		return [][2]string{{"enter", "restore"}, {"esc", "cancel"}}
 	}
 	return [][2]string{{"↑↓", "select"}, {"enter", "restore this"}, {"d", "download the server's backups"}}
 }
@@ -330,11 +333,14 @@ func (s *restoreScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	if s.confirm {
 		switch k.String() {
-		case "y":
+		case "y", "enter":
 			s.confirm = false
 			return run(deploy.Options{Action: deploy.ActionRestore, Backup: s.list[s.cursor].Path})
 		case "esc", "n":
 			s.confirm = false
+		default: // moving away cancels
+			s.confirm = false
+			s.cursor = cursorKey(k.String(), s.cursor, len(s.list))
 		}
 		return nil
 	}
@@ -371,7 +377,7 @@ func (s *restoreScreen) view(w, h int) string {
 		out += "\n\n" + confirmView(w,
 			sWarn.Render("Replace the database of "+s.cfg.Domain+" with the dump from "+b.Time.Local().Format("2006-01-02 15:04")+"?"),
 			sSub.Render("Every service stops, the current database is dumped to "+deploy.BackupDir()+" first, then emptied and loaded from this file. Messages sent since the dump are lost."),
-			"", keyLink("y")+sMuted.Render(" restore   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			"", keyLink("enter")+sMuted.Render(" again to restore   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	return out
 }
@@ -520,7 +526,7 @@ func (s *usersScreen) keys() [][2]string {
 	case usersNew:
 		return [][2]string{{"tab/↑↓", "move"}, {"space", "toggle"}, {"ctrl+r", "reveal"}, {"enter", "create"}, {"esc", "cancel"}}
 	case usersConfirm:
-		return [][2]string{{"y", "do it"}, {"esc", "cancel"}}
+		return [][2]string{{"enter", "do it"}, {"esc", "cancel"}}
 	}
 	return [][2]string{{"↑↓", "select"}, {"n", "new"}, {"p", "reset password"}, {"a", "admin on/off"}, {"d", "deactivate"}, {"r", "reload"}}
 }
@@ -623,13 +629,16 @@ func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 	case usersLogin, usersNew:
 		return s.form.Update(msg)
 	case usersConfirm:
-		if k.String() == "y" && s.op != nil {
+		switch {
+		case (k.String() == "y" || k.String() == "enter") && s.op != nil:
 			op := s.op
 			s.mode, s.op = usersList, nil
 			return s.run(op)
-		}
-		if k.String() == "n" {
+		case k.String() == "n":
 			s.mode, s.op = usersList, nil
+		case cursorKey(k.String(), s.cursor, len(s.users)) != s.cursor: // moving away cancels
+			s.mode, s.op = usersList, nil
+			s.cursor = cursorKey(k.String(), s.cursor, len(s.users))
 		}
 		return nil
 	}
@@ -722,11 +731,11 @@ func (s *usersScreen) view(w, h int) string {
 	foot := strings.Join(status, "\n")
 	if s.mode == usersConfirm && s.op != nil {
 		foot = confirmView(w, sWarn.Render(strings.ToUpper(s.op.desc[:1])+s.op.desc[1:]+"?"), "",
-			keyLink("y")+sMuted.Render(" yes   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			keyLink("enter")+sMuted.Render(" yes   ")+keyLink("esc")+sMuted.Render(" cancel"))
 		if s.op.body["deactivated"] == true {
 			foot = confirmView(w, sWarn.Render("Deactivate "+s.op.user+"?"),
 				sSub.Render("They are signed out everywhere and can't sign in again until reactivated."), "",
-				keyLink("y")+sMuted.Render(" deactivate   ")+keyLink("esc")+sMuted.Render(" cancel"))
+				keyLink("enter")+sMuted.Render(" deactivate   ")+keyLink("esc")+sMuted.Render(" cancel"))
 		}
 	}
 	if len(s.users) == 0 {
@@ -960,7 +969,7 @@ func (s *serversScreen) keys() [][2]string {
 	case s.form != nil:
 		return [][2]string{{"enter", "set up this server"}, {"esc", "cancel"}}
 	case s.confirm:
-		return [][2]string{{"y", "forget it"}, {"esc", "cancel"}}
+		return [][2]string{{"x", "forget it"}, {"esc", "cancel"}}
 	}
 	return [][2]string{{"↑↓", "select"}, {"enter", "switch to it"}, {"n", "add a server"}, {"x", "forget"}}
 }
@@ -996,7 +1005,7 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	if s.confirm {
 		switch k.String() {
-		case "y":
+		case "y", "x", "enter":
 			s.confirm = false
 			if err := config.RemoveProfile(s.list[s.cursor].Name); err != nil {
 				s.err = err.Error()
@@ -1004,6 +1013,9 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 			return s.enter(s.cfg)
 		case "esc", "n":
 			s.confirm = false
+		default: // moving away cancels
+			s.confirm = false
+			s.cursor = cursorKey(k.String(), s.cursor, len(s.list))
 		}
 		return nil
 	}
@@ -1086,7 +1098,7 @@ func (s *serversScreen) view(w, h int) string {
 	if s.confirm {
 		out += "\n\n" + confirmView(w, sWarn.Render("Forget "+s.list[s.cursor].Name+"?"),
 			sSub.Render("Only interzone's saved answers are deleted. Nothing changes on the server itself."), "",
-			keyLink("y")+sMuted.Render(" forget   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			keyLink("x")+sMuted.Render(" again to forget   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	if s.err != "" {
 		out += "\n\n" + sBad.Render("✗ "+s.err)

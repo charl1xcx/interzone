@@ -236,7 +236,7 @@ func (c *Config) Missing() []string {
 		out = append(out, "Server: SSH host")
 	}
 	if c.SSL.Mode == "custom" && (c.SSL.CertPath == "" || c.SSL.KeyPath == "") {
-		out = append(out, "SSL: certificate and key paths")
+		out = append(out, "Server: certificate and key paths")
 	}
 	for _, comp := range catalog.Components {
 		if !c.Enabled(comp) {
@@ -263,7 +263,7 @@ func (c *Config) Missing() []string {
 	if extra := strings.TrimSpace(c.ExtraYAML); extra != "" {
 		var m map[string]any
 		if err := yaml.Unmarshal([]byte(extra), &m); err != nil {
-			out = append(out, "Settings: extra vars.yml lines aren't valid YAML ("+yamlError(err)+")")
+			out = append(out, "Components: extra vars.yml lines aren't valid YAML ("+yamlError(err)+")")
 		}
 	}
 	return out

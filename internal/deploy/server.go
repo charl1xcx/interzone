@@ -189,7 +189,7 @@ func ServerChecks(c *config.Config) []Finding {
 	} else if dockerRepo == nil {
 		add("Docker", Pass, "not installed yet; the playbook will install it from the distro's packages")
 	} else if c.Sources.Blackout && c.Sources.DockerPackageURL == "" {
-		add("Docker", Warn, "not installed, and no Docker package mirror is set on the Network step")
+		add("Docker", Warn, "not installed, and no Docker package mirror is set on the Server step")
 	} else {
 		add("Docker", Pass, "not installed yet; the playbook will install it")
 	}

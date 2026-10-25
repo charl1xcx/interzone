@@ -26,6 +26,10 @@ type screen interface {
 // toolScreen marks screens reached from Manage; esc returns there.
 type toolScreen interface{ tool() }
 
+// pager screens have more than one page in their step; nextPage moves on
+// within the screen and reports false on its last page.
+type pager interface{ nextPage() (tea.Cmd, bool) }
+
 // escHandler screens use esc themselves (to close an editor or a
 // confirmation) while handlesEsc reports true.
 type escHandler interface{ handlesEsc() bool }
@@ -54,12 +58,9 @@ func New(cfg *config.Config, loaded bool) *App {
 	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed(), layout: loadLayout()}
 	a.screens = []screen{
 		&welcomeScreen{loaded: loaded},
-		newNetworkScreen(),
 		newServerScreen(),
 		&homeserverScreen{},
-		newSSLScreen(),
 		newComponentsScreen(),
-		&settingsScreen{},
 		newReviewScreen(),
 		newDeployScreen(),
 		newManageScreen(), // not a wizard step: reached from Welcome
@@ -75,6 +76,9 @@ func New(cfg *config.Config, loaded bool) *App {
 		newMigrateScreen(),
 	}
 	a.deployBack = a.index("Review")
+	if cfg.Installed() {
+		a.step = a.index("Manage") // esc still leads to Welcome
+	}
 	return a
 }
 
@@ -90,7 +94,7 @@ func (a *App) index(name string) int {
 // wizard is the screens shown in the stepper, Welcome and Manage excluded.
 func (a *App) wizard() []screen { return a.screens[1:a.index("Manage")] }
 
-func (a *App) Init() tea.Cmd { return a.screens[0].enter(a.cfg) }
+func (a *App) Init() tea.Cmd { return a.cur().enter(a.cfg) }
 
 func (a *App) cur() screen { return a.screens[a.step] }
 
@@ -102,8 +106,9 @@ func (a *App) jump(n int) tea.Cmd {
 	if n < 0 || n >= len(a.screens) || n == a.step {
 		return nil
 	}
-	if a.screens[n].name() == "Deploy" {
+	if ds, ok := a.screens[n].(*deployScreen); ok {
 		a.deployBack = a.step
+		ds.fromManage = a.cur().name() == "Manage" || a.isTool(a.step)
 	}
 	a.cur().leave(a.cfg)
 	if err := a.cfg.Save(); err != nil {
@@ -133,6 +138,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, a.switchServer(m)
 	case gotoMsg:
 		return a, a.jump(a.index(string(m)))
+	case autoBackMsg:
+		if _, ok := a.cur().(*deployScreen); ok {
+			a.status = sGood.Render("✓ " + m.text)
+			return a, a.back()
+		}
+		return a, nil
 	case runActionMsg:
 		cmd := a.jump(a.index("Deploy"))
 		return a, tea.Batch(cmd, func() tea.Msg { return startDeployMsg{m.opts} })
@@ -175,6 +186,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, a.back()
 		case "ctrl+n", "pgdown":
 			if a.step >= 1 && a.step < a.index("Review") {
+				if p, ok := a.cur().(pager); ok {
+					if cmd, moved := p.nextPage(); moved {
+						return a, cmd
+					}
+				}
 				return a, a.go_(1)
 			}
 		case "ctrl+p", "pgup":
@@ -219,7 +235,11 @@ func (a *App) back() tea.Cmd {
 	if _, ok := a.cur().(toolScreen); ok {
 		return a.jump(a.index("Manage"))
 	}
-	return a.go_(-1)
+	cmd := a.go_(-1)
+	if cs, ok := a.cur().(*componentsScreen); ok {
+		return tea.Batch(cmd, cs.openDetails()) // back from Review lands on the settings page
+	}
+	return cmd
 }
 
 func (a *App) View() string {
@@ -383,8 +403,11 @@ func (a *App) switchServer(m switchServerMsg) tea.Cmd {
 	}
 	a.status = sGood.Render("✓ now working on " + m.name)
 	target := 0
-	if m.fresh {
-		target = a.index("Network")
+	switch {
+	case m.fresh:
+		target = a.index("Server")
+	case a.cfg.Installed():
+		target = a.index("Manage")
 	}
 	a.step = target
 	return a.cur().enter(a.cfg)

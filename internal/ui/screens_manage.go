@@ -254,7 +254,7 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 		_ = s.cfg.Save()
 		return run(deploy.Options{Action: deploy.ActionInstall})
 	case "setup":
-		return func() tea.Msg { return gotoMsg("Network") }
+		return func() tea.Msg { return gotoMsg("Server") }
 	case "images":
 		return run(deploy.Options{Action: deploy.ActionImages})
 	case "selfupdate":

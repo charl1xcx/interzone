@@ -339,6 +339,9 @@ type deployScreen struct {
 	started time.Time
 	elapsed time.Duration
 
+	fromManage bool      // started from Manage or one of its tools
+	backAt     time.Time // when a finished quick action returns to Manage; zero: stay
+
 	log     []string
 	logFile *os.File
 	vp      viewport.Model
@@ -415,6 +418,7 @@ func (s *deployScreen) start(opts deploy.Options) tea.Cmd {
 	s.cancel = cancel
 	s.opts = opts
 	s.running, s.finished, s.err, s.result = true, false, nil, nil
+	s.backAt = time.Time{}
 	s.plan = deploy.Plan(opts.Action)
 	s.states = map[deploy.Step]stepState{}
 	s.task, s.tasks, s.fails, s.lastErr = "", 0, 0, ""
@@ -443,6 +447,20 @@ func (s *deployScreen) wait() tea.Cmd {
 
 type tickMsg struct{}
 
+// autoBackMsg asks the app to leave the Deploy screen after a quick action
+// went fine; text is the toast to show.
+type autoBackMsg struct{ text string }
+
+// autoBackActions are the actions whose outcome a one-line toast tells in
+// full, so their result screen needn't wait for esc. The rest show
+// something to read (a password, logs, problems) or are rare and big.
+var autoBackActions = map[deploy.Action]bool{
+	deploy.ActionInstall: true, deploy.ActionSelfCheck: true, deploy.ActionRestart: true,
+	deploy.ActionImages: true, deploy.ActionSchedule: true,
+}
+
+const autoBackDelay = 4 * time.Second
+
 func tick() tea.Cmd { return tea.Tick(time.Second, func(time.Time) tea.Msg { return tickMsg{} }) }
 
 func (s *deployScreen) appendLog(line string) {
@@ -461,6 +479,14 @@ func (s *deployScreen) update(msg tea.Msg) tea.Cmd {
 			s.elapsed = time.Since(s.started)
 			return tick()
 		}
+		if !s.backAt.IsZero() {
+			if time.Now().Before(s.backAt) {
+				return tick()
+			}
+			s.backAt = time.Time{}
+			text := actionTitles[s.opts.Action][1]
+			return func() tea.Msg { return autoBackMsg{text} }
+		}
 	case spinner.TickMsg:
 		if s.running {
 			var cmd tea.Cmd
@@ -475,6 +501,7 @@ func (s *deployScreen) update(msg tea.Msg) tea.Cmd {
 		s.handle(m.ev)
 		return s.wait()
 	case tea.KeyMsg:
+		s.backAt = time.Time{} // any key stays on the result
 		switch m.String() {
 		case "r":
 			if !s.running && s.plan != nil {
@@ -521,6 +548,9 @@ func (s *deployScreen) handle(ev deploy.Event) {
 		s.result = ev.Result
 		s.elapsed = time.Since(s.started)
 		s.finishActive(done)
+		if s.fromManage && autoBackActions[s.opts.Action] && (s.result == nil || len(s.result.Problems) == 0) && s.fails == 0 {
+			s.backAt = time.Now().Add(autoBackDelay)
+		}
 		return
 	case ev.Moved:
 		// The data now lives on the new server: from here on it is the
@@ -651,6 +681,10 @@ func (s *deployScreen) view(w, h int) string {
 	var result string
 	if s.finished || s.err != nil {
 		result = s.resultView(w)
+	}
+	if !s.backAt.IsZero() {
+		left := max(1, int(time.Until(s.backAt).Round(time.Second)/time.Second))
+		result += "\n" + sMuted.Render(fmt.Sprintf("↩ back to Manage in %ds · any key stays here", left))
 	}
 
 	gaps := 1 // blank lines between the sections below

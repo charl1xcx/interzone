@@ -272,7 +272,7 @@ func (a *App) sideClick(id string) tea.Cmd {
 		switch arg {
 		case "setup":
 			if a.section() != sideSetup {
-				return a.jump(a.index("Network"))
+				return a.jump(a.index("Server"))
 			}
 		case "manage":
 			return a.sideClick("side:manage:Manage")

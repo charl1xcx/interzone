@@ -25,14 +25,26 @@ func listClick(id string, cursor *int, n int, update func(tea.Msg) tea.Cmd) (tea
 	return update(enterKey), true
 }
 
+// confirmClick is listClick for a list whose enter asks to confirm: a click
+// asks, a second click on the same row confirms, a click on another row
+// cancels and selects it.
+func confirmClick(id string, cursor *int, confirm *bool, n int, update func(tea.Msg) tea.Cmd) (tea.Cmd, bool) {
+	_, again, ok := rowClick(id, "row:", cursor, n)
+	switch {
+	case !ok:
+		return nil, false
+	case *confirm && !again:
+		*confirm = false
+		return nil, true
+	}
+	return update(enterKey), true
+}
+
 // The forms each screen shows.
 
-func (s *networkScreen) activeForm() *form  { return s.form }
-func (s *serverScreen) activeForm() *form   { return s.form }
-func (s *sslScreen) activeForm() *form      { return s.form }
-func (s *settingsScreen) activeForm() *form { return s.form }
-func (s *backupsScreen) activeForm() *form  { return s.form }
-func (s *serversScreen) activeForm() *form  { return s.form }
+func (s *serverScreen) activeForm() *form  { return s.form }
+func (s *backupsScreen) activeForm() *form { return s.form }
+func (s *serversScreen) activeForm() *form { return s.form }
 
 func (s *migrateScreen) activeForm() *form {
 	if s.confirm {
@@ -70,6 +82,9 @@ func (s *homeserverScreen) click(id string) (tea.Cmd, bool) {
 }
 
 func (s *componentsScreen) click(id string) (tea.Cmd, bool) {
+	if s.details {
+		return nil, false // the settings form takes it
+	}
 	items := s.items()
 	toggle := func(i int) {
 		if it := items[i]; s.available(it) {
@@ -123,17 +138,11 @@ func (s *manageScreen) click(id string) (tea.Cmd, bool) {
 }
 
 func (s *historyScreen) click(id string) (tea.Cmd, bool) {
-	if s.confirm {
-		return nil, false
-	}
-	return listClick(id, &s.cursor, len(s.list), s.update)
+	return confirmClick(id, &s.cursor, &s.confirm, len(s.list), s.update)
 }
 
 func (s *restoreScreen) click(id string) (tea.Cmd, bool) {
-	if s.confirm {
-		return nil, false
-	}
-	return listClick(id, &s.cursor, len(s.list), s.update)
+	return confirmClick(id, &s.cursor, &s.confirm, len(s.list), s.update)
 }
 
 func (s *usersScreen) click(id string) (tea.Cmd, bool) {

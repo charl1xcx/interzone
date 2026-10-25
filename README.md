@@ -64,7 +64,7 @@ Need help, found a bug, or just like the project? Join the Matrix space
   | OS packages | `https://infamous.g0th.ir` (blackout mode) | The server's APT, dnf or pacman sources are pointed at the mirror before install (with backups), for each repository the mirror actually carries |
   | PyPI | `https://infamous.g0th.ir/pypi/simple` (blackout mode) | Installs Ansible into a private venv if it's missing |
 
-  `ctrl+t` on the Network screen tests every source. Mirrors are checked
+  `ctrl+t` on the Server screen tests every source. Mirrors are checked
   for content, not just reachability: OS mirrors must have security or
   update indexes less than two weeks old (a month for AlmaLinux, Rocky and
   CentOS Stream), Docker mirrors their repository indexes, and PyPI
@@ -162,7 +162,7 @@ Need help, found a bug, or just like the project? Join the Matrix space
     streams `/matrix` to the new one through this computer, then installs
     there (following the playbook's migration guide).
   - **Several servers:** each has its own answers and playbook copy;
-    switch on the Servers screen (`s` on Welcome) or with
+    switch on the Servers screen (in the menu, or `s` on Welcome) or with
     `interzone servers use NAME`.
   - **Self-update** from the newest release, checked against its
     `SHA256SUMS`.
@@ -187,11 +187,16 @@ install itself from a PyPI mirror).
 ## Use
 
 ```sh
-./interzone           # start the wizard (or the Manage menu, once installed)
+./interzone           # start the wizard (or Manage, once installed; esc there leads to Welcome)
 ./interzone --reset   # forget saved answers
 ./interzone -no-mouse # leave the mouse to the terminal
 ./interzone -layout compact # phone layout, whatever the size (or wide, or auto)
 ```
+
+The wizard has four steps before the deploy: **Server** (where it runs,
+where downloads come from, HTTPS certificates, networking), **Homeserver**,
+**Components** (pick them, then fill in what they need on the second page)
+and **Review**.
 
 The menu on the left shows where you are: the setup steps, the Manage
 screens (with the action running, if any) and your servers. The section
@@ -219,9 +224,16 @@ bottom of the menu cycles auto, compact and wide and remembers the choice;
 Everything also works with the mouse: click a menu entry, a field, an option,
 a checkbox or a key in the bar at the bottom. A click or tap anywhere on a
 list row opens it; Manage actions that change the server right away (update,
-restart, check, back up …) ask for a second click first. The wheel scrolls. While interzone has the
-mouse, hold `shift` to select text in most terminals, or start it with
+restart, check, back up …) ask for a second click first. The wheel scrolls.
+While interzone has the mouse, hold `shift` to select text in most terminals, or start it with
 `-no-mouse`.
+
+Anything that asks before acting (rolling back, restoring, deactivating a
+user) is confirmed by pressing the same key, or clicking the same row,
+again; moving away cancels. After a quick action from Manage (update,
+check, restart, image check, scheduled backups) succeeds, interzone returns
+to Manage by itself a few seconds later; press any key to stay on the
+result.
 
 On the Review screen, `enter` deploys and `s` only writes the files and prints
 the `ansible-playbook` command to run later.
