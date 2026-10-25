@@ -53,14 +53,14 @@ func cursorKey(k string, cur, n int) int {
 }
 
 // listRows renders a scrolled list with the cursor row highlighted.
-func listRows(rows []string, cur, h int) string {
+func listRows(rows []string, cur, h, w int) string {
 	start := max(0, min(cur-h/2, len(rows)-h))
 	var out []string
 	for i := start; i < len(rows) && i < start+h; i++ {
 		if i == cur {
-			out = append(out, mark("row:"+strconv.Itoa(i), sAccent.Render("▌")+"  "+rows[i]))
+			out = append(out, markRow("row:"+strconv.Itoa(i), sAccent.Render("▌")+"  "+rows[i], w))
 		} else {
-			out = append(out, mark("row:"+strconv.Itoa(i), "   "+rows[i]))
+			out = append(out, markRow("row:"+strconv.Itoa(i), "   "+rows[i], w))
 		}
 	}
 	return strings.Join(out, "\n")
@@ -283,7 +283,7 @@ func (s *historyScreen) view(w, h int) string {
 		}
 		rows = append(rows, line)
 	}
-	out := listRows(rows, s.cursor, h-10)
+	out := listRows(rows, s.cursor, h-10, w)
 	if s.confirm {
 		d := s.list[s.cursor]
 		out += "\n\n" + confirmView(w,
@@ -365,7 +365,7 @@ func (s *restoreScreen) view(w, h int) string {
 		rows = append(rows, sTitle.Render(b.Time.Local().Format("2006-01-02 15:04"))+"  "+
 			lipgloss.NewStyle().Width(10).Render(sMuted.Render(deploy.HumanSize(b.Size)))+sFaint.Render(filepath.Base(b.Path)))
 	}
-	out := sMuted.Render(deploy.BackupDir()) + "\n\n" + listRows(rows, s.cursor, h-12)
+	out := sMuted.Render(deploy.BackupDir()) + "\n\n" + listRows(rows, s.cursor, h-12, w)
 	if s.confirm {
 		b := s.list[s.cursor]
 		out += "\n\n" + confirmView(w,
@@ -758,7 +758,7 @@ func (s *usersScreen) view(w, h int) string {
 			lipgloss.NewStyle().Width(22).Render(sFaint.Render(seen))+badge)
 	}
 	head := sMuted.Render(fmt.Sprintf("%d accounts", len(s.users)))
-	return head + "\n\n" + listRows(rows, s.cursor, max(3, h-lipgloss.Height(foot)-4)) + "\n\n" + foot
+	return head + "\n\n" + listRows(rows, s.cursor, max(3, h-lipgloss.Height(foot)-4), w) + "\n\n" + foot
 }
 
 func errString(err error) string {
@@ -1081,7 +1081,7 @@ func (s *serversScreen) view(w, h int) string {
 		}
 		rows = append(rows, line)
 	}
-	out := listRows(rows, s.cursor, h-8) + "\n\n" +
+	out := listRows(rows, s.cursor, h-8, w) + "\n\n" +
 		sFaint.Render("Each server has its own answers and playbook copy. Commands use the active one;\nINTERZONE_SERVER=name picks another for a single run.")
 	if s.confirm {
 		out += "\n\n" + confirmView(w, sWarn.Render("Forget "+s.list[s.cursor].Name+"?"),

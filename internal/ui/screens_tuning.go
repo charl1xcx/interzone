@@ -506,6 +506,10 @@ func (s *tuningScreen) view(w, h int) string {
 	detail := s.detailView(w)
 	listH := max(3, h-lipgloss.Height(detail)-5)
 	nameW := min(54, w/2)
+	narrow := w < 70 // no value column; the panel below shows it
+	if narrow {
+		nameW = w - 4
+	}
 	start := max(0, min(s.cursor-listH/2, len(items)-listH))
 	var rows []string
 	for i := start; i < len(items) && i < start+listH; i++ {
@@ -527,7 +531,11 @@ func (s *tuningScreen) view(w, h int) string {
 			valStyle = sSub
 		}
 		name := lipgloss.NewStyle().Width(nameW).Render(nameStyle.Render(truncate(v.Name, nameW-2)))
-		rows = append(rows, mark("tvar:"+strconv.Itoa(i), bar+dot+" "+name+valStyle.Render(truncate(first, max(8, w-nameW-6)))))
+		if narrow {
+			rows = append(rows, markRow("tvar:"+strconv.Itoa(i), bar+dot+" "+nameStyle.Render(truncateMid(v.Name, nameW-1)), w))
+			continue
+		}
+		rows = append(rows, markRow("tvar:"+strconv.Itoa(i), bar+dot+" "+name+valStyle.Render(truncate(first, max(8, w-nameW-6))), w))
 	}
 	if len(items) == 0 {
 		rows = append(rows, sMuted.Render("   nothing matches"))
@@ -558,6 +566,10 @@ func (s *tuningScreen) rolesView(w, h int) string {
 		foot = "\n\n" + sFaint.Render("Roles from requirements.yml (Traefik, Postgres, ntfy, Jitsi …) appear after the first install installs them.")
 	}
 	nameW, labelW := min(40, w/3), min(36, w/3)
+	narrow := w < 70 // name and counts only
+	if narrow {
+		nameW, labelW = w-18, 0
+	}
 	var lines []string
 	for i, row := range rows {
 		r := s.roles[row.idx]
@@ -580,8 +592,17 @@ func (s *tuningScreen) rolesView(w, h int) string {
 		if r.inUse {
 			info += sGood.Render("  in use")
 		}
-		lines = append(lines, mark("trole:"+strconv.Itoa(i), truncateANSI(bar+dot+" "+lipgloss.NewStyle().Width(nameW).Render(nameStyle.Render(truncate(r.Name, nameW-2)))+
-			lipgloss.NewStyle().Width(labelW).Render(sSub.Render(truncate(r.label, labelW-2)))+info, w)))
+		if narrow {
+			info = sFaint.Render(fmt.Sprint(len(r.Vars)))
+			if s.query() != "" && row.matching > 0 {
+				info = sFaint.Render(fmt.Sprint(row.matching))
+			}
+			if row.change > 0 {
+				info += sPink.Render(fmt.Sprintf(" %d±", row.change))
+			}
+		}
+		lines = append(lines, markRow("trole:"+strconv.Itoa(i), truncateANSI(bar+dot+" "+lipgloss.NewStyle().Width(nameW).Render(nameStyle.Render(truncate(r.Name, nameW-2)))+
+			labelCol(r.label, labelW)+info, w), w))
 	}
 	if len(rows) == 0 {
 		lines = append(lines, sMuted.Render("   nothing matches"))
@@ -589,6 +610,14 @@ func (s *tuningScreen) rolesView(w, h int) string {
 	listH := max(3, h-lipgloss.Height(foot)-4)
 	start := max(0, min(s.roleCursor-listH/2, len(lines)-listH))
 	return head + "\n" + mark("tfilter", filter) + "\n\n" + strings.Join(lines[start:min(len(lines), start+listH)], "\n") + foot
+}
+
+// labelCol is a role's label in a column w wide, or nothing when w is 0.
+func labelCol(label string, w int) string {
+	if w == 0 {
+		return ""
+	}
+	return lipgloss.NewStyle().Width(w).Render(sSub.Render(truncate(label, w-2)))
 }
 
 func (s *tuningScreen) detailView(w int) string {

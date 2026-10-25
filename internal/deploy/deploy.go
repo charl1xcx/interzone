@@ -214,6 +214,9 @@ func Env(c *config.Config) []string {
 	if idx := c.Sources.PyPIIndex; idx != "" {
 		env = append(env, "PIP_INDEX_URL="+idx)
 	}
+	if reuse := sshReuse(); reuse != nil {
+		env = append(env, "ANSIBLE_SSH_ARGS=-C "+strings.Join(reuse, " "))
+	}
 	return env
 }
 

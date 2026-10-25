@@ -190,6 +190,7 @@ install itself from a PyPI mirror).
 ./interzone           # start the wizard (or the Manage menu, once installed)
 ./interzone --reset   # forget saved answers
 ./interzone -no-mouse # leave the mouse to the terminal
+./interzone -layout compact # phone layout, whatever the size (or wide, or auto)
 ```
 
 The menu on the left shows where you are: the setup steps, the Manage
@@ -198,6 +199,13 @@ you're in is open and the others are folded; `ctrl+b` folds the whole menu
 to a rail of icons, and terminals narrower than 100 columns always get the
 rail.
 
+On a phone (Termux, or any narrow or portrait terminal) interzone switches
+to a compact layout: no sidebar or borders, the menu opens from `≡ menu` in
+the top right (or `ctrl+b`), lists drop their side columns, and the key
+hints wrap onto a second line instead of being cut off. `◫ layout` at the
+bottom of the menu cycles auto, compact and wide and remembers the choice;
+`-layout` picks one for a single run.
+
 | Key | Action |
 |---|---|
 | `enter` / `↑↓` / `tab` | move through fields |
@@ -205,12 +213,13 @@ rail.
 | `ctrl+n` / `ctrl+p` | next / previous step |
 | `ctrl+r` | reveal secrets |
 | `ctrl+s` | save answers |
-| `ctrl+b` | fold or unfold the menu on the left |
+| `ctrl+b` | fold or unfold the menu on the left (compact layout: open the menu) |
 | `esc` | back |
 
 Everything also works with the mouse: click a menu entry, a field, an option,
-a checkbox or a key in the bar at the bottom. In lists, the first click selects
-a row and a second click opens it. The wheel scrolls. While interzone has the
+a checkbox or a key in the bar at the bottom. A click or tap anywhere on a
+list row opens it; Manage actions that change the server right away (update,
+restart, check, back up …) ask for a second click first. The wheel scrolls. While interzone has the
 mouse, hold `shift` to select text in most terminals, or start it with
 `-no-mouse`.
 

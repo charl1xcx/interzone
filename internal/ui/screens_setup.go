@@ -58,19 +58,25 @@ func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 }
 
 func (s *welcomeScreen) view(w, h int) string {
+	tw := min(w, 72) // text width
+	// wrap renders text tw wide with every line after indent.
+	wrap := func(st lipgloss.Style, indent, text string) string {
+		t := st.Width(max(10, tw-lipgloss.Width(indent))).Render(text)
+		return strings.ReplaceAll(t, "\n", "\n"+indent)
+	}
 	feature := func(icon, title, text string) string {
-		return sPink.Render(icon) + "  " + sTitle.Render(title) + "\n   " + sMuted.Render(text)
+		return sPink.Render(icon) + "  " + sTitle.Render(title) + "\n   " + wrap(sMuted, "   ", text)
+	}
+	brand := gradientLines(strings.TrimPrefix(logo, "\n"))
+	if lipgloss.Width(brand) > w {
+		brand = gradient("◢◤ interzone")
 	}
 	head := lipgloss.JoinVertical(lipgloss.Center,
-		gradientLines(strings.TrimPrefix(logo, "\n")),
+		brand,
 		"",
-		sSub.Render("Your own Matrix server, set up with matrix-docker-ansible-deploy,"),
-		sSub.Render("without editing a single YAML file."),
+		sSub.Width(tw).Align(lipgloss.Center).Render("Your own Matrix server, set up with matrix-docker-ansible-deploy, without editing a single YAML file."),
 	)
-	parts := []string{
-		head,
-		"",
-		"",
+	features := []string{
 		feature("◆", "Pick any homeserver", "Synapse, Continuwuity, Tuwunel, Conduit or Dendrite."),
 		"",
 		feature("◆", "Opt into anything", fmt.Sprintf("%d bridges, bots, clients and services from the playbook.", len(catalog.Components))),
@@ -79,27 +85,33 @@ func (s *welcomeScreen) view(w, h int) string {
 		"",
 		"",
 	}
+	var tail []string
 	switch {
 	case s.installed:
 		opt := func(i int, title, desc string) string {
 			id := "welcome:" + strconv.Itoa(i)
 			if i == s.choice {
-				return markLines(id, sAccent.Render("▌ ◉  ")+sTitle.Render(title)+"\n"+sAccent.Render("▌")+"    "+sMuted.Render(desc))
+				bar := sAccent.Render("▌") + "    "
+				return markRow(id, sAccent.Render("▌ ◉  ")+sTitle.Render(title)+"\n"+bar+wrap(sMuted, bar, desc), tw)
 			}
-			return markLines(id, "  "+sFaint.Render("○  ")+sMuted.Render(title)+"\n"+"     "+sFaint.Render(desc))
+			return markRow(id, "  "+sFaint.Render("○  ")+sMuted.Render(title)+"\n"+"     "+wrap(sFaint, "     ", desc), tw)
 		}
-		parts = append(parts,
-			sGood.Render("✓ This computer already set up ")+sTitle.Render(s.domain),
+		tail = append(tail,
+			wrap(lipgloss.NewStyle(), "", sGood.Render("✓ This computer already set up ")+sTitle.Render(s.domain)),
 			"", "",
 			opt(0, "Manage the server", "Update, check, users, backups, dashboard, rollback, logs…"),
 			"",
 			opt(1, "Change the setup", "Walk through the wizard again with your saved answers."))
 	case s.loaded:
-		parts = append(parts, sGood.Render("✓ Picked up your previous answers."), "", "", mark("key:enter", sAccent.Render("Press enter to begin ›")))
+		tail = append(tail, sGood.Render("✓ Picked up your previous answers."), "", "", mark("key:enter", sAccent.Render("Press enter to begin ›")))
 	default:
-		parts = append(parts, mark("key:enter", sAccent.Render("Press enter to begin ›")))
+		tail = append(tail, mark("key:enter", sAccent.Render("Press enter to begin ›")))
 	}
+	parts := append([]string{head, "", ""}, append(features, tail...)...)
 	block := lipgloss.JoinVertical(lipgloss.Left, parts...)
+	if lipgloss.Height(block) > h { // short or narrow: the choices matter more
+		block = lipgloss.JoinVertical(lipgloss.Left, append([]string{head, "", ""}, tail...)...)
+	}
 	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, block)
 }
 
@@ -387,7 +399,7 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 	for i, hs := range catalog.Homeservers {
 		tag := sMuted.Render("   " + hs.Tagline)
 		if i != s.sel && compact {
-			cards = append(cards, mark("hs:"+strconv.Itoa(i), "   "+sFaint.Render("○  ")+sMuted.Render(hs.Name)+tag))
+			cards = append(cards, markRow("hs:"+strconv.Itoa(i), "   "+sFaint.Render("○  ")+sMuted.Render(hs.Name)+tag, w))
 			continue
 		}
 		style, name := card, sFaint.Render("○  ")+sTitle.Render(hs.Name)

@@ -38,6 +38,7 @@ func main() {
 
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	reset := flag.Bool("reset", false, "forget saved answers and start fresh")
+	layout := flag.String("layout", "", "auto, compact (phones, narrow or portrait terminals) or wide; the default is the last one picked in the app, else auto")
 	noMouse := flag.Bool("no-mouse", false, "don't take the mouse, so the terminal can select text without shift")
 	flag.Usage = func() {
 		fmt.Fprintln(flag.CommandLine.Output(), cli.Usage+"\n\nOptions:")
@@ -64,7 +65,15 @@ func main() {
 	if !*noMouse {
 		opts = append(opts, tea.WithMouseCellMotion())
 	}
-	p := tea.NewProgram(ui.New(cfg, loaded), opts...)
+	app := ui.New(cfg, loaded)
+	if *layout != "" {
+		if *layout != "auto" && *layout != "compact" && *layout != "wide" {
+			fmt.Fprintf(os.Stderr, "interzone: -layout is auto, compact or wide, not %q\n", *layout)
+			os.Exit(2)
+		}
+		app.SetLayout(*layout)
+	}
+	p := tea.NewProgram(app, opts...)
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "interzone:", err)
 		os.Exit(1)

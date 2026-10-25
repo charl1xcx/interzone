@@ -44,12 +44,14 @@ type App struct {
 
 	deployBack int // where esc leads from the Deploy screen
 
-	sideCollapsed bool // the left menu is folded to its icon rail
+	sideCollapsed bool   // the left menu is folded to its icon rail
+	layout        string // auto, compact or wide (layout.go)
+	menuOpen      bool   // the compact layout shows the menu
 }
 
 func New(cfg *config.Config, loaded bool) *App {
 	zone.NewGlobal()
-	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed()}
+	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed(), layout: loadLayout()}
 	a.screens = []screen{
 		&welcomeScreen{loaded: loaded},
 		newNetworkScreen(),
@@ -136,6 +138,17 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, tea.Batch(cmd, func() tea.Msg { return startDeployMsg{m.opts} })
 	case tea.KeyMsg:
 		a.status = ""
+		if a.menuOpen {
+			switch m.String() {
+			case "esc", "ctrl+b", "q":
+				a.menuOpen = false
+				return a, nil
+			case "ctrl+c":
+				a.menuOpen = false
+			default:
+				return a, nil
+			}
+		}
 		ds, deploying := a.cur().(*deployScreen)
 		switch m.String() {
 		case "ctrl+c":
@@ -169,7 +182,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, a.back()
 			}
 		case "ctrl+b":
-			a.toggleSidebar()
+			if a.compact() {
+				a.menuOpen = true
+			} else {
+				a.toggleSidebar()
+			}
 			return a, nil
 		case "ctrl+s":
 			a.cur().leave(a.cfg)
@@ -210,6 +227,10 @@ func (a *App) View() string {
 		return ""
 	}
 	marked = marked[:0]
+	if a.compact() {
+		return a.compactView()
+	}
+	a.menuOpen = false
 	header := a.header(a.w)
 	footer := a.footer(a.w)
 	// With the menu open, it shows the steps; the stepper line is only

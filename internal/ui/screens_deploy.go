@@ -242,6 +242,12 @@ func (s *reviewScreen) checksView(w int) []string {
 			if g == "DNS" {
 				name = lipgloss.NewStyle().Width(dnsW).Render(sTitle.Render(truncate(f.Name, dnsW-2)))
 			}
+			if w < 60 { // the detail goes under the name
+				name = sTitle.Render(f.Name)
+				detail := style.Width(max(16, w-5)).Render(f.Detail)
+				rows = append(rows, "  "+icon+"  "+name+"\n     "+strings.ReplaceAll(detail, "\n", "\n     "))
+				continue
+			}
 			pad := 5 + lipgloss.Width(name)
 			detail := style.Width(max(16, w-pad)).Render(f.Detail)
 			if f.Level == deploy.Pass {
@@ -606,6 +612,10 @@ func (s *deployScreen) view(w, h int) string {
 	if h >= 30 {
 		sep = "\n\n" // room to spare: space the steps out
 	}
+	narrow := w < 72 // the stats go above the steps instead of beside them
+	if narrow {
+		sep = "\n"
+	}
 	stepsCol := lipgloss.NewStyle().Width(36).Render(strings.Join(steps, sep))
 
 	nDone := 0
@@ -615,6 +625,9 @@ func (s *deployScreen) view(w, h int) string {
 		}
 	}
 	s.bar.Width = max(10, w-40)
+	if narrow {
+		s.bar.Width = max(10, w-2)
+	}
 	stats := []string{
 		s.bar.ViewAs(float64(nDone) / float64(len(s.plan))),
 		"",
@@ -626,8 +639,14 @@ func (s *deployScreen) view(w, h int) string {
 	}
 	if s.task != "" && s.running {
 		stats = append(stats, "", sPink.Render("▸ ")+truncate(s.task, w-44))
+		if narrow {
+			stats[len(stats)-1] = sPink.Render("▸ ") + truncate(s.task, w-4)
+		}
 	}
 	top := lipgloss.JoinHorizontal(lipgloss.Top, stepsCol, "    ", strings.Join(stats, "\n"))
+	if narrow {
+		top = strings.Join(stats, "\n") + "\n\n" + stepsCol
+	}
 
 	var result string
 	if s.finished || s.err != nil {

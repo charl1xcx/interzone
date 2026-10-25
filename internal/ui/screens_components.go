@@ -190,7 +190,7 @@ func (s *componentsScreen) view(w, h int) string {
 	// one shows its full description), so scroll by whole items.
 	blocks := make([]string, len(items))
 	for i, it := range items {
-		blocks[i] = markLines("comp:"+strconv.Itoa(i), s.row(it, i, i == s.cursor, w))
+		blocks[i] = markRow("comp:"+strconv.Itoa(i), s.row(it, i, i == s.cursor, w), w)
 	}
 	used := func(from, to int) int {
 		n := 0
@@ -286,16 +286,25 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 		bar = sAccent.Render("▌") + "  "
 	}
 	line := bar + mark("compbox:"+strconv.Itoa(i), box) + "  " + style.Render(c.Name)
-	if len(tags) > 0 {
-		line += "    " + strings.Join(tags, sFaint.Render("  ·  "))
+	tagLine := strings.Join(tags, sFaint.Render("  ·  "))
+	if len(tags) > 0 && lipgloss.Width(line+"    "+tagLine) <= w {
+		line += "    " + tagLine
+		tagLine = ""
 	}
 	lines := []string{truncateANSI(line, w)}
 
 	pad := bar + "   "
 	textW := max(20, w-lipgloss.Width(pad)-1)
 	if !cur {
-		lines = append(lines, pad+sFaint.Render(truncate(c.Description, textW)))
+		desc := pad
+		if tagLine != "" { // too narrow to follow the name: they lead the next line
+			desc += tagLine + sFaint.Render("  ·  ")
+		}
+		lines = append(lines, desc+sFaint.Render(truncate(c.Description, w-lipgloss.Width(desc))))
 		return strings.Join(lines, "\n")
+	}
+	if tagLine != "" {
+		lines = append(lines, truncateANSI(pad+tagLine, w))
 	}
 	desc := sSub.Width(textW).Render(c.Description)
 	for _, l := range strings.Split(desc, "\n") {

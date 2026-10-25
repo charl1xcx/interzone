@@ -24,6 +24,7 @@ import (
 // sshArgs are the ssh options for a target.
 func sshArgs(t config.Target) []string {
 	args := []string{"-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=accept-new"}
+	args = append(args, sshReuse()...)
 	if t.Port != "" {
 		args = append(args, "-p", t.Port)
 	}
@@ -31,6 +32,18 @@ func sshArgs(t config.Target) []string {
 		args = append(args, "-i", expandHome(t.SSHKey))
 	}
 	return append(args, t.User+"@"+t.Host)
+}
+
+// sshReuse keeps one connection per server open for a while and shares it
+// between interzone's own ssh calls and Ansible's, so an action started
+// shortly after another skips the TCP and key exchange round trips.
+func sshReuse() []string {
+	dir := filepath.Join(os.TempDir(), fmt.Sprintf("interzone-ssh-%d", os.Getuid()))
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil
+	}
+	return []string{"-o", "ControlMaster=auto", "-o", "ControlPersist=10m", "-o", "ControlPath=" + filepath.Join(dir, "%C"),
+		"-o", "ServerAliveInterval=15", "-o", "ServerAliveCountMax=3"}
 }
 
 // targetCmd runs a shell script on a target as the login user.

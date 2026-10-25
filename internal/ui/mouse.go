@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	zone "github.com/lrstanley/bubblezone"
 
 	"interzone/internal/config"
@@ -19,6 +20,7 @@ import (
 //
 //   key:<name>       a key hint; clicking presses the key
 //   side:…           the menu on the left (sidebar.go)
+//   app:…            the compact layout's menu button, the layout switch
 //   anything else    handled by the screen's click method, or its form
 //
 // The wheel scrolls by sending ↑ and ↓ to the screen.
@@ -51,6 +53,19 @@ func mark(id, s string) string {
 func markLines(id, s string) string {
 	lines := strings.Split(s, "\n")
 	for i, l := range lines {
+		lines[i] = mark(id, l)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// markRow marks every line of a list row padded to w columns, so a tap
+// anywhere across the row hits it, not only on its text.
+func markRow(id, s string, w int) string {
+	lines := strings.Split(s, "\n")
+	for i, l := range lines {
+		if gap := w - lipgloss.Width(l); gap > 0 {
+			l += strings.Repeat(" ", gap)
+		}
 		lines[i] = mark(id, l)
 	}
 	return strings.Join(lines, "\n")
@@ -127,9 +142,9 @@ func keyLink(name string) string {
 	return mark("key:"+name, sKey.Render(name))
 }
 
-// rowClick handles a click on a list row id "<prefix><n>": the first click
-// selects the row, a click on the selected row activates it.
-func rowClick(id, prefix string, cursor *int, n int) (row int, activate, ok bool) {
+// rowClick handles a click on a list row id "<prefix><n>": it moves the
+// cursor to the row and reports whether the row was already selected.
+func rowClick(id, prefix string, cursor *int, n int) (row int, again, ok bool) {
 	rest, found := strings.CutPrefix(id, prefix)
 	if !found {
 		return 0, false, false
@@ -138,9 +153,9 @@ func rowClick(id, prefix string, cursor *int, n int) (row int, activate, ok bool
 	if err != nil || i < 0 || i >= n {
 		return 0, false, false
 	}
-	activate = *cursor == i
+	again = *cursor == i
 	*cursor = i
-	return i, activate, true
+	return i, again, true
 }
 
 func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
@@ -153,7 +168,7 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 	case m.Action != tea.MouseActionPress:
 		return a, nil
 	case m.Button == tea.MouseButtonWheelUp || m.Button == tea.MouseButtonWheelDown:
-		if onSide || a.cur().typing() && !a.wheelOK() {
+		if onSide || a.menuOpen || a.cur().typing() && !a.wheelOK() {
 			return a, nil
 		}
 		k := tea.KeyMsg{Type: tea.KeyDown}
@@ -165,6 +180,17 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 	for _, id := range ids {
+		switch id {
+		case "app:menu":
+			a.menuOpen = !a.menuOpen
+			return a, nil
+		case "app:layout":
+			a.cycleLayout()
+			return a, nil
+		}
+		if a.menuOpen && !strings.HasPrefix(id, "side:") && !strings.HasPrefix(id, "key:") {
+			continue // the screen under the menu isn't shown
+		}
 		if name, ok := strings.CutPrefix(id, "key:"); ok {
 			if k, ok := keyMsg(name); ok {
 				return a.Update(k)
@@ -208,6 +234,7 @@ func (a *App) busy() bool {
 }
 
 func (a *App) sideClick(id string) tea.Cmd {
+	a.menuOpen = false
 	if id == "side:fold" {
 		a.toggleSidebar()
 		return nil

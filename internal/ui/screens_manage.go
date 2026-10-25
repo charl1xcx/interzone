@@ -43,9 +43,15 @@ type manageAction struct {
 	disabled        string // why it can't be used, if it can't
 }
 
+// runsAtOnce are the Manage actions that start changing the server as
+// soon as they're chosen; a click on one needs a second click.
+var runsAtOnce = map[string]bool{"update": true, "check": true, "restart": true, "backup": true,
+	"registration": true, "images": true, "selfupdate": true}
+
 type manageScreen struct {
 	cfg    *config.Config
 	cursor int
+	armed  bool // a click selected a runsAtOnce action; the next click runs it
 	mode   manageMode
 
 	userForm *form
@@ -91,7 +97,7 @@ func (s *manageScreen) inSubview() bool { return s.mode != modeList }
 
 func (s *manageScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
-	s.mode = modeList
+	s.mode, s.armed = modeList, false
 	return nil
 }
 
@@ -190,6 +196,7 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 	if !ok {
 		return nil
 	}
+	s.armed = false
 	if k.String() == "esc" && s.mode != modeList {
 		s.mode = modeList
 		return nil
@@ -314,12 +321,14 @@ func (s *manageScreen) view(w, h int) string {
 		pad := bar + "   "
 		textW := max(20, min(w, maxFormWidth)-lipgloss.Width(pad))
 		var d string
-		if cur {
+		if cur && s.armed && a.disabled == "" {
+			d = sWarn.Render("click again to run")
+		} else if cur {
 			d = sSub.Width(textW).Render(desc)
 		} else {
 			d = sFaint.Render(truncate(desc, textW))
 		}
-		blocks = append(blocks, markLines("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad)))
+		blocks = append(blocks, markRow("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad), w))
 	}
 	out := strings.Join(blocks, "\n\n")
 	if lipgloss.Height(out) <= h {

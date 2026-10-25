@@ -123,3 +123,14 @@ func truncate(s string, w int) string {
 	}
 	return string(r[:w-1]) + "…"
 }
+
+// truncateMid shortens s to w runes by cutting its middle, so names that
+// share a long prefix stay apart.
+func truncateMid(s string, w int) string {
+	r := []rune(s)
+	if len(r) <= w || w < 5 {
+		return truncate(s, w)
+	}
+	head := (w - 1) / 2
+	return string(r[:head]) + "…" + string(r[len(r)-(w-1-head):])
+}

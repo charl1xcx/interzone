@@ -123,7 +123,20 @@ func (a *App) sidebar(h int) string {
 		return sPanel.Padding(0).Width(sidebarRailW - 2).Height(h).Render(strings.Join(lines, "\n"))
 	}
 
-	inner := sidebarW - 4
+	lines := a.menuLines(sidebarW - 4)
+	// The layout switch and the fold hint sit at the bottom.
+	body := strings.Join(lines, "\n")
+	if gap := h - lipgloss.Height(body) - 2; gap > 0 {
+		body += strings.Repeat("\n", gap)
+	}
+	body += "\n" + a.layoutLink() + "\n" + mark("side:fold", sFaint.Render("ctrl+b ‹ fold"))
+	return sPanel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
+}
+
+// menuLines are the menu's entries, inner columns wide: the sidebar's, and
+// the menu screen's in the compact layout.
+func (a *App) menuLines(inner int) []string {
+	sec := a.section()
 	item := func(on bool, dot, label string) string {
 		label = truncate(label, inner-4)
 		if on {
@@ -156,7 +169,7 @@ func (a *App) sidebar(h int) string {
 			default:
 				line = item(false, sFaint.Render("○"), s.name())
 			}
-			lines = append(lines, mark("side:step:"+strconv.Itoa(idx), line))
+			lines = append(lines, markRow("side:step:"+strconv.Itoa(idx), line, inner))
 		}
 	}
 	lines = append(lines, "")
@@ -177,7 +190,7 @@ func (a *App) sidebar(h int) string {
 			if m.screen == cur {
 				dot = sAccent.Render("◆")
 			}
-			lines = append(lines, mark("side:manage:"+m.screen, item(m.screen == cur, dot, m.label)))
+			lines = append(lines, markRow("side:manage:"+m.screen, item(m.screen == cur, dot, m.label), inner))
 			if m.screen == cur && a.cur().name() == "Deploy" {
 				lines = append(lines, "    "+sPink.Render("↳ ")+sSub.Render(truncate(a.deployLabel(), inner-6)))
 			}
@@ -203,17 +216,10 @@ func (a *App) sidebar(h int) string {
 			if p.Domain != "" && p.Name == config.DefaultProfile {
 				label = p.Domain
 			}
-			lines = append(lines, mark("side:server:"+p.Name, item(active && sec == sideServers, dot, label)))
+			lines = append(lines, markRow("side:server:"+p.Name, item(active && sec == sideServers, dot, label), inner))
 		}
 	}
-
-	// The fold hint sits at the bottom.
-	body := strings.Join(lines, "\n")
-	if gap := h - lipgloss.Height(body) - 1; gap > 0 {
-		body += strings.Repeat("\n", gap)
-	}
-	body += "\n" + mark("side:fold", sFaint.Render("ctrl+b ‹ fold"))
-	return sPanel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
+	return lines
 }
 
 // deployLabel names what the Deploy screen is running, for the sidebar.

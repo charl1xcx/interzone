@@ -360,7 +360,13 @@ func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 		if fl.on {
 			state = sGood.Render("on")
 		}
-		return bar + box + "  " + label + "  " + state + helpLine(fl, focused, bar, inner)
+		line := bar + box + "  " + label + "  " + state
+		if lipgloss.Width(line) > width { // the state goes under the label
+			indent := bar + "   "
+			label = lipgloss.NewStyle().Width(width - lipgloss.Width(indent)).Render(label)
+			line = bar + box + "  " + strings.ReplaceAll(label, "\n", "\n"+indent) + "\n" + indent + state
+		}
+		return line + helpLine(fl, focused, bar, inner)
 	case fChoice:
 		var parts []string
 		for i, c := range fl.choices {
@@ -375,12 +381,19 @@ func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 			parts = append(parts, mark(f.id+"c"+strconv.Itoa(idx)+"."+strconv.Itoa(i), opt))
 		}
 		body = strings.Join(parts, "  ")
+		if lipgloss.Width(body) > inner {
+			body = strings.Join(parts, "\n") // too narrow for a row: one per line
+		}
 	case fArea:
 		fl.area.SetWidth(max(20, inner))
 		body = fl.area.View()
 	default:
 		fl.input.Width = max(10, inner-3)
+		fl.input.SetCursor(fl.input.Position()) // scroll the value to the new width
 		v := fl.input.View()
+		if !focused && fl.kind == fText && fl.input.Value() != "" {
+			v = fl.input.TextStyle.Render(truncate(fl.input.Value(), fl.input.Width)) // from its start
+		}
 		if !focused && fl.input.Value() == "" && fl.required {
 			v = sBad.Render("required")
 		}
