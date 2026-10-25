@@ -1,5 +1,5 @@
 // Package cli implements interzone's non-interactive commands: apply,
-// check, bundle and unbundle. They print plain progress lines (coloured
+// check, bundle, unbundle and the maintenance commands in tools.go. They print plain progress lines (coloured
 // only on a terminal) and report failure through the exit code.
 package cli
 
@@ -45,6 +45,15 @@ const Usage = `Usage:
   interzone mirrors         test every known in-country mirror
   interzone bundle          pack the playbook, roles and Ansible for offline use
   interzone unbundle FILE   install an offline bundle on this machine
+  interzone changes         show what an update would bring
+  interzone images          check every container image can be pulled
+  interzone status          the server's load, disks, certificates, containers
+  interzone restore [FILE]  list backups, or restore the database from one
+  interzone rollback [N]    list earlier deploys, or go back to one
+  interzone servers         list servers; 'servers use NAME' switches
+  interzone self-update     install the newest interzone release
+
+INTERZONE_SERVER=NAME runs any command against another saved server.
 
 Run 'interzone COMMAND -h' for a command's options.`
 
@@ -76,6 +85,7 @@ func Apply(args []string) error {
 	skipChecks := fs.Bool("skip-checks", false, "don't check the server and DNS first")
 	force := fs.Bool("force", false, "deploy even if checks fail")
 	quiet := fs.Bool("quiet", false, "print task names and errors only, not every Ansible line")
+	latest := fs.Bool("latest", false, "release a playbook held back by a rollback and update it")
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "Usage: interzone apply [options]\n\nDeploys with saved answers. Secrets that are still missing are generated and saved back.\n\nOptions:")
 		fs.PrintDefaults()
@@ -87,6 +97,11 @@ func Apply(args []string) error {
 		return err
 	}
 	c.FillGenerated()
+	if *latest {
+		c.PinnedCommit = ""
+	} else if c.PinnedCommit != "" {
+		fmt.Println(warn.Render("! The playbook is held at " + c.PinnedCommit[:min(10, len(c.PinnedCommit))] + " since a rollback; pass --latest to update it."))
+	}
 	if err := c.SaveFile(path); err != nil {
 		return fmt.Errorf("saving generated secrets: %w", err)
 	}

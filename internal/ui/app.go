@@ -22,6 +22,13 @@ type screen interface {
 	typing() bool // printable keys go to an input
 }
 
+// toolScreen marks screens reached from Manage; esc returns there.
+type toolScreen interface{ tool() }
+
+// escHandler screens use esc themselves (to close an editor or a
+// confirmation) while handlesEsc reports true.
+type escHandler interface{ handlesEsc() bool }
+
 type navMsg int
 
 func nav(dir int) tea.Cmd { return func() tea.Msg { return navMsg(dir) } }
@@ -35,6 +42,8 @@ type App struct {
 	status  string
 
 	deployBack int // where esc leads from the Deploy screen
+	// tuningFromManage: Tuning was opened from Manage, so esc returns there.
+	tuningFromManage bool
 }
 
 func New(cfg *config.Config, loaded bool) *App {
@@ -47,9 +56,19 @@ func New(cfg *config.Config, loaded bool) *App {
 		newSSLScreen(),
 		newComponentsScreen(),
 		&settingsScreen{},
+		newTuningScreen(),
 		newReviewScreen(),
 		newDeployScreen(),
 		newManageScreen(), // not a wizard step: reached from Welcome
+		// Reached from Manage:
+		newUpdatesScreen(),
+		newHistoryScreen(),
+		newRestoreScreen(),
+		newBackupsScreen(),
+		newUsersScreen(),
+		newDashboardScreen(),
+		newServersScreen(),
+		newMigrateScreen(),
 	}
 	a.deployBack = a.index("Review")
 	return a
@@ -82,6 +101,9 @@ func (a *App) jump(n int) tea.Cmd {
 	if a.screens[n].name() == "Deploy" {
 		a.deployBack = a.step
 	}
+	if a.screens[n].name() == "Tuning" {
+		a.tuningFromManage = a.cur().name() == "Manage"
+	}
 	a.cur().leave(a.cfg)
 	if err := a.cfg.Save(); err != nil {
 		a.status = "couldn't save config: " + err.Error()
@@ -97,10 +119,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case navMsg:
 		return a, a.go_(int(m))
 	case formDoneMsg:
-		if ms, ok := a.cur().(*manageScreen); ok {
-			return a, ms.update(m)
+		if _, ok := a.cur().(*manageScreen); ok {
+			return a, a.cur().update(m)
+		}
+		if _, ok := a.cur().(toolScreen); ok {
+			return a, a.cur().update(m)
 		}
 		return a, a.go_(1)
+	case switchServerMsg:
+		return a, a.switchServer(m)
 	case gotoMsg:
 		return a, a.jump(a.index(string(m)))
 	case runActionMsg:
@@ -126,6 +153,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				break
 			}
 			if ms, ok := a.cur().(*manageScreen); ok && ms.inSubview() {
+				break
+			}
+			if eh, ok := a.cur().(escHandler); ok && eh.handlesEsc() {
 				break
 			}
 			return a, a.back()
@@ -164,6 +194,12 @@ func (a *App) back() tea.Cmd {
 		return a.jump(a.deployBack)
 	case "Manage":
 		return a.jump(0)
+	}
+	if _, ok := a.cur().(toolScreen); ok {
+		return a.jump(a.index("Manage"))
+	}
+	if a.cur().name() == "Tuning" && a.tuningFromManage {
+		return a.jump(a.index("Manage"))
 	}
 	return a.go_(-1)
 }
@@ -210,8 +246,20 @@ func (a *App) header(w int) string {
 }
 
 func (a *App) stepper(w int) string {
-	if a.cur().name() == "Manage" || (a.cur().name() == "Deploy" && a.deployBack == a.index("Manage")) {
-		return " " + sAccent.Render("◆ Manage") + sMuted.Render("  "+a.cfg.Domain)
+	server := ""
+	if p := config.Active(); p != config.DefaultProfile {
+		server = sFaint.Render("  ·  server " + p)
+	}
+	domain := a.cfg.Domain
+	if domain == "" {
+		domain = "(no domain yet)"
+	}
+	if _, ok := a.cur().(toolScreen); ok {
+		return " " + sAccent.Render("◆ Manage") + sMuted.Render("  "+domain) + sFaint.Render("  ›  ") + sTitle.Render(a.cur().name()) + server
+	}
+	_, fromTool := a.screens[a.deployBack].(toolScreen)
+	if a.cur().name() == "Manage" || (a.cur().name() == "Deploy" && (a.deployBack == a.index("Manage") || fromTool)) {
+		return " " + sAccent.Render("◆ Manage") + sMuted.Render("  "+domain) + server
 	}
 	var parts, dots []string
 	for i, s := range a.wizard() {
@@ -263,4 +311,35 @@ func truncateANSI(s string, w int) string {
 		return s
 	}
 	return lipgloss.NewStyle().MaxWidth(w).Render(s)
+}
+
+// switchServerMsg makes another saved server the active one. With fresh
+// set, it is a new server and the wizard starts.
+type switchServerMsg struct {
+	name  string
+	cfg   *config.Config
+	fresh bool
+}
+
+func (a *App) switchServer(m switchServerMsg) tea.Cmd {
+	a.cur().leave(a.cfg)
+	if err := a.cfg.Save(); err != nil {
+		a.status = sBad.Render("couldn't save config: " + err.Error())
+		return nil
+	}
+	if err := config.SetActive(m.name); err != nil {
+		a.status = sBad.Render("couldn't switch: " + err.Error())
+		return nil
+	}
+	*a.cfg = *m.cfg // every screen holds this pointer
+	if err := a.cfg.Save(); err != nil {
+		a.status = sBad.Render("couldn't save config: " + err.Error())
+	}
+	a.status = sGood.Render("✓ now working on " + m.name)
+	target := 0
+	if m.fresh {
+		target = a.index("Network")
+	}
+	a.step = target
+	return a.cur().enter(a.cfg)
 }

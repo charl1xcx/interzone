@@ -353,13 +353,20 @@ func newDeployScreen() *deployScreen {
 }
 
 var actionTitles = map[deploy.Action][3]string{ // running, done, failed
-	deploy.ActionInstall:   {"Deploying…", "Your Matrix server is live ✨", "Deployment stopped"},
-	deploy.ActionSaveOnly:  {"Writing configuration…", "Configuration saved", "Couldn't write the configuration"},
-	deploy.ActionSelfCheck: {"Checking services…", "Self-check finished", "Self-check couldn't run"},
-	deploy.ActionRestart:   {"Restarting services…", "Services restarted", "Restart failed"},
-	deploy.ActionRegister:  {"Registering the user…", "User registered", "Couldn't register the user"},
-	deploy.ActionBackup:    {"Backing up…", "Backup saved", "Backup failed"},
-	deploy.ActionLogs:      {"Fetching logs…", "Logs", "Couldn't fetch logs"},
+	deploy.ActionInstall:      {"Deploying…", "Your Matrix server is live ✨", "Deployment stopped"},
+	deploy.ActionSaveOnly:     {"Writing configuration…", "Configuration saved", "Couldn't write the configuration"},
+	deploy.ActionSelfCheck:    {"Checking services…", "Self-check finished", "Self-check couldn't run"},
+	deploy.ActionRestart:      {"Restarting services…", "Services restarted", "Restart failed"},
+	deploy.ActionRegister:     {"Registering the user…", "User registered", "Couldn't register the user"},
+	deploy.ActionBackup:       {"Backing up…", "Backup saved", "Backup failed"},
+	deploy.ActionLogs:         {"Fetching logs…", "Logs", "Couldn't fetch logs"},
+	deploy.ActionImages:       {"Checking container images…", "Image check finished", "Couldn't check the images"},
+	deploy.ActionRollback:     {"Rolling back…", "Rolled back", "Rollback stopped"},
+	deploy.ActionSelfUpdate:   {"Updating interzone…", "interzone updated", "Couldn't update interzone"},
+	deploy.ActionRestore:      {"Restoring the database…", "Database restored", "Restore stopped"},
+	deploy.ActionSchedule:     {"Setting up scheduled backups…", "Scheduled backups set", "Couldn't set up scheduled backups"},
+	deploy.ActionFetchBackups: {"Downloading backups…", "Backups downloaded", "Couldn't download the backups"},
+	deploy.ActionMigrate:      {"Moving the server…", "Moved to the new server ✨", "The move stopped"},
 }
 
 func (s *deployScreen) name() string { return "Deploy" }
@@ -508,6 +515,13 @@ func (s *deployScreen) handle(ev deploy.Event) {
 		s.result = ev.Result
 		s.elapsed = time.Since(s.started)
 		s.finishActive(done)
+		return
+	case ev.Moved:
+		// The data now lives on the new server: from here on it is the
+		// server, even if a later step fails.
+		s.cfg.Target = s.opts.NewTarget
+		_ = s.cfg.Save()
+		s.appendLog(sGood.Render("✓ /matrix is on the new server; it is now the saved target"))
 		return
 	case ev.Started:
 		s.finishActive(done)
@@ -685,7 +699,33 @@ func (s *deployScreen) resultView(w int) string {
 	case deploy.ActionBackup:
 		return panel(cMint,
 			sGood.Render("✓ Database dump saved to ")+sTitle.Render(res.File),
-			sMuted.Render("Restore it with the playbook's import-postgres tag (docs/importing-postgres.md)."))
+			sMuted.Render("Restore it from Manage › Restore a backup."))
+	case deploy.ActionImages:
+		if len(res.MissingImages) == 0 {
+			return panel(cMint, sGood.Render(fmt.Sprintf("✓ All %d images can be pulled.", len(res.Images))))
+		}
+		return panel(cAmber, imageSummary(res, w)...)
+	case deploy.ActionSelfUpdate:
+		if res.File == "" {
+			return panel(cMint, sGood.Render("✓ interzone "+res.Version+" is the newest release."))
+		}
+		return panel(cMint, sGood.Render("✓ Installed interzone ")+sTitle.Render(res.Version)+sGood.Render(" to ")+sTitle.Render(res.File),
+			sMuted.Render("Quit (q) and start interzone again to use it."))
+	case deploy.ActionRestore:
+		return panel(cMint, sGood.Render("✓ The database of "+c.Domain+" was restored from ")+sTitle.Render(filepath.Base(s.opts.Backup)),
+			sMuted.Render("The database as it was just before is in "+deploy.BackupDir()+"; every service was started again."))
+	case deploy.ActionSchedule:
+		if !c.Backups.Enabled {
+			return panel(cMint, sGood.Render("✓ Scheduled backups are off."),
+				sMuted.Render("Dumps already on the server stay in "+deploy.ServerBackupDir+"."))
+		}
+		return panel(cMint, sGood.Render("✓ The server backs up its database ")+sTitle.Render(c.Backups.When)+
+			sGood.Render(fmt.Sprintf(", keeping %d.", c.Backups.Keep)),
+			sMuted.Render("Dumps go to "+deploy.ServerBackupDir+"; download them from Manage › Restore with d."))
+	case deploy.ActionFetchBackups:
+		n := len(deploy.ListBackups(c.Domain))
+		return panel(cMint, sGood.Render("✓ The server's backups are in ")+sTitle.Render(res.File),
+			sMuted.Render(fmt.Sprintf("%d backup(s) of %s on this computer now.", n, c.Domain)))
 	case deploy.ActionLogs:
 		return ""
 	}
@@ -695,6 +735,16 @@ func (s *deployScreen) resultView(w int) string {
 		scheme = "http://"
 	}
 	lines := []string{sGood.Render("✓ Done in " + s.elapsed.Round(time.Second).String())}
+	switch s.opts.Action {
+	case deploy.ActionRollback:
+		if pin := c.PinnedCommit; pin != "" {
+			lines = append(lines, sWarn.Render("The playbook is held at "+pin[:min(10, len(pin))]+"; Manage › Update the server releases it."))
+		}
+	case deploy.ActionMigrate:
+		lines = append(lines,
+			sWarn.Render("Point these DNS records at the new server now: ")+sTitle.Render(strings.Join(c.DNSRecords(), ", ")),
+			sMuted.Render("The old server's Matrix services are stopped and disabled; its /matrix stays until you delete it."))
+	}
 	lines = append(lines, sMuted.Render("Homeserver  ")+sTitle.Render(scheme+"matrix."+c.Domain))
 	if c.Components["element"] {
 		lines = append(lines, sMuted.Render("Element     ")+sTitle.Render(scheme+"element."+c.Domain))
@@ -714,11 +764,15 @@ func (s *deployScreen) resultView(w int) string {
 	if c.SSL.Mode == "selfsigned" {
 		lines = append(lines, sWarn.Render("Self-signed certificate: import "+filepath.Join(config.Dir(), "ssl", c.Domain, "cert.pem")+" on your devices."))
 	}
+	if len(res.MissingImages) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, imageSummary(res, w)...)
+	}
 	if len(res.Passed) > 0 || len(res.Problems) > 0 {
 		lines = append(lines, "", checkSummary(res))
 	}
 	color := lipgloss.TerminalColor(cMint)
-	if len(res.Problems) > 0 {
+	if len(res.Problems) > 0 || len(res.MissingImages) > 0 {
 		color = cAmber
 	}
 	return panel(color, lines...)
@@ -739,4 +793,17 @@ func checkSummary(res *deploy.Result) string {
 		lines = append(lines, sMuted.Render("Nothing to check for the enabled services."))
 	}
 	return strings.Join(lines, "\n")
+}
+
+// imageSummary lists the images the registries couldn't serve.
+func imageSummary(res *deploy.Result, w int) []string {
+	lines := []string{sWarn.Render(fmt.Sprintf("! %d of %d images can't be pulled:", len(res.MissingImages), len(res.MissingImages)+len(res.Images)))}
+	for i, m := range res.MissingImages {
+		if i == 8 {
+			lines = append(lines, sFaint.Render(fmt.Sprintf("  …and %d more (see the log)", len(res.MissingImages)-i)))
+			break
+		}
+		lines = append(lines, sMuted.Render("  "+truncate(m, w-8)))
+	}
+	return append(lines, sMuted.Render("Copy them into your registry mirror, or switch the container registry in the setup."))
 }

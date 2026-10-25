@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -62,6 +63,9 @@ type Config struct {
 
 	AdminUser     string
 	AdminPassword string
+	// AdminToken is the Synapse session interzone's user admin reuses, so
+	// it doesn't log in (and hit the login rate limit) for every change.
+	AdminToken string
 	// CloseRegistration turns off the open registration Conduit, Continuwuity
 	// and Tuwunel need for creating the first account.
 	CloseRegistration bool
@@ -69,8 +73,23 @@ type Config struct {
 	GenericSecret    string
 	PostgresPassword string
 
-	ExtraYAML   string
+	ExtraYAML string
+	// Overrides holds role variables changed on the Tuning screen, as raw
+	// YAML values keyed by variable name.
+	Overrides   map[string]string
 	PlaybookDir string
+
+	Backups BackupSchedule
+	// PinnedCommit holds the playbook at this commit after a rollback, until
+	// the next update.
+	PinnedCommit string
+}
+
+// BackupSchedule configures the database backups the server makes itself.
+type BackupSchedule struct {
+	Enabled bool
+	When    string // systemd OnCalendar, e.g. "daily" or "*-*-* 03:30"
+	Keep    int    // dumps kept on the server
 }
 
 func Dir() string {
@@ -80,16 +99,10 @@ func Dir() string {
 	return ".interzone"
 }
 
-// Path is where the wizard keeps its answers.
-func Path() string { return filepath.Join(Dir(), "config.json") }
+// Path is where the wizard keeps the active server's answers.
+func Path() string { return ProfilePath(Active()) }
 
 func Default() *Config {
-	data, _ := os.UserHomeDir()
-	if x := os.Getenv("XDG_DATA_HOME"); x != "" {
-		data = x
-	} else {
-		data = filepath.Join(data, ".local", "share")
-	}
 	c := &Config{
 		Homeserver: "synapse",
 		Target:     Target{Mode: "local", User: "root", Port: "22"},
@@ -103,11 +116,13 @@ func Default() *Config {
 		Federation:       true,
 		Components:       map[string]bool{},
 		Values:           map[string]string{},
+		Overrides:        map[string]string{},
+		Backups:          BackupSchedule{When: "daily", Keep: 7},
 		AdminUser:        "admin",
 		AdminPassword:    RandomPassword(20),
 		GenericSecret:    RandomPassword(64),
 		PostgresPassword: RandomPassword(48),
-		PlaybookDir:      filepath.Join(data, "interzone", "matrix-docker-ansible-deploy"),
+		PlaybookDir:      filepath.Join(DataDir(), "matrix-docker-ansible-deploy"),
 	}
 	for _, comp := range catalog.Components {
 		if comp.DefaultOn {
@@ -141,6 +156,9 @@ func LoadFile(file string) (*Config, error) {
 	}
 	if c.Values == nil {
 		c.Values = map[string]string{}
+	}
+	if c.Overrides == nil {
+		c.Overrides = map[string]string{}
 	}
 	return c, nil
 }
@@ -237,6 +255,11 @@ func (c *Config) Missing() []string {
 			}
 		}
 	}
+	for _, k := range sortedKeys(c.Overrides) {
+		if err := yaml.Unmarshal([]byte(c.Overrides[k]), new(any)); err != nil {
+			out = append(out, "Tuning: "+k+" isn't valid YAML ("+yamlError(err)+")")
+		}
+	}
 	if extra := strings.TrimSpace(c.ExtraYAML); extra != "" {
 		var m map[string]any
 		if err := yaml.Unmarshal([]byte(extra), &m); err != nil {
@@ -252,4 +275,13 @@ func yamlError(err error) string {
 		return "expected lines like key: value"
 	}
 	return strings.TrimPrefix(err.Error(), "yaml: ")
+}
+
+func sortedKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

@@ -37,6 +37,13 @@ const (
 	StepLogs
 	StepWheels
 	StepArchive
+	StepImages
+	StepSelfUpdate
+	StepRestore
+	StepSchedule
+	StepFetchBackups
+	StepStopOld
+	StepCopyData
 )
 
 var stepNames = map[Step]string{
@@ -53,6 +60,14 @@ var stepNames = map[Step]string{
 	StepLogs:      "Fetch logs",
 	StepWheels:    "Download Python packages",
 	StepArchive:   "Write the bundle",
+
+	StepImages:       "Check container images",
+	StepSelfUpdate:   "Update interzone",
+	StepRestore:      "Restore the database",
+	StepSchedule:     "Set up scheduled backups",
+	StepFetchBackups: "Download the server's backups",
+	StepStopOld:      "Stop the old server",
+	StepCopyData:     "Copy /matrix to the new server",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -69,6 +84,13 @@ const (
 	ActionBackup
 	ActionLogs
 	ActionBundle
+	ActionImages
+	ActionRollback
+	ActionSelfUpdate
+	ActionRestore
+	ActionSchedule
+	ActionFetchBackups
+	ActionMigrate
 )
 
 // Plan lists the steps an action runs, in order.
@@ -88,8 +110,22 @@ func Plan(a Action) []Step {
 		return []Step{StepAnsible, StepInventory, StepLogs}
 	case ActionBundle:
 		return []Step{StepAnsible, StepPlaybook, StepRoles, StepWheels, StepArchive}
+	case ActionImages:
+		return []Step{StepAnsible, StepInventory, StepImages}
+	case ActionRollback:
+		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepBackup, StepInstall, StepSelfCheck}
+	case ActionSelfUpdate:
+		return []Step{StepSelfUpdate}
+	case ActionRestore:
+		return []Step{StepAnsible, StepInventory, StepBackup, StepRestore}
+	case ActionSchedule:
+		return []Step{StepAnsible, StepInventory, StepSchedule}
+	case ActionFetchBackups:
+		return []Step{StepAnsible, StepInventory, StepFetchBackups}
+	case ActionMigrate:
+		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepStopOld, StepCopyData, StepMirrors, StepInstall, StepSelfCheck}
 	}
-	return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepMirrors, StepInstall, StepSelfCheck}
+	return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepImages, StepMirrors, StepInstall, StepSelfCheck}
 }
 
 type Event struct {
@@ -102,6 +138,7 @@ type Event struct {
 	Note    bool    // Line is interzone's own message, not command output
 	Task    string  // current Ansible task, when Line starts one
 	Failed  bool    // Line reports a failed task
+	Moved   bool    // migration: the data is on the new server, which is now the target
 	Err     error   // the whole run failed
 	Done    bool    // the whole run finished
 	Result  *Result // set with Done
@@ -112,6 +149,10 @@ type Result struct {
 	Passed   []string // self-check: services that answered
 	Problems []string // self-check: what failed
 	File     string   // backup or bundle written
+
+	Images        []string // image check: images the registries have
+	MissingImages []string // image check: "ref: why"
+	Version       string   // self-update: the version installed
 }
 
 type NewUser struct {
@@ -125,9 +166,14 @@ type Options struct {
 	User    NewUser // ActionRegister
 	Service string  // ActionLogs: systemd unit, e.g. matrix-synapse
 	Output  string  // ActionBundle: archive path
+	Backup  string  // ActionRestore: local dump file
+	// ActionMigrate: the server to move to. The run works on a copy of the
+	// config; the caller switches its own Target when the Moved event comes.
+	NewTarget config.Target
+	Force     bool // ActionSelfUpdate: reinstall even if up to date
 }
 
-func dataDir() string   { return filepath.Dir(config.Default().PlaybookDir) }
+func dataDir() string   { return config.DataDir() }
 func venvDir() string   { return filepath.Join(dataDir(), "venv") }
 func wheelsDir() string { return filepath.Join(dataDir(), "wheels") }
 
@@ -185,6 +231,10 @@ type Runner struct {
 // Start launches the run in the background. Events arrive on the returned
 // channel, which is closed when the run ends.
 func Start(ctx context.Context, cfg *config.Config, opts Options) <-chan Event {
+	if opts.Action == ActionMigrate {
+		cp := *cfg
+		cfg = &cp
+	}
 	r := &Runner{cfg: cfg, opts: opts, events: make(chan Event, 256)}
 	go func() {
 		defer close(r.events)
@@ -222,6 +272,14 @@ func (r *Runner) run(ctx context.Context) error {
 		StepLogs:      r.logs,
 		StepWheels:    r.wheels,
 		StepArchive:   r.archive,
+
+		StepImages:       r.images,
+		StepSelfUpdate:   r.selfUpdate,
+		StepRestore:      r.restore,
+		StepSchedule:     r.schedule,
+		StepFetchBackups: r.fetchBackups,
+		StepStopOld:      r.stopOld,
+		StepCopyData:     r.copyData,
 	}
 	plan := Plan(r.opts.Action)
 	r.emit(Event{Plan: plan})
@@ -272,6 +330,15 @@ func (r *Runner) playbook(ctx context.Context) error {
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
 		before := r.gitHead(dir)
 		err := r.exec(ctx, StepPlaybook, dir, "git", "remote", "set-url", "origin", r.cfg.Sources.PlaybookGit)
+		if pin := r.cfg.PinnedCommit; err == nil && pin != "" {
+			err = r.checkout(ctx, dir, pin)
+			r.playbookUpdated = before != r.gitHead(dir)
+			return err
+		}
+		if err == nil && r.detached(dir) {
+			// Back from a rollback: return to the branch.
+			err = r.exec(ctx, StepPlaybook, dir, "git", "checkout", defaultBranch(dir))
+		}
 		if err == nil {
 			err = r.exec(ctx, StepPlaybook, dir, "git", "pull", "--ff-only")
 		}
@@ -290,7 +357,13 @@ func (r *Runner) playbook(ctx context.Context) error {
 		return err
 	}
 	r.playbookUpdated = true
-	return r.exec(ctx, StepPlaybook, "", "git", "clone", "--depth", "1", r.cfg.Sources.PlaybookGit, dir)
+	if err := r.exec(ctx, StepPlaybook, "", "git", "clone", "--depth", "1", r.cfg.Sources.PlaybookGit, dir); err != nil {
+		return err
+	}
+	if pin := r.cfg.PinnedCommit; pin != "" {
+		return r.checkout(ctx, dir, pin)
+	}
+	return nil
 }
 
 func (r *Runner) inventory(ctx context.Context) error {
@@ -389,7 +462,13 @@ func (r *Runner) playbookRun(ctx context.Context, step Step, args ...string) err
 }
 
 func (r *Runner) install(ctx context.Context) error {
-	return r.playbookRun(ctx, StepInstall, "--tags=install-all,ensure-matrix-users-created,start")
+	if err := r.playbookRun(ctx, StepInstall, "--tags=install-all,ensure-matrix-users-created,start"); err != nil {
+		return err
+	}
+	if err := RecordDeploy(r.cfg, r.gitHead(r.cfg.PlaybookDir)); err != nil {
+		r.note(StepInstall, "! couldn't record this deploy for rollbacks: "+err.Error())
+	}
+	return nil
 }
 
 func (r *Runner) restart(ctx context.Context) error {
@@ -524,6 +603,10 @@ const backupPlay = `- name: Back up the Matrix Postgres database
 `
 
 func (r *Runner) backup(ctx context.Context) error {
+	if r.opts.Action != ActionBackup && r.cfg.Components["external-postgres"] {
+		r.skip(StepBackup, "you use an external Postgres server; back it up where it runs")
+		return nil
+	}
 	r.begin(StepBackup)
 	if err := os.MkdirAll(BackupDir(), 0o700); err != nil {
 		return err

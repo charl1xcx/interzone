@@ -33,9 +33,9 @@ func (s *welcomeScreen) leave(*config.Config) {}
 func (s *welcomeScreen) typing() bool         { return false }
 func (s *welcomeScreen) keys() [][2]string {
 	if s.installed {
-		return [][2]string{{"↑↓", "choose"}, {"enter", "continue"}}
+		return [][2]string{{"↑↓", "choose"}, {"enter", "continue"}, {"s", "servers"}}
 	}
-	return [][2]string{{"enter", "begin"}}
+	return [][2]string{{"enter", "begin"}, {"s", "servers"}}
 }
 func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 	k, ok := msg.(tea.KeyMsg)
@@ -50,6 +50,8 @@ func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 			return func() tea.Msg { return gotoMsg("Manage") }
 		}
 		return nav(1)
+	case "s":
+		return func() tea.Msg { return gotoMsg("Servers") }
 	}
 	return nil
 }
@@ -87,7 +89,7 @@ func (s *welcomeScreen) view(w, h int) string {
 		parts = append(parts,
 			sGood.Render("✓ This computer already set up ")+sTitle.Render(s.domain),
 			"", "",
-			opt(0, "Manage the server", "Update, check, restart, add users, back up, view logs."),
+			opt(0, "Manage the server", "Update, check, users, backups, dashboard, rollback, logs…"),
 			"",
 			opt(1, "Change the setup", "Walk through the wizard again with your saved answers."))
 	case s.loaded:

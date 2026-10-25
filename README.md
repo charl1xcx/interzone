@@ -91,16 +91,48 @@ every download can come from mirrors inside the country.
   it with the server's addresses.
 - **Checks after deploying.** The playbook's self-check runs at the end and
   lists which services answer and which don't.
+- **Checks images before installing.** The install asks the playbook which
+  container images the enabled services use and checks each one in its
+  registry (or your mirror) for the server's CPU, so a missing image is
+  reported up front instead of halfway through.
 - **Manage an existing server:** update, run the self-check, restart, add
   users (Synapse/Dendrite), close registration (Conduit, Continuwuity,
   Tuwunel), back up the Postgres database to this computer, and read any
-  service's logs.
+  service's logs. Also:
+  - **Update preview:** the new playbook commits and the component
+    versions they change, before installing anything.
+  - **Rollback:** every successful install records its playbook commit and
+    answers (the last 10). Rolling back backs up the database, checks
+    that commit out and reinstalls; the playbook stays held there until
+    the next update.
+  - **Restore** any database dump on this computer: services stop, the
+    current database is dumped first, then replaced.
+  - **Scheduled backups:** a systemd timer on the server dumps the database
+    by itself (`/matrix/interzone-backups`, keeping the newest N);
+    download them for Restore.
+  - **Users** (Synapse): list accounts, reset passwords, grant or remove
+    admin rights, deactivate and reactivate, through the admin API from
+    inside the Synapse container. Nothing needs to be exposed publicly.
+  - **Dashboard:** load, memory, disks, the backup timer, certificate expiry
+    for every hostname, and each container's state, CPU and memory.
+  - **Fine-tune:** every variable of the homeserver role's
+    `defaults/main.yml` (705 for Synapse), with its documentation, default
+    and your value. Changes are written into `vars.yml`. Also a wizard
+    step.
+  - **Move to another server:** stops and disables the old server,
+    streams `/matrix` to the new one through this computer, then installs
+    there (following the playbook's migration guide).
+  - **Several servers:** each has its own answers and playbook copy;
+    switch on the Servers screen (`s` on Welcome) or with
+    `interzone servers use NAME`.
+  - **Self-update** from the newest release, checked against its
+    `SHA256SUMS`.
 - **Fully offline installs** with `interzone bundle` (see below).
 - **Certificates that work offline:** Let's Encrypt, a generated self-signed
   wildcard certificate, your own certificate, or no HTTPS.
 - **Install locally or over SSH.**
 - **Remembers your answers** in `~/.config/interzone/config.json` (mode
-  `0600`). Re-run interzone to change anything.
+  `0600`; other servers in `servers/NAME.json`). Re-run interzone to change anything.
 
 ## Build
 
@@ -140,6 +172,15 @@ interzone apply --save-only    # only write the inventory
 interzone apply --config answers.json --force --quiet
 interzone check                # test mirrors, the server and DNS
 interzone mirrors              # test every known in-country mirror and what it carries
+interzone apply --latest       # update a playbook held back by a rollback
+interzone changes              # what an update would bring
+interzone images               # can every container image be pulled?
+interzone status               # load, disks, certificates, containers
+interzone restore              # list backups; 'restore FILE' restores one
+interzone rollback --list      # recorded deploys; 'rollback N' goes back to one
+interzone servers              # saved servers; 'servers use NAME', 'servers rm NAME'
+interzone self-update          # install the newest release
+INTERZONE_SERVER=work interzone apply   # any command, for another saved server
 ```
 
 `apply` exits non-zero if a check fails (unless `--force`), if the run
@@ -176,3 +217,6 @@ Files:
 - last deployment log: `~/.config/interzone/last-deploy.log`
 - self-signed certificates: `~/.config/interzone/ssl/<domain>/`
 - database backups: `~/.local/share/interzone/backups/`
+- deploy history for rollback: `~/.config/interzone/history/<server>/`
+- other servers: answers in `~/.config/interzone/servers/`, playbooks in
+  `~/.local/share/interzone/servers/<name>/`

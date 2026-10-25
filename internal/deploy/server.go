@@ -78,15 +78,7 @@ func probe(ctx context.Context, c *config.Config) (map[string]string, error) {
 	script := "IZ_PW=" + shellQuote(t.BecomePass) + "\n" + probeScript
 	var cmd *exec.Cmd
 	if t.Mode == "ssh" {
-		args := []string{"-o", "BatchMode=yes", "-o", "ConnectTimeout=10", "-o", "StrictHostKeyChecking=accept-new"}
-		if t.Port != "" {
-			args = append(args, "-p", t.Port)
-		}
-		if t.SSHKey != "" {
-			args = append(args, "-i", expandHome(t.SSHKey))
-		}
-		args = append(args, t.User+"@"+t.Host, "sh", "-s")
-		cmd = exec.CommandContext(ctx, "ssh", args...)
+		cmd = exec.CommandContext(ctx, "ssh", append(sshArgs(t), "sh", "-s")...)
 	} else {
 		cmd = exec.CommandContext(ctx, "sh", "-s")
 	}

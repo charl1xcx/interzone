@@ -122,18 +122,41 @@ func (s *manageScreen) actions() []manageAction {
 		}
 	}
 	acts = append(acts,
+		manageAction{id: "users", title: "Manage users",
+			desc: "List every account; reset passwords, grant or remove admin rights, deactivate or reactivate."},
+		manageAction{id: "dashboard", title: "Server dashboard",
+			desc: "Load, memory, disk space, certificate expiry and the state of every container."},
+		manageAction{id: "changes", title: "See what an update brings",
+			desc: "Fetch the playbook without installing and list the new commits and component versions."},
+		manageAction{id: "images", title: "Check container images",
+			desc: "Make sure every image the install needs can be pulled from your registry mirror, for the server's CPU."},
 		manageAction{id: "backup", title: "Back up the database",
 			desc: "Dump the bundled Postgres database and copy it to " + deploy.BackupDir() + "."},
+		manageAction{id: "schedule", title: "Scheduled backups",
+			desc: "Have the server dump its database on a timer by itself, keeping the newest few."},
+		manageAction{id: "restore", title: "Restore a backup",
+			desc: "Replace the database with one of the dumps in " + deploy.BackupDir() + "."},
+		manageAction{id: "rollback", title: "Roll back",
+			desc: "Go back to the playbook commit and answers of an earlier successful deploy."},
 		manageAction{id: "logs", title: "View logs",
 			desc: "Show the last 300 log lines of any Matrix service."},
+		manageAction{id: "tuning", title: "Fine-tune " + homeserverName(c.Homeserver),
+			desc: "Browse and change any of the homeserver role's default variables."},
 		manageAction{id: "setup", title: "Change the setup",
 			desc: "Go through the wizard again: components, mirrors, certificates. Saved answers are kept."},
+		manageAction{id: "migrate", title: "Move to another server",
+			desc: "Copy everything in /matrix to a new machine and install there; the old one is stopped."},
+		manageAction{id: "servers", title: "Other servers",
+			desc: "Switch between the servers interzone manages, or add another."},
+		manageAction{id: "selfupdate", title: "Update interzone",
+			desc: "Download the newest interzone release and replace this program with it."},
 	)
-	if c.Components["external-postgres"] {
-		for i := range acts {
-			if acts[i].id == "backup" {
-				acts[i].disabled = "You use an external Postgres server; back it up where it runs."
-			}
+	for i := range acts {
+		switch {
+		case acts[i].id == "users" && c.Homeserver != "synapse":
+			acts[i].disabled = "Needs Synapse's admin API; " + homeserverName(c.Homeserver) + " doesn't have one."
+		case c.Components["external-postgres"] && (acts[i].id == "backup" || acts[i].id == "schedule" || acts[i].id == "restore"):
+			acts[i].disabled = "You use an external Postgres server; back it up where it runs."
 		}
 	}
 	return acts
@@ -224,6 +247,14 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 		return run(deploy.Options{Action: deploy.ActionInstall})
 	case "setup":
 		return func() tea.Msg { return gotoMsg("Network") }
+	case "images":
+		return run(deploy.Options{Action: deploy.ActionImages})
+	case "selfupdate":
+		return run(deploy.Options{Action: deploy.ActionSelfUpdate})
+	case "users", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate":
+		screen := map[string]string{"users": "Users", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
+			"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}[id]
+		return func() tea.Msg { return gotoMsg(screen) }
 	case "user":
 		u := textField("name", "Username", "", "alice", "Just the name, not @alice:"+s.cfg.Domain+".")
 		u.required = true
@@ -290,10 +321,18 @@ func (s *manageScreen) view(w, h int) string {
 		blocks = append(blocks, bar+icon+"  "+style.Render(a.title)+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad))
 	}
 	out := strings.Join(blocks, "\n\n")
-	if lipgloss.Height(out) > h {
-		out = strings.Join(blocks, "\n")
+	if lipgloss.Height(out) <= h {
+		return out
 	}
-	return out
+	// Too tall: one block per entry, scrolled to keep the cursor in view.
+	lines := strings.Split(strings.Join(blocks, "\n"), "\n")
+	top := 0
+	for i := 0; i < s.cursor; i++ {
+		top += lipgloss.Height(blocks[i])
+	}
+	curH := lipgloss.Height(blocks[s.cursor])
+	start := max(0, min(top-(h-curH)/2, len(lines)-h))
+	return strings.Join(lines[start:min(len(lines), start+h)], "\n")
 }
 
 func (s *manageScreen) servicesView(w, h int) string {
