@@ -180,6 +180,15 @@ Need help, found a bug, or just like the project? Join the Matrix space
   - **Several servers:** each has its own answers and playbook copy;
     switch on the Servers screen (in the menu, or `s` on Welcome) or with
     `interzone servers use NAME`.
+  - **Take over a server set up by hand:** if you installed
+    matrix-docker-ansible-deploy yourself, `i` on Welcome or the Servers
+    screen (or `interzone import PATH`) reads its `vars.yml` and
+    `inventory/hosts` and keeps every setting and secret: variables
+    interzone has no question for are carried over as you wrote them,
+    comments included, and ones interzone would add are held at the
+    playbook's defaults. Your files are only read; interzone works on a
+    copy of the playbook and keeps the original `vars.yml` to compare
+    with, so the first Review lists each variable that would change.
   - **Self-update** from the newest release, checked against its
     `SHA256SUMS`.
 - **Fully offline installs** with `interzone bundle` (see below).
@@ -276,6 +285,7 @@ interzone status               # load, disks, certificates, containers
 interzone restore              # list backups; 'restore FILE' restores one
 interzone rollback --list      # recorded deploys; 'rollback N' goes back to one
 interzone servers              # saved servers; 'servers use NAME', 'servers rm NAME'
+interzone import PATH          # take over a playbook set up by hand (-name, -dry-run)
 interzone self-update          # install the newest release
 INTERZONE_SERVER=work interzone apply   # any command, for another saved server
 ```

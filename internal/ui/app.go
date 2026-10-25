@@ -394,6 +394,7 @@ type switchServerMsg struct {
 	name  string
 	cfg   *config.Config
 	fresh bool
+	note  string // the status line afterwards, if not the usual
 }
 
 func (a *App) switchServer(m switchServerMsg) tea.Cmd {
@@ -411,6 +412,9 @@ func (a *App) switchServer(m switchServerMsg) tea.Cmd {
 		a.status = sBad.Render("couldn't save config: " + err.Error())
 	}
 	a.status = sGood.Render("✓ now working on " + m.name)
+	if m.note != "" {
+		a.status = sGood.Render(m.note)
+	}
 	target := 0
 	switch {
 	case m.fresh:

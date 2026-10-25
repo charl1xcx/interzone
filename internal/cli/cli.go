@@ -51,6 +51,7 @@ const Usage = `Usage:
   interzone restore [FILE]  list backups, or restore the database from one
   interzone rollback [N]    list earlier deploys, or go back to one
   interzone servers         list servers; 'servers use NAME' switches
+  interzone import PATH     take over a server set up with the playbook by hand
   interzone self-update     install the newest interzone release
 
 INTERZONE_SERVER=NAME runs any command against another saved server.

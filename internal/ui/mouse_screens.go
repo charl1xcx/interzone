@@ -44,7 +44,15 @@ func confirmClick(id string, cursor *int, confirm *bool, n int, update func(tea.
 
 func (s *serverScreen) activeForm() *form  { return s.form }
 func (s *backupsScreen) activeForm() *form { return s.form }
-func (s *serversScreen) activeForm() *form { return s.form }
+func (s *serversScreen) activeForm() *form {
+	if s.imp != nil {
+		if s.imp.im != nil {
+			return nil
+		}
+		return s.imp.form
+	}
+	return s.form
+}
 
 func (s *migrateScreen) activeForm() *form {
 	if s.confirm {
@@ -153,7 +161,7 @@ func (s *usersScreen) click(id string) (tea.Cmd, bool) {
 }
 
 func (s *serversScreen) click(id string) (tea.Cmd, bool) {
-	if s.form != nil || s.confirm {
+	if s.form != nil || s.confirm || s.imp != nil {
 		return nil, false
 	}
 	return listClick(id, &s.cursor, len(s.list), s.update)

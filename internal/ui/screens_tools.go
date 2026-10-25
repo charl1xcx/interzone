@@ -981,28 +981,41 @@ type serversScreen struct {
 	form    *form // naming a new server
 	confirm bool  // forgetting one
 	err     string
+	imp     *importState // taking over a server set up by hand (import.go)
 }
 
 func newServersScreen() *serversScreen { return &serversScreen{} }
 
-func (s *serversScreen) tool()                {}
-func (s *serversScreen) name() string         { return "Servers" }
-func (s *serversScreen) title() string        { return "Your servers" }
-func (s *serversScreen) typing() bool         { return s.form != nil && s.form.typing() }
-func (s *serversScreen) handlesEsc() bool     { return s.form != nil || s.confirm }
+func (s *serversScreen) tool()        {}
+func (s *serversScreen) name() string { return "Servers" }
+func (s *serversScreen) title() string {
+	if s.imp != nil {
+		return "Import a server"
+	}
+	return "Your servers"
+}
+func (s *serversScreen) typing() bool {
+	if s.imp != nil {
+		return s.imp.im == nil && s.imp.form.typing()
+	}
+	return s.form != nil && s.form.typing()
+}
+func (s *serversScreen) handlesEsc() bool     { return s.form != nil || s.confirm || s.imp != nil }
 func (s *serversScreen) leave(*config.Config) {}
 func (s *serversScreen) keys() [][2]string {
 	switch {
+	case s.imp != nil:
+		return s.importKeys()
 	case s.form != nil:
 		return [][2]string{{"enter", "set up this server"}, {"esc", "cancel"}}
 	case s.confirm:
 		return [][2]string{{"x", "forget it"}, {"esc", "cancel"}}
 	}
-	return [][2]string{{"↑↓", "select"}, {"enter", "switch to it"}, {"n", "add a server"}, {"x", "forget"}}
+	return [][2]string{{"↑↓", "select"}, {"enter", "switch to it"}, {"n", "add a server"}, {"i", "import one"}, {"x", "forget"}}
 }
 
 func (s *serversScreen) enter(c *config.Config) tea.Cmd {
-	s.cfg, s.form, s.confirm, s.err = c, nil, false, ""
+	s.cfg, s.form, s.confirm, s.err, s.imp = c, nil, false, "", nil
 	s.list = config.Profiles()
 	if len(s.list) == 0 { // nothing saved yet: the answers so far are the default server
 		s.list = []config.Profile{{Name: config.DefaultProfile, Domain: c.Domain}}
@@ -1016,6 +1029,13 @@ func (s *serversScreen) enter(c *config.Config) tea.Cmd {
 }
 
 func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
+	if _, ok := msg.(importOpenMsg); ok {
+		s.startImport()
+		return nil
+	}
+	if s.imp != nil {
+		return s.importUpdate(msg)
+	}
 	if _, ok := msg.(formDoneMsg); ok && s.form != nil {
 		return s.create()
 	}
@@ -1064,6 +1084,8 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 			"Lowercase letters, digits, dots and dashes. It names the saved answers; the wizard asks for the domain next.")
 		f.required = true
 		s.form = newForm(f)
+	case "i":
+		s.startImport()
 	case "x":
 		p := s.list[s.cursor]
 		switch {
@@ -1100,6 +1122,9 @@ func (s *serversScreen) create() tea.Cmd {
 }
 
 func (s *serversScreen) view(w, h int) string {
+	if s.imp != nil {
+		return s.importView(w, h)
+	}
 	if s.form != nil {
 		out := s.form.View(w, h-2)
 		if s.err != "" {

@@ -33,4 +33,4 @@
 │ ◫ layout: auto (wide)  ││                                                                                            │
 │ ctrl+b ‹ fold          ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- enter begin   ·   s servers   ·   ctrl+c quit                                                                          
+ enter begin   ·   i import a setup   ·   s servers   ·   ctrl+c quit                                                   

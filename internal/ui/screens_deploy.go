@@ -40,8 +40,14 @@ type reviewScreen struct {
 
 	last     *deploy.Deploy // the last successful deploy, if any
 	diff     []diffLine     // vars.yml then → now
+	imported bool           // no deploy yet, but the server was imported:
+	changes  []config.VarChange
+	defaults map[string]string // the playbook's, to tell which additions change nothing
 	showDiff bool
 }
+
+// comparable reports whether there's an earlier vars.yml to compare with.
+func (s *reviewScreen) comparable() bool { return s.last != nil || s.imported }
 
 func newReviewScreen() *reviewScreen {
 	sp := spinner.New()
@@ -55,7 +61,7 @@ func (s *reviewScreen) title() string { return "Everything look right?" }
 func (s *reviewScreen) typing() bool  { return false }
 func (s *reviewScreen) keys() [][2]string {
 	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"↑↓", "scroll vars.yml"}, {"s", "save files only"}}
-	if s.last != nil {
+	if s.comparable() {
 		k = append(k, [2]string{"x", map[bool]string{true: "whole vars.yml", false: "what changes"}[s.showDiff]})
 	}
 	if len(s.missing) == 0 {
@@ -75,20 +81,30 @@ func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
 	}
 	mv := config.MigrationVersion(c.PlaybookDir)
 	s.yaml = c.VarsYAML(mv, cert, key)
-	s.last, s.diff = nil, nil
+	s.last, s.diff, s.imported, s.changes = nil, nil, false, nil
 	if h := deploy.History(); len(h) > 0 {
 		if prev, err := config.LoadFile(filepath.Join(h[0].Dir, "config.json")); err == nil {
 			s.last = &h[0]
 			s.diff = lineDiff(strings.Split(prev.VarsYAML(mv, cert, key), "\n"), strings.Split(s.yaml, "\n"))
 		}
+	} else if orig, ok := config.ImportedVars(config.Active()); ok {
+		s.imported = true
+		s.changes = config.VarChanges(orig, s.yaml)
+		s.defaults = config.PlaybookDefaults(c.PlaybookDir)
 	}
-	s.showDiff = s.last != nil
+	s.showDiff = s.comparable()
 	s.setPreview()
 	return s.runChecks()
 }
 
 func (s *reviewScreen) setPreview() {
-	if s.showDiff {
+	if s.showDiff && s.imported {
+		if len(s.changes) == 0 {
+			s.vp.SetContent(sMuted.Render("Every variable keeps the value it had in the imported vars.yml."))
+		} else {
+			s.vp.SetContent(changesView(s.changes, s.defaults))
+		}
+	} else if s.showDiff {
 		if a, r := diffChanges(s.diff); a+r == 0 {
 			s.vp.SetContent(sMuted.Render("Nothing in vars.yml changes. An update still pulls the newest playbook and images."))
 		} else {
@@ -100,10 +116,41 @@ func (s *reviewScreen) setPreview() {
 	s.vp.GotoTop()
 }
 
+// changesView lists variables that differ from the imported vars.yml.
+// An added variable at the playbook's default changes nothing, and says so.
+func changesView(cs []config.VarChange, defaults map[string]string) string {
+	var out []string
+	for _, c := range cs {
+		was, now := c.Old, c.New
+		if secretVar(c.Name, was) || secretVar(c.Name, now) {
+			if was != "" {
+				was = "••••••••"
+			}
+			if now != "" {
+				now = "••••••••"
+			}
+		}
+		switch {
+		case was == "" && config.SameYAML(defaults[c.Name], c.New):
+			out = append(out, sFaint.Render("+ "+c.Name+": "+now), sFaint.Render("    the playbook's default, changes nothing"))
+		case was == "":
+			out = append(out, sGood.Render("+ "+c.Name+": "+now))
+		case now == "":
+			out = append(out, sBad.Render("- "+c.Name+": "+was))
+		default:
+			out = append(out, sWarn.Render("~ "+c.Name), sFaint.Render("    was ")+was, sFaint.Render("    now ")+now)
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
 // previewTitle heads the vars.yml panel.
 func (s *reviewScreen) previewTitle() string {
 	if !s.showDiff {
 		return sMuted.Render("vars.yml preview")
+	}
+	if s.imported {
+		return sMuted.Render("vars.yml compared with the imported one  ") + sWarn.Render(fmt.Sprintf("%d changed", len(s.changes)))
 	}
 	a, r := diffChanges(s.diff)
 	return sMuted.Render("vars.yml since the deploy of "+s.last.Time.Local().Format("Jan 2 15:04")+"  ") +
@@ -319,6 +366,21 @@ func indexOf(xs []string, v string) int {
 
 var yamlKey = regexp.MustCompile(`^(\s*-?\s*)([A-Za-z0-9_.]+)(:)(.*)$`)
 
+// secretVar reports whether a vars.yml variable holds a secret, which is
+// shown masked.
+func secretVar(name, val string) bool {
+	return strings.Contains(name, "password") || strings.Contains(name, "secret") || strings.Contains(name, "token") ||
+		strings.Contains(name, "passphrase") || strings.Contains(name, "key") && len(strings.TrimSpace(val)) > 30
+}
+
+// maskLine hides the value of a "name: value" line that holds a secret.
+func maskLine(l string) string {
+	if m := yamlKey.FindStringSubmatch(l); m != nil && secretVar(m[2], m[4]) && strings.TrimSpace(m[4]) != "" {
+		return m[1] + m[2] + m[3] + " ••••••••"
+	}
+	return l
+}
+
 func highlightYAML(s string) string {
 	lines := strings.Split(s, "\n")
 	for i, l := range lines {
@@ -332,7 +394,7 @@ func highlightYAML(s string) string {
 			if m := yamlKey.FindStringSubmatch(l); m != nil {
 				val := m[4]
 				vs := lipgloss.NewStyle().Foreground(cText)
-				if strings.Contains(m[2], "password") || strings.Contains(m[2], "secret") || strings.Contains(m[2], "token") || strings.Contains(m[2], "key") && len(strings.TrimSpace(val)) > 30 {
+				if secretVar(m[2], val) {
 					val = " " + sFaint.Render("••••••••")
 				} else if strings.TrimSpace(val) == "true" {
 					vs = sGood

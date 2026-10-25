@@ -36,7 +36,7 @@ func (s *welcomeScreen) keys() [][2]string {
 	if s.installed {
 		return [][2]string{{"↑↓", "choose"}, {"enter", "continue"}, {"s", "servers"}}
 	}
-	return [][2]string{{"enter", "begin"}, {"s", "servers"}}
+	return [][2]string{{"enter", "begin"}, {"i", "import a setup"}, {"s", "servers"}}
 }
 func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 	k, ok := msg.(tea.KeyMsg)
@@ -53,6 +53,8 @@ func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 		return nav(1)
 	case "s":
 		return func() tea.Msg { return gotoMsg("Servers") }
+	case "i":
+		return tea.Sequence(func() tea.Msg { return gotoMsg("Servers") }, func() tea.Msg { return importOpenMsg{} })
 	}
 	return nil
 }
@@ -105,7 +107,8 @@ func (s *welcomeScreen) view(w, h int) string {
 	case s.loaded:
 		tail = append(tail, sGood.Render("✓ Picked up your previous answers."), "", "", mark("key:enter", sAccent.Render("Press enter to begin ›")))
 	default:
-		tail = append(tail, mark("key:enter", sAccent.Render("Press enter to begin ›")))
+		tail = append(tail, mark("key:enter", sAccent.Render("Press enter to begin ›")), "",
+			mark("key:i", wrap(sMuted, "", "Already set up a server with the playbook yourself? Press i to import it.")))
 	}
 	parts := append([]string{head, "", ""}, append(features, tail...)...)
 	block := lipgloss.JoinVertical(lipgloss.Left, parts...)

@@ -82,6 +82,7 @@ func diffView(d []diffLine, ctx int) string {
 			out = append(out, sFaint.Render("  ⋯"))
 		}
 		skipped = false
+		l.text = maskLine(l.text)
 		switch l.op {
 		case '+':
 			out = append(out, sGood.Render("+ "+l.text))
