@@ -44,7 +44,7 @@ every download can come from mirrors inside the country.
 ## Community
 
 Need help, found a bug, or just like the project? Join the Matrix space
-[#interzone:foid.ir](https://matrix.to/#/#interzone:foid.ir).
+[#interzone:foid.ir](https://matrix.to/#/%23interzone%3Afoid.ir).
 
 ## Features
 
