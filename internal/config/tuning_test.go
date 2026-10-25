@@ -1,6 +1,7 @@
 package config
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -126,5 +127,51 @@ func TestStripComment(t *testing.T) {
 		if got := stripComment(in); got != want {
 			t.Errorf("stripComment(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestRoles(t *testing.T) {
+	dir := t.TempDir()
+	write := func(rel, text string) {
+		p := filepath.Join(dir, rel)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("roles/custom/matrix-synapse/defaults/main.yml", "matrix_synapse_enabled: true\nmatrix_synapse_x: 1\n")
+	write("roles/custom/matrix-empty/tasks/main.yml", "- debug:\n")
+	write("roles/galaxy/ntfy/defaults/main.yml", "# Enable it.\nntfy_enabled: true\n")
+	write("roles/galaxy/split/defaults/main/a.yml", "split_a: 1\n")
+	write("roles/galaxy/split/defaults/main/b.yml", "split_b: 2\n")
+	write("group_vars/matrix_servers", "ntfy_enabled: false\nmatrix_synapse_enabled: \"{{ x == 'synapse' }}\"\nmatrix_playbook_only: yes\n")
+
+	roles, err := Roles(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	byName := map[string]Role{}
+	for _, r := range roles {
+		names = append(names, r.Name)
+		byName[r.Name] = r
+	}
+	if got := strings.Join(names, " "); got != "playbook-wide matrix-synapse ntfy split" {
+		t.Fatalf("roles = %s", got)
+	}
+	n := byName["ntfy"].Vars[0]
+	if !byName["ntfy"].Galaxy || !n.PlaybookSet || n.Effective() != "false" || n.Default != "true" || n.Help != "Enable it." {
+		t.Errorf("ntfy_enabled = %+v", n)
+	}
+	if v := byName["matrix-synapse"].Vars[0]; !v.Derived {
+		t.Errorf("computed playbook value not marked derived: %+v", v)
+	}
+	if len(byName["split"].Vars) != 2 {
+		t.Errorf("split defaults: %+v", byName["split"].Vars)
+	}
+	if w := byName["playbook-wide"].Vars; len(w) != 1 || w[0].Name != "matrix_playbook_only" {
+		t.Errorf("playbook-wide = %+v", w)
 	}
 }

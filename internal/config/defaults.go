@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -14,7 +15,24 @@ type RoleVar struct {
 	Default string // raw YAML, as written in the file
 	Help    string // the comment block above it, without the #s
 	Derived bool   // the default is computed from other variables
+	// Playbook is what the playbook's group_vars/matrix_servers sets
+	// instead of the role's default, when PlaybookSet. It wins over the
+	// role default and is what applies unless the variable is changed.
+	Playbook    string
+	PlaybookSet bool
 }
+
+// Effective is the value that applies when the variable isn't changed.
+func (v RoleVar) Effective() string {
+	if v.PlaybookSet {
+		return v.Playbook
+	}
+	return v.Default
+}
+
+// PlaybookRole names the pseudo-role for variables the playbook's
+// group_vars defines without a role default.
+const PlaybookRole = "playbook-wide"
 
 // HomeserverRole is the playbook role holding each homeserver's defaults.
 var HomeserverRole = map[string]string{
@@ -25,21 +43,85 @@ var HomeserverRole = map[string]string{
 	"dendrite":     "matrix-dendrite",
 }
 
-// HomeserverDefaultsFile is the defaults file of the homeserver's role.
-func HomeserverDefaultsFile(playbookDir, homeserver string) string {
-	return filepath.Join(playbookDir, "roles", "custom", HomeserverRole[homeserver], "defaults", "main.yml")
+// Role is a playbook role with variables to tune: one of the playbook's
+// own (roles/custom) or one installed from requirements.yml (roles/galaxy).
+type Role struct {
+	Name   string // directory name, e.g. matrix-synapse or ntfy
+	Galaxy bool
+	Vars   []RoleVar
 }
 
-// HomeserverDefaults lists every variable the homeserver's role lets you change.
-func HomeserverDefaults(playbookDir, homeserver string) ([]RoleVar, error) {
-	if HomeserverRole[homeserver] == "" {
-		return nil, fmt.Errorf("unknown homeserver %q", homeserver)
+// Roles reads the defaults of every role in the playbook that has them,
+// custom roles first, each group sorted by name. Galaxy roles exist only
+// once they've been installed (the install's Roles step).
+func Roles(playbookDir string) ([]Role, error) {
+	var out []Role
+	for _, kind := range []string{"custom", "galaxy"} {
+		files, _ := filepath.Glob(filepath.Join(playbookDir, "roles", kind, "*", "defaults", "main.yml"))
+		more, _ := filepath.Glob(filepath.Join(playbookDir, "roles", kind, "*", "defaults", "main", "*.yml"))
+		byRole := map[string][]string{}
+		var names []string
+		for _, f := range append(files, more...) {
+			rel, _ := filepath.Rel(filepath.Join(playbookDir, "roles", kind), f)
+			name := strings.SplitN(rel, string(filepath.Separator), 2)[0]
+			if byRole[name] == nil {
+				names = append(names, name)
+			}
+			byRole[name] = append(byRole[name], f)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			r := Role{Name: name, Galaxy: kind == "galaxy"}
+			for _, f := range byRole[name] {
+				b, err := os.ReadFile(f)
+				if err != nil {
+					continue
+				}
+				r.Vars = append(r.Vars, ParseDefaults(string(b))...)
+			}
+			if len(r.Vars) > 0 {
+				out = append(out, r)
+			}
+		}
 	}
-	b, err := os.ReadFile(HomeserverDefaultsFile(playbookDir, homeserver))
-	if err != nil {
-		return nil, err
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no roles with defaults in %s", filepath.Join(playbookDir, "roles"))
 	}
-	return ParseDefaults(string(b)), nil
+	// The playbook wires the roles together in group_vars, overriding
+	// many of their defaults.
+	b, _ := os.ReadFile(filepath.Join(playbookDir, "group_vars", "matrix_servers"))
+	group := map[string]RoleVar{}
+	var order []string
+	for _, v := range ParseDefaults(string(b)) {
+		if _, dup := group[v.Name]; !dup {
+			order = append(order, v.Name)
+		}
+		group[v.Name] = v
+	}
+	seen := map[string]bool{}
+	for i := range out {
+		for j := range out[i].Vars {
+			v := &out[i].Vars[j]
+			if g, ok := group[v.Name]; ok {
+				v.Playbook, v.PlaybookSet = g.Default, true
+				v.Derived = g.Derived
+				if v.Help == "" {
+					v.Help = g.Help
+				}
+			}
+			seen[v.Name] = true
+		}
+	}
+	wide := Role{Name: PlaybookRole}
+	for _, name := range order {
+		if !seen[name] {
+			wide.Vars = append(wide.Vars, group[name])
+		}
+	}
+	if len(wide.Vars) > 0 {
+		out = append([]Role{wide}, out...)
+	}
+	return out, nil
 }
 
 var topKey = regexp.MustCompile(`^([A-Za-z_][A-Za-z0-9_]*):(?:\s+(.*))?$`)

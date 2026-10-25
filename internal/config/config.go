@@ -257,7 +257,7 @@ func (c *Config) Missing() []string {
 	}
 	for _, k := range sortedKeys(c.Overrides) {
 		if err := yaml.Unmarshal([]byte(c.Overrides[k]), new(any)); err != nil {
-			out = append(out, "Tuning: "+k+" isn't valid YAML ("+yamlError(err)+")")
+			out = append(out, "Fine-tune: "+k+" isn't valid YAML ("+yamlError(err)+")")
 		}
 	}
 	if extra := strings.TrimSpace(c.ExtraYAML); extra != "" {

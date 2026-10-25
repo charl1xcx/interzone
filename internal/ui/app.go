@@ -42,8 +42,6 @@ type App struct {
 	status  string
 
 	deployBack int // where esc leads from the Deploy screen
-	// tuningFromManage: Tuning was opened from Manage, so esc returns there.
-	tuningFromManage bool
 }
 
 func New(cfg *config.Config, loaded bool) *App {
@@ -56,11 +54,11 @@ func New(cfg *config.Config, loaded bool) *App {
 		newSSLScreen(),
 		newComponentsScreen(),
 		&settingsScreen{},
-		newTuningScreen(),
 		newReviewScreen(),
 		newDeployScreen(),
 		newManageScreen(), // not a wizard step: reached from Welcome
 		// Reached from Manage:
+		newTuningScreen(),
 		newUpdatesScreen(),
 		newHistoryScreen(),
 		newRestoreScreen(),
@@ -100,9 +98,6 @@ func (a *App) jump(n int) tea.Cmd {
 	}
 	if a.screens[n].name() == "Deploy" {
 		a.deployBack = a.step
-	}
-	if a.screens[n].name() == "Tuning" {
-		a.tuningFromManage = a.cur().name() == "Manage"
 	}
 	a.cur().leave(a.cfg)
 	if err := a.cfg.Save(); err != nil {
@@ -196,9 +191,6 @@ func (a *App) back() tea.Cmd {
 		return a.jump(0)
 	}
 	if _, ok := a.cur().(toolScreen); ok {
-		return a.jump(a.index("Manage"))
-	}
-	if a.cur().name() == "Tuning" && a.tuningFromManage {
 		return a.jump(a.index("Manage"))
 	}
 	return a.go_(-1)

@@ -115,10 +115,12 @@ every download can come from mirrors inside the country.
     inside the Synapse container. Nothing needs to be exposed publicly.
   - **Dashboard:** load, memory, disks, the backup timer, certificate expiry
     for every hostname, and each container's state, CPU and memory.
-  - **Fine-tune:** every variable of the homeserver role's
-    `defaults/main.yml` (705 for Synapse), with its documentation, default
-    and your value. Changes are written into `vars.yml`. Also a wizard
-    step.
+  - **Fine-tune:** every variable of every playbook role, the playbook's
+    own and the ones installed from `requirements.yml` (about 100 roles
+    and 8,600 settings), with its documentation, the role's default, the
+    value the playbook's `group_vars` sets instead, and yours. The roles
+    in your setup are listed first, and `/` searches every role at once.
+    Changes are written into `vars.yml` and applied on the next update.
   - **Move to another server:** stops and disables the old server,
     streams `/matrix` to the new one through this computer, then installs
     there (following the playbook's migration guide).

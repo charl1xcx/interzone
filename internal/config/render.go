@@ -50,7 +50,7 @@ func (w *yamlWriter) override(key, value string) {
 	w.seen[key] = true
 	value = strings.TrimRight(value, "\n ")
 	if !strings.Contains(value, "\n") {
-		fmt.Fprintf(&w.b, "%s: %s  # changed in interzone's Tuning step\n", key, value)
+		fmt.Fprintf(&w.b, "%s: %s  # changed in interzone's Fine-tune screen\n", key, value)
 		return
 	}
 	if strings.HasPrefix(value, "|") || strings.HasPrefix(value, ">") {
@@ -295,7 +295,7 @@ tls:
 	}
 	if len(rest) > 0 {
 		w.section("Tuning")
-		w.comment("Role defaults changed in interzone's Tuning step.")
+		w.comment("Role defaults changed in interzone's Fine-tune screen (Manage).")
 		for _, k := range rest {
 			w.override(k, c.Overrides[k])
 		}
