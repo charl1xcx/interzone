@@ -30,6 +30,17 @@ progress view.
 It is built to keep working during a **country-wide internet blackout**:
 every download can come from mirrors inside the country.
 
+![interzone's welcome screen](docs/screenshots/welcome.png)
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Choosing a homeserver](docs/screenshots/homeserver.png) | ![Picking bridges, clients and services](docs/screenshots/components.png) |
+| **Choose a homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite. | **Pick components:** 82 bridges, bots, clients and services. |
+| ![The Manage menu](docs/screenshots/manage.png) | ![Fine-tuning the playbook's roles](docs/screenshots/tuning.png) |
+| **Manage the server:** updates, users, backups, rollback, logs and more. | **Fine-tune:** search and change the settings of every playbook role. |
+
 ## Community
 
 Need help, found a bug, or just like the project? Join the Matrix space
