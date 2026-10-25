@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"slices"
 	"testing"
 
 	"interzone/internal/config"
@@ -61,6 +62,8 @@ timer=Mon 2026-10-26 03:00:00 UTC
 ps={"Names":"matrix-synapse","State":"running","Status":"Up 2 hours"}
 ps={"Names":"matrix-bridge","State":"exited","Status":"Exited (1)"}
 stats={"Name":"matrix-synapse","CPUPerc":"1.5%","MemUsage":"300MiB / 3.8GiB","MemPerc":"7.7%"}
+labels=traefik.enable=true,traefik.http.routers.matrix-client-element.rule=Host(` + "`chat.other.net`" + `),traefik.docker.network=traefik
+labels=traefik.http.routers.a.rule=Host(` + "`matrix.example.org`" + `) && PathPrefix(` + "`/_matrix`" + `),traefik.http.routers.b.rule=Host(` + "`matrix.example.org`" + `)
 `
 	st := &ServerStatus{}
 	parseStatus(st, out)
@@ -75,6 +78,9 @@ stats={"Name":"matrix-synapse","CPUPerc":"1.5%","MemUsage":"300MiB / 3.8GiB","Me
 	}
 	if len(st.Containers) != 2 || st.Containers[0].Name != "matrix-bridge" {
 		t.Errorf("stopped containers should come first: %+v", st.Containers)
+	}
+	if want := []string{"chat.other.net", "matrix.example.org"}; !slices.Equal(st.Hosts, want) {
+		t.Errorf("hosts %v", st.Hosts)
 	}
 	if st.Containers[1].CPU != "1.5%" {
 		t.Errorf("stats not merged: %+v", st.Containers[1])

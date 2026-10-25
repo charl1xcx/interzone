@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -26,7 +28,8 @@ type ServerStatus struct {
 	Disks      []Disk
 	Containers []Container
 	Certs      []Cert
-	Timer      string // next scheduled backup, if any
+	Hosts      []string // what Traefik serves for Matrix
+	Timer      string   // next scheduled backup, if any
 	Taken      time.Time
 }
 
@@ -65,26 +68,39 @@ const statusPlay = `- name: interzone status
         docker ps -a --filter name=^matrix- --format 'ps={{json .}}'
         ids=$(docker ps -q --filter name=^matrix-)
         if [ -n "$ids" ]; then docker stats --no-stream --format 'stats={{json .}}' $ids; fi
+        docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Labels}}'
       changed_when: false
 `
 
 // Status collects the dashboard's numbers: resources and containers from
-// the server, certificates from each hostname's HTTPS endpoint.
+// the server, certificates from each hostname's HTTPS endpoint. The
+// hostnames are the ones the playbook gave Traefik, read from the running
+// containers, so components moved to other domains are checked where they
+// are; before anything runs behind Traefik, the usual ones are guessed.
 func Status(ctx context.Context, c *config.Config) (*ServerStatus, error) {
 	st := &ServerStatus{Taken: time.Now()}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		st.Certs = CheckCerts(ctx, c)
-	}()
 	res, err := runPlayJSON(ctx, c, "status", statusPlay, nil)
-	wg.Wait()
-	if err != nil {
-		return st, err
+	if err == nil {
+		parseStatus(st, res["interzone status"].String("stdout"))
 	}
-	parseStatus(st, res["interzone status"].String("stdout"))
-	return st, nil
+	hosts := st.Hosts
+	if len(hosts) == 0 {
+		hosts = c.DNSRecords()
+	}
+	st.Certs = CheckCerts(ctx, c, hosts)
+	return st, err
+}
+
+var hostRule = regexp.MustCompile("Host\\(`([^`]+)`\\)")
+
+// servedHosts adds the hostnames in a container's Traefik rules to hosts.
+func servedHosts(hosts []string, labels string) []string {
+	for _, m := range hostRule.FindAllStringSubmatch(labels, -1) {
+		if !slices.Contains(hosts, m[1]) {
+			hosts = append(hosts, m[1])
+		}
+	}
+	return hosts
 }
 
 func parseStatus(st *ServerStatus, out string) {
@@ -130,6 +146,8 @@ func parseStatus(st *ServerStatus, out string) {
 			}
 		case "timer":
 			st.Timer = strings.TrimSpace(v)
+		case "labels":
+			st.Hosts = servedHosts(st.Hosts, v)
 		case "ps":
 			var p struct{ Names, State, Status string }
 			if json.Unmarshal([]byte(v), &p) == nil {
@@ -143,6 +161,7 @@ func parseStatus(st *ServerStatus, out string) {
 			}
 		}
 	}
+	sort.Strings(st.Hosts)
 	for i, ct := range st.Containers {
 		if s, ok := stats[ct.Name]; ok {
 			st.Containers[i].CPU, st.Containers[i].Mem, st.Containers[i].MemPerc = s.CPU, s.Mem, s.MemPerc
@@ -169,11 +188,10 @@ func serverAddr(c *config.Config) string {
 
 // CheckCerts reads the certificate the server presents for each hostname.
 // It connects to the server directly, so it works before DNS is set up.
-func CheckCerts(ctx context.Context, c *config.Config) []Cert {
+func CheckCerts(ctx context.Context, c *config.Config, recs []string) []Cert {
 	if c.SSL.Mode == "none" {
 		return nil
 	}
-	recs := c.DNSRecords()
 	out := make([]Cert, len(recs))
 	var wg sync.WaitGroup
 	for i, host := range recs {
