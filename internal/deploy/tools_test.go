@@ -56,12 +56,19 @@ cpus=4
 uptime=93784.5
 memtotal=4000000
 memavail=1000000
+swaptotal=2000
+swapfree=500
+os=Debian GNU/Linux 12 (bookworm)
+kernel=6.1.0-26-amd64
+docker=27.3.1
 disk=/ 100 40 60
 disk=/matrix 100 40 60
 timer=Mon 2026-10-26 03:00:00 UTC
 ps={"Names":"matrix-synapse","State":"running","Status":"Up 2 hours"}
 ps={"Names":"matrix-bridge","State":"exited","Status":"Exited (1)"}
 stats={"Name":"matrix-synapse","CPUPerc":"1.5%","MemUsage":"300MiB / 3.8GiB","MemPerc":"7.7%"}
+inspect=/matrix-synapse 3 unhealthy
+inspect=/matrix-bridge 0 
 labels=matrix-client-element traefik.enable=true,traefik.http.routers.matrix-client-element.rule=Host(` + "`chat.other.net`" + `),traefik.docker.network=traefik
 labels=matrix-synapse traefik.http.routers.a.rule=Host(` + "`matrix.example.org`" + `) && PathPrefix(` + "`/_matrix`" + `),traefik.http.routers.b.rule=Host(` + "`matrix.example.org`" + `)
 `
@@ -84,6 +91,12 @@ labels=matrix-synapse traefik.http.routers.a.rule=Host(` + "`matrix.example.org`
 	}
 	if got := st.Served["chat.other.net"]; !slices.Equal(got, []string{"client-element"}) {
 		t.Errorf("served %v", st.Served)
+	}
+	if st.OS != "Debian GNU/Linux 12 (bookworm)" || st.Kernel != "6.1.0-26-amd64" || st.Docker != "27.3.1" || st.SwapTotal != 2000*1024 || st.SwapFree != 500*1024 {
+		t.Errorf("system: %+v", st)
+	}
+	if c := st.Containers[1]; c.Restarts != 3 || c.Health != "unhealthy" || c.Healthy() {
+		t.Errorf("inspect not merged: %+v", c)
 	}
 	if st.Containers[1].CPU != "1.5%" {
 		t.Errorf("stats not merged: %+v", st.Containers[1])

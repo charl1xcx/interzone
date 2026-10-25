@@ -9,10 +9,10 @@
 │                        ││   ▌     Relays voice/video calls for users behind NAT. Strongly recommended.               │
 │ ▸ Manage example.org   ││   ▌     docs/configuring-playbook-turn.md                                                  │
 │                        ││                                                                                            │
-│ ▸ Servers              ││      ●  Exim email relay    needs settings                                                 │
+│ ▸ Mirrors              ││      ●  Exim email relay    needs settings                                                 │
 │                        ││         Lets services send email (password resets, notifications).                         │
-│                        ││                                                                                            │
-│                        ││      ○  Serve the base domain                                                              │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││      ○  Serve the base domain                                                              │
 │                        ││         Host a simple page and .well-known files on <domain> itself (only if nothing el…   │
 │                        ││                                                                                            │
 │                        ││      ○  Dynamic DNS (ddclient)    needs settings                                           │
@@ -29,8 +29,8 @@
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
-│                        ││                                                                                            │
-│ ◫ layout: auto (wide)  ││                                                                                            │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ←→ category · ↑↓ move · space toggle · / search · p save as preset · enter next · esc back · ctrl+c quit               

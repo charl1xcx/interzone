@@ -59,8 +59,13 @@ Need help, found a bug, or just like the project? Join the Matrix space
 - **Everything MDAD offers:** 82 components across clients, auth, storage,
   bridges, bots, monitoring, backups and calls, with search (`/`).
   Required settings are asked for; secrets are generated.
+- **MAS with Synapse:** a new Synapse server gets the Matrix
+  Authentication Service (OAuth 2.0/OIDC logins, which Element X needs),
+  in the presets too. Untick it on Components to keep Synapse's own
+  logins. Servers that are already installed keep what they have, since
+  moving existing accounts to MAS is a migration of its own.
 - **Presets** to start from on the Homeserver step: Minimal chat (Synapse,
-  Element), Friends & family (adds Element Call, Ketesa and database
+  MAS, Element), Friends & family (adds Element Call, Ketesa and database
   dumps), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
   puppeting and encryption), Public community (MAS sign-up, Element and
   Cinny, Draupnir, antispam, monitoring) and Lightweight (Tuwunel and
@@ -152,6 +157,12 @@ Need help, found a bug, or just like the project? Join the Matrix space
   container images the enabled services use and checks each one in its
   registry (or your mirror) for the server's CPU, so a missing image is
   reported up front instead of halfway through.
+- **Mirrors:** its own section of the menu checks that everything a
+  deploy downloads is there: the playbook and every role it pins, at that
+  version, on the roles mirror; the registry and package mirrors in use
+  and every known mirror; and each container image the enabled services
+  use, for the server's architecture (once it's installed). `m` on
+  Welcome opens it.
 - **Manage an existing server:** update, run the self-check, restart, add
   users (Synapse/Dendrite), close registration (Conduit, Continuwuity,
   Tuwunel), back up the Postgres database to this computer, and follow any
@@ -175,8 +186,12 @@ Need help, found a bug, or just like the project? Join the Matrix space
     With MAS (Matrix Authentication Service), accounts are changed with
     `mas-cli` in its container instead, and signing in needs only the
     admin's username: MAS issues the session.
-  - **Dashboard:** load, memory, disks, the backup timer, certificate expiry
-    for every hostname, and each container's state, CPU and memory.
+  - **Dashboard:** tiles for CPU, memory, disk and containers; the OS,
+    kernel, Docker version and uptime; load, swap, every disk and the
+    backup timer; the containers using the most; certificate expiry for
+    every hostname; and each container's state, health check, restarts,
+    CPU, memory and network traffic. Wide terminals get the cards side by
+    side, the compact layout stacks them.
     The Dashboard, Users and the logs' service list open with what they
     showed last time and refresh in the background.
   - **Health in the header:** once a server is installed, a dot says
@@ -238,6 +253,7 @@ with Pillow).
 ./interzone --reset   # forget saved answers
 ./interzone -no-mouse # leave the mouse to the terminal
 ./interzone -layout compact # phone layout, whatever the size (or wide, or auto)
+./interzone -theme nord     # colours for one run (ctrl+y switches and remembers them)
 ```
 
 The wizard has four steps before the deploy: **Server** (where it runs,
@@ -247,17 +263,23 @@ where downloads come from, HTTPS certificates, networking), **Homeserver**
 and **Review**.
 
 The menu on the left shows where you are: the setup steps, the Manage
-screens (with the action running, if any) and your servers. The section
-you're in is open and the others are folded; `ctrl+b` folds the whole menu
-to a rail of icons, and terminals narrower than 100 columns always get the
-rail.
+screens (with the action running, if any), the mirror checks and your
+servers. Each section folds on its own: click its heading to open or
+close just that one, and going to a screen opens its section without
+closing the others; interzone remembers which are open. `ctrl+b` folds the
+whole menu to a rail of icons, and terminals narrower than 100 columns
+always get the rail.
 
 On a phone (Termux, or any narrow or portrait terminal) interzone switches
 to a compact layout: no sidebar or borders, the menu opens from `≡ menu` in
 the top right (or `ctrl+b`), lists drop their side columns, and the key
-hints wrap onto a second line instead of being cut off. `◫ layout` at the
-bottom of the menu cycles auto, compact and wide and remembers the choice;
-`-layout` picks one for a single run.
+hints wrap onto a second line instead of being cut off. `ctrl+l`, or `◫`
+at the bottom of the menu, cycles auto, compact and wide and remembers the
+choice; `-layout` picks one for a single run.
+
+`ctrl+y`, or `◐` under it, switches the colours between interzone,
+Catppuccin, Nord, Gruvbox, Dracula, Solarized and mono; each has a light
+and a dark variant that follows the terminal's background.
 
 | Key | Action |
 |---|---|
@@ -267,6 +289,8 @@ bottom of the menu cycles auto, compact and wide and remembers the choice;
 | `ctrl+r` | reveal secrets |
 | `ctrl+s` | save answers |
 | `ctrl+b` | fold or unfold the menu on the left (compact layout: open the menu) |
+| `ctrl+l` | next layout: auto, compact, wide |
+| `ctrl+y` | next theme |
 | `esc` | back |
 
 Everything also works with the mouse: click a menu entry, a field, an option,

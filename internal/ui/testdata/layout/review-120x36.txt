@@ -9,10 +9,10 @@
 │                        ││   Components      5                                                                        │
 │ ▸ Manage example.org   ││   Certificates    Let's Encrypt                                                            │
 │                        ││   Images from     mechatok.g0th.ir/                                                        │
-│ ▸ Servers              ││                                                                                            │
+│ ▸ Mirrors              ││                                                                                            │
 │                        ││   ✓ Ready to deploy.                                                                       │
-│                        ││                                                                                            │
-│                        ││   Pre-deploy checks  ⠋ checking the server and DNS…                                        │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││   Pre-deploy checks  ⠋ checking the server and DNS…                                        │
 │                        ││                                                                                            │
 │                        ││     ○  Synapse      matrix.example.org                                                     │
 │                        ││     ○  Element Web  element.example.org                                                    │
@@ -29,8 +29,8 @@
 │                        ││   │ matrix_playbook_migration_validated_version: ''  # filled in from the playbook dur │   │
 │                        ││   │ matrix_domain: 'example.org'                                                       │   │
 │                        ││   │ matrix_homeserver_implementation: synapse                                          │   │
-│                        ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
-│ ◫ layout: auto (wide)  ││                                                                                            │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  enter deploy · c check again · v details · ↑↓ scroll vars.yml · s save files only · esc back · ctrl+c quit             

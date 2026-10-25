@@ -14,10 +14,11 @@ import (
 // ── Sidebar ────────────────────────────────────────────────────────
 //
 // A menu on the left showing where you are: the setup wizard's steps, the
-// Manage screens, and the saved servers. The section holding the current
-// screen is open and the others are folded to their heading. ctrl+b folds
-// the whole menu to a narrow rail of icons; narrow terminals always get
-// the rail.
+// Manage screens, the mirror checks and the saved servers. Each section
+// folds on its own: clicking a heading opens or closes just that one, and
+// going to a screen opens its section without closing the others. ctrl+b
+// folds the whole menu to a narrow rail of icons; narrow terminals always
+// get the rail.
 
 const (
 	sidebarW     = 26
@@ -31,8 +32,57 @@ const (
 	sideNone sideSection = iota
 	sideSetup
 	sideManage
+	sideMirrors
 	sideServers
 )
+
+var sectionNames = map[sideSection]string{sideSetup: "setup", sideManage: "manage", sideMirrors: "mirrors", sideServers: "servers"}
+
+func sideOpenFile() string { return filepath.Join(config.Dir(), "sidebar-open") }
+
+// loadSideOpen reads which sections were left open. Before anything was
+// saved only Servers is.
+func loadSideOpen() map[sideSection]bool {
+	b, err := os.ReadFile(sideOpenFile())
+	if err != nil {
+		return map[sideSection]bool{sideServers: true}
+	}
+	open := map[sideSection]bool{}
+	for _, name := range strings.Fields(string(b)) {
+		for sec, n := range sectionNames {
+			if n == name {
+				open[sec] = true
+			}
+		}
+	}
+	return open
+}
+
+func (a *App) saveSideOpen() {
+	var names []string
+	for _, sec := range []sideSection{sideSetup, sideManage, sideMirrors, sideServers} {
+		if a.sideOpen[sec] {
+			names = append(names, sectionNames[sec])
+		}
+	}
+	_ = os.MkdirAll(config.Dir(), 0o700)
+	_ = os.WriteFile(sideOpenFile(), []byte(strings.Join(names, "\n")+"\n"), 0o600)
+}
+
+// openSection unfolds sec, leaving the others as they are.
+func (a *App) openSection(sec sideSection) {
+	if sec == sideNone || a.sideOpen[sec] {
+		return
+	}
+	a.sideOpen[sec] = true
+	a.saveSideOpen()
+}
+
+// toggleSection folds or unfolds sec alone.
+func (a *App) toggleSection(sec sideSection) {
+	a.sideOpen[sec] = !a.sideOpen[sec]
+	a.saveSideOpen()
+}
 
 // manageMenu is the Manage section in the order Manage lists its tools.
 var manageMenu = []struct{ screen, label string }{
@@ -83,6 +133,8 @@ func (a *App) section() sideSection {
 		return sideNone
 	case name == "Servers":
 		return sideServers
+	case name == "Mirrors":
+		return sideMirrors
 	case name == "Manage", a.isTool(a.step):
 		return sideManage
 	case name == "Deploy":
@@ -114,7 +166,7 @@ func (a *App) sidebar(h int) string {
 			return sFaint.Render(" " + glyph)
 		}
 		lines := []string{mark("side:head:setup", icon(sideSetup, "◇")), "", mark("side:head:manage", icon(sideManage, "◆")), "",
-			mark("side:head:servers", icon(sideServers, "▤"))}
+			mark("side:head:mirrors", icon(sideMirrors, "⇅")), "", mark("side:head:servers", icon(sideServers, "▤"))}
 		if !a.sideCollapsed {
 			lines = append(lines, "", "", sFaint.Render(" ⋯")) // too narrow; ctrl+b does nothing here
 		} else {
@@ -126,10 +178,10 @@ func (a *App) sidebar(h int) string {
 	lines := a.menuLines(sidebarW - 4)
 	// The layout switch and the fold hint sit at the bottom.
 	body := strings.Join(lines, "\n")
-	if gap := h - lipgloss.Height(body) - 2; gap > 0 {
+	if gap := h - lipgloss.Height(body) - 3; gap > 0 {
 		body += strings.Repeat("\n", gap)
 	}
-	body += "\n" + a.layoutLink() + "\n" + mark("side:fold", sFaint.Render("ctrl+b ‹ fold"))
+	body += "\n" + a.layoutLink() + "\n" + themeLink() + "\n" + mark("side:fold", sFaint.Render("◂ fold  ctrl+b"))
 	return sPanel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
 }
 
@@ -144,27 +196,28 @@ func (a *App) menuLines(inner int) []string {
 		}
 		return "  " + dot + " " + sMuted.Render(label)
 	}
-	head := func(s sideSection, title string, open bool) string {
-		switch {
-		case s == sec:
-			return sSection.Render("▾ " + title)
-		case open:
-			return sMuted.Render("▾ " + title)
+	head := func(s sideSection, title string) string {
+		arrow := "▸ "
+		if a.sideOpen[s] {
+			arrow = "▾ "
 		}
-		return sFaint.Render("▸ ") + sMuted.Render(title)
+		if s == sec {
+			return sSection.Render(arrow + title)
+		}
+		return sFaint.Render(arrow) + sMuted.Render(title)
 	}
 
 	var lines []string
 	// Setup wizard
-	lines = append(lines, mark("side:head:setup", head(sideSetup, "Setup", false)))
-	if sec == sideSetup {
+	lines = append(lines, mark("side:head:setup", head(sideSetup, "Setup")))
+	if a.sideOpen[sideSetup] {
 		for i, s := range a.wizard() {
 			idx := i + 1
 			var line string
 			switch {
-			case idx == a.step:
+			case idx == a.step && sec == sideSetup:
 				line = item(true, sAccent.Render("◉"), s.name())
-			case idx < a.step:
+			case idx < a.step && sec == sideSetup, sec != sideSetup && a.cfg.Installed():
 				line = item(false, sGood.Render("●"), s.name())
 			default:
 				line = item(false, sFaint.Render("○"), s.name())
@@ -179,9 +232,12 @@ func (a *App) menuLines(inner int) []string {
 	if a.cfg.Domain != "" {
 		title = "Manage " + a.cfg.Domain
 	}
-	lines = append(lines, mark("side:head:manage", head(sideManage, truncate(title, inner-2), false)))
-	if sec == sideManage {
-		cur := a.manageCurrent()
+	lines = append(lines, mark("side:head:manage", head(sideManage, truncate(title, inner-2))))
+	if a.sideOpen[sideManage] {
+		cur := ""
+		if sec == sideManage {
+			cur = a.manageCurrent()
+		}
 		for _, m := range manageMenu {
 			if m.screen == "Users" && a.cfg.Homeserver != "synapse" {
 				continue
@@ -198,14 +254,34 @@ func (a *App) menuLines(inner int) []string {
 	}
 	lines = append(lines, "")
 
+	// Mirrors
+	lines = append(lines, mark("side:head:mirrors", head(sideMirrors, "Mirrors")))
+	if a.sideOpen[sideMirrors] {
+		ms := a.screens[a.index("Mirrors")].(*mirrorsScreen)
+		for i, t := range mirrorsTabs {
+			on := sec == sideMirrors && ms.tab == i
+			dot := sFaint.Render("·")
+			if ok, n := ms.tally(i); n > 0 {
+				dot = sGood.Render("✓")
+				if ok < n {
+					dot = sBad.Render("✗")
+				}
+			}
+			if on {
+				dot = sAccent.Render("◆")
+			}
+			lines = append(lines, markRow("side:mirrors:"+strconv.Itoa(i), item(on, dot, t), inner))
+		}
+	}
+	lines = append(lines, "")
+
 	// Servers
 	profiles := config.Profiles()
 	if len(profiles) == 0 {
 		profiles = []config.Profile{{Name: config.DefaultProfile, Domain: a.cfg.Domain}}
 	}
-	showServers := sec == sideServers || sec == sideNone || len(profiles) > 1
-	lines = append(lines, mark("side:head:servers", head(sideServers, "Servers", showServers)))
-	if showServers {
+	lines = append(lines, mark("side:head:servers", head(sideServers, "Servers")))
+	if a.sideOpen[sideServers] {
 		for _, p := range profiles {
 			active := p.Name == config.Active()
 			dot := sFaint.Render("○")

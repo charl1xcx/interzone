@@ -14,10 +14,10 @@
 │   · Move server        ││         Register a new account, optionally as a server administrator.                      │
 │   · Servers            ││      ◆  Manage users  m                                                                    │
 │                        ││         List every account; reset passwords, grant or remove admin rights, deactivate o…   │
-│ ▸ Servers              ││      ◆  Server dashboard  d                                                                │
+│ ▸ Mirrors              ││      ◆  Server dashboard  d                                                                │
 │                        ││         Load, memory, disk space, certificate expiry and the state of every container.     │
-│                        ││      ◆  See what an update brings  n                                                       │
-│                        ││         Fetch the playbook without installing and list the new commits and component ve…   │
+│ ▾ Servers              ││      ◆  See what an update brings  n                                                       │
+│   ● example.org        ││         Fetch the playbook without installing and list the new commits and component ve…   │
 │                        ││      ◆  Check container images  i                                                          │
 │                        ││         Make sure every image the install needs can be pulled from your registry mirror…   │
 │                        ││      ◆  Back up the database  b                                                            │
@@ -29,8 +29,8 @@
 │                        ││      ◆  Roll back  z                                                                       │
 │                        ││         Go back to the playbook commit and answers of an earlier successful deploy.        │
 │                        ││      ◆  View logs  l                                                                       │
-│                        ││         Follow the log of any Matrix service as it's written.                              │
-│ ◫ layout: auto (wide)  ││      ◆  Fine-tune the roles  f                                                             │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││         Follow the log of any Matrix service as it's written.                              │
+│ ◐ interzone  ctrl+y    ││      ◆  Fine-tune the roles  f                                                             │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         

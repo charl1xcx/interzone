@@ -134,11 +134,21 @@ func Default() *Config {
 	return c
 }
 
-// Load returns the saved configuration, or defaults on first run.
+// Fresh is Default for a server being set up from scratch: Synapse with
+// the Matrix Authentication Service, which the wizard turns on unless it's
+// unticked. Default itself stays without it, as saved answers are read on
+// top of it.
+func Fresh() *Config {
+	c := Default()
+	c.Components["mas"] = true
+	return c
+}
+
+// Load returns the saved configuration, or fresh answers on first run.
 func Load() (*Config, bool) {
 	c, err := LoadFile(Path())
 	if err != nil {
-		return Default(), false
+		return Fresh(), false
 	}
 	return c, true
 }

@@ -34,9 +34,9 @@ func (s *welcomeScreen) leave(*config.Config) {}
 func (s *welcomeScreen) typing() bool         { return false }
 func (s *welcomeScreen) keys() [][2]string {
 	if s.installed {
-		return [][2]string{{"↑↓", "choose"}, {"enter", "continue"}, {"s", "servers"}}
+		return [][2]string{{"↑↓", "choose"}, {"enter", "continue"}, {"s", "servers"}, {"m", "mirrors"}}
 	}
-	return [][2]string{{"enter", "begin"}, {"i", "import a setup"}, {"s", "servers"}}
+	return [][2]string{{"enter", "begin"}, {"i", "import a setup"}, {"s", "servers"}, {"m", "mirrors"}}
 }
 func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 	k, ok := msg.(tea.KeyMsg)
@@ -53,6 +53,8 @@ func (s *welcomeScreen) update(msg tea.Msg) tea.Cmd {
 		return nav(1)
 	case "s":
 		return func() tea.Msg { return gotoMsg("Servers") }
+	case "m":
+		return func() tea.Msg { return gotoMsg("Mirrors") }
 	case "i":
 		return tea.Sequence(func() tea.Msg { return gotoMsg("Servers") }, func() tea.Msg { return importOpenMsg{} })
 	}

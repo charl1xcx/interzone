@@ -376,7 +376,7 @@ func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 			}
 			opt := sMuted.Padding(0, 2).Render(name)
 			if i == fl.choice {
-				opt = lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(name)
+				opt = lipgloss.NewStyle().Foreground(cOnAccent).Background(cPurple).Bold(true).Padding(0, 2).Render(name)
 			}
 			parts = append(parts, mark(f.id+"c"+strconv.Itoa(idx)+"."+strconv.Itoa(i), opt))
 		}

@@ -25,6 +25,12 @@ type ServerStatus struct {
 	Uptime     time.Duration
 	MemTotal   int64 // bytes
 	MemAvail   int64
+	SwapTotal  int64
+	SwapFree   int64
+	OS         string // e.g. "Debian GNU/Linux 12 (bookworm)"
+	Kernel     string
+	Docker     string // the Docker engine's version
+	Hostname   string
 	Disks      []Disk
 	Containers []Container
 	Certs      []Cert
@@ -41,9 +47,19 @@ type Disk struct {
 
 type Container struct {
 	Name, State, Status string
+	Image               string
 	CPU                 string // e.g. "0.52%"
 	Mem                 string // e.g. "120MiB / 3.8GiB"
 	MemPerc             float64
+	Net                 string // received / sent, e.g. "1.2MB / 800kB"
+	Restarts            int
+	Health              string // healthy, unhealthy, starting, or "" without a health check
+}
+
+// CPUPerc is CPU as a number, in percent of one core.
+func (c Container) CPUPerc() float64 {
+	f, _ := strconv.ParseFloat(strings.TrimSuffix(c.CPU, "%"), 64)
+	return f
 }
 
 type Cert struct {
@@ -64,12 +80,18 @@ const statusPlay = `- name: interzone status
         echo "load=$(cut -d' ' -f1-3 /proc/loadavg)"
         echo "cpus=$(nproc)"
         echo "uptime=$(cut -d' ' -f1 /proc/uptime)"
-        awk '/^MemTotal:/{print "memtotal="$2} /^MemAvailable:/{print "memavail="$2}' /proc/meminfo
+        awk '/^MemTotal:/{print "memtotal="$2} /^MemAvailable:/{print "memavail="$2} /^SwapTotal:/{print "swaptotal="$2} /^SwapFree:/{print "swapfree="$2}' /proc/meminfo
+        (. /etc/os-release 2>/dev/null && echo "os=$PRETTY_NAME")
+        echo "kernel=$(uname -r)"
+        echo "hostname=$(hostname)"
+        echo "docker=$(docker version --format '{{.Server.Version}}' 2>/dev/null)"
         df -Pk / /matrix 2>/dev/null | awk 'NR>1{print "disk="$6" "$2" "$3" "$4}'
         echo "timer=$(systemctl show interzone-backup.timer -p NextElapseUSecRealtime --value 2>/dev/null)"
         docker ps -a --filter name=^matrix- --format 'ps={{json .}}'
         ids=$(docker ps -q --filter name=^matrix-)
         if [ -n "$ids" ]; then docker stats --no-stream --format 'stats={{json .}}' $ids; fi
+        all=$(docker ps -aq --filter name=^matrix-)
+        if [ -n "$all" ]; then docker inspect --format 'inspect={{.Name}} {{.RestartCount}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' $all; fi
         docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Names}} {{.Labels}}'
       changed_when: false
 `
@@ -121,7 +143,7 @@ func (st *ServerStatus) served(line string) {
 }
 
 func parseStatus(st *ServerStatus, out string) {
-	stats := map[string]Container{}
+	stats, inspect := map[string]Container{}, map[string]Container{}
 	sc := bufio.NewScanner(strings.NewReader(out))
 	sc.Buffer(make([]byte, 64*1024), 1024*1024)
 	for sc.Scan() {
@@ -146,6 +168,29 @@ func parseStatus(st *ServerStatus, out string) {
 		case "memavail":
 			n, _ := strconv.ParseInt(v, 10, 64)
 			st.MemAvail = n * 1024
+		case "swaptotal":
+			n, _ := strconv.ParseInt(v, 10, 64)
+			st.SwapTotal = n * 1024
+		case "swapfree":
+			n, _ := strconv.ParseInt(v, 10, 64)
+			st.SwapFree = n * 1024
+		case "os":
+			st.OS = strings.TrimSpace(v)
+		case "kernel":
+			st.Kernel = strings.TrimSpace(v)
+		case "hostname":
+			st.Hostname = strings.TrimSpace(v)
+		case "docker":
+			st.Docker = strings.TrimSpace(v)
+		case "inspect":
+			if len(f) >= 2 {
+				n, _ := strconv.Atoi(f[1])
+				h := ""
+				if len(f) > 2 {
+					h = f[2]
+				}
+				inspect[strings.TrimPrefix(f[0], "/")] = Container{Restarts: n, Health: h}
+			}
 		case "disk":
 			if len(f) == 4 {
 				d := Disk{Mount: f[0]}
@@ -166,33 +211,39 @@ func parseStatus(st *ServerStatus, out string) {
 		case "labels":
 			st.served(v)
 		case "ps":
-			var p struct{ Names, State, Status string }
+			var p struct{ Names, State, Status, Image string }
 			if json.Unmarshal([]byte(v), &p) == nil {
-				st.Containers = append(st.Containers, Container{Name: p.Names, State: p.State, Status: p.Status})
+				st.Containers = append(st.Containers, Container{Name: p.Names, State: p.State, Status: p.Status, Image: p.Image})
 			}
 		case "stats":
-			var s struct{ Name, CPUPerc, MemUsage, MemPerc string }
+			var s struct{ Name, CPUPerc, MemUsage, MemPerc, NetIO string }
 			if json.Unmarshal([]byte(v), &s) == nil {
 				perc, _ := strconv.ParseFloat(strings.TrimSuffix(s.MemPerc, "%"), 64)
-				stats[s.Name] = Container{CPU: s.CPUPerc, Mem: s.MemUsage, MemPerc: perc}
+				stats[s.Name] = Container{CPU: s.CPUPerc, Mem: s.MemUsage, MemPerc: perc, Net: s.NetIO}
 			}
 		}
 	}
 	sort.Strings(st.Hosts)
 	for i, ct := range st.Containers {
 		if s, ok := stats[ct.Name]; ok {
-			st.Containers[i].CPU, st.Containers[i].Mem, st.Containers[i].MemPerc = s.CPU, s.Mem, s.MemPerc
+			st.Containers[i].CPU, st.Containers[i].Mem, st.Containers[i].MemPerc, st.Containers[i].Net = s.CPU, s.Mem, s.MemPerc, s.Net
+		}
+		if in, ok := inspect[ct.Name]; ok {
+			st.Containers[i].Restarts, st.Containers[i].Health = in.Restarts, in.Health
 		}
 	}
 	// Problems first, then by name.
 	sort.SliceStable(st.Containers, func(i, j int) bool {
-		a, b := st.Containers[i].State == "running", st.Containers[j].State == "running"
+		a, b := st.Containers[i].Healthy(), st.Containers[j].Healthy()
 		if a != b {
 			return !a
 		}
 		return st.Containers[i].Name < st.Containers[j].Name
 	})
 }
+
+// Healthy reports whether a container runs and passes its health check.
+func (c Container) Healthy() bool { return c.State == "running" && c.Health != "unhealthy" }
 
 // serverAddr is where the server's HTTPS port is reached from here: its
 // SSH address, or this machine.

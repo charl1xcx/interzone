@@ -89,7 +89,16 @@ func (s *homeserverScreen) reload() {
 	s.sel = min(s.sel, len(s.presets)+len(catalog.Homeservers)-1)
 }
 
-func (s *homeserverScreen) leave(c *config.Config) { c.Homeserver = catalog.Homeservers[s.hs].ID }
+func (s *homeserverScreen) leave(c *config.Config) {
+	hs := catalog.Homeservers[s.hs].ID
+	if hs == "synapse" && c.Homeserver != "synapse" && !c.Installed() {
+		// Synapse logins go through MAS unless it's unticked on Components.
+		// An installed server keeps what it has: moving accounts to MAS
+		// is a migration of its own.
+		c.Components["mas"] = true
+	}
+	c.Homeserver = hs
+}
 
 // preset is the preset under the cursor, if it's on one.
 func (s *homeserverScreen) preset() (config.Preset, bool) {
@@ -114,7 +123,7 @@ func (s *homeserverScreen) custom() bool {
 			return false
 		}
 	}
-	return !slices.Equal(s.cfg.Stack().Components, config.Default().Stack().Components)
+	return !slices.Equal(s.cfg.Stack().Components, config.Fresh().Stack().Components)
 }
 
 // choose acts on the row under the cursor: a preset replaces the stack, a

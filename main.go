@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -38,6 +39,7 @@ func main() {
 
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	reset := flag.Bool("reset", false, "forget saved answers and start fresh")
+	theme := flag.String("theme", "", "the colours for this run: "+strings.Join(ui.ThemeNames(), ", ")+"; ctrl+y in the app switches and remembers them")
 	layout := flag.String("layout", "", "auto, compact (phones, narrow or portrait terminals) or wide; the default is the last one picked in the app, else auto")
 	noMouse := flag.Bool("no-mouse", false, "don't take the mouse, so the terminal can select text without shift")
 	flag.Usage = func() {
@@ -58,7 +60,7 @@ func main() {
 
 	cfg, loaded := config.Load()
 	if *reset {
-		cfg, loaded = config.Default(), false
+		cfg, loaded = config.Fresh(), false
 	}
 
 	opts := []tea.ProgramOption{tea.WithAltScreen()}
@@ -72,6 +74,10 @@ func main() {
 			os.Exit(2)
 		}
 		app.SetLayout(*layout)
+	}
+	if *theme != "" && !ui.SetTheme(*theme) {
+		fmt.Fprintf(os.Stderr, "interzone: -theme is one of %s, not %q\n", strings.Join(ui.ThemeNames(), ", "), *theme)
+		os.Exit(2)
 	}
 	p := tea.NewProgram(app, opts...)
 	if _, err := p.Run(); err != nil {

@@ -47,11 +47,13 @@ type App struct {
 	w, h    int
 	status  string
 
-	deployBack int // where esc leads from the Deploy screen
+	deployBack  int // where esc leads from the Deploy screen
+	mirrorsBack int // and from Mirrors
 
-	sideCollapsed bool   // the left menu is folded to its icon rail
-	layout        string // auto, compact or wide (layout.go)
-	menuOpen      bool   // the compact layout shows the menu
+	sideCollapsed bool                 // the left menu is folded to its icon rail
+	sideOpen      map[sideSection]bool // which of its sections are unfolded
+	layout        string               // auto, compact or wide (layout.go)
+	menuOpen      bool                 // the compact layout shows the menu
 
 	health    *deploy.Health // the header's dot (health.go)
 	healthGen int
@@ -59,7 +61,8 @@ type App struct {
 
 func New(cfg *config.Config, loaded bool) *App {
 	zone.NewGlobal()
-	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed(), layout: loadLayout()}
+	loadTheme()
+	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed(), sideOpen: loadSideOpen(), layout: loadLayout()}
 	a.screens = []screen{
 		&welcomeScreen{loaded: loaded},
 		newServerScreen(),
@@ -78,11 +81,13 @@ func New(cfg *config.Config, loaded bool) *App {
 		newDashboardScreen(),
 		newServersScreen(),
 		newMigrateScreen(),
+		newMirrorsScreen(), // its own sidebar section
 	}
 	a.deployBack = a.index("Review")
 	if cfg.Installed() {
 		a.step = a.index("Manage") // esc still leads to Welcome
 	}
+	a.openSection(a.section())
 	return a
 }
 
@@ -110,6 +115,9 @@ func (a *App) jump(n int) tea.Cmd {
 	if n < 0 || n >= len(a.screens) || n == a.step {
 		return nil
 	}
+	if a.screens[n].name() == "Mirrors" {
+		a.mirrorsBack = a.step
+	}
 	if ds, ok := a.screens[n].(*deployScreen); ok {
 		a.deployBack = a.step
 		ds.fromManage = a.cur().name() == "Manage" || a.isTool(a.step)
@@ -118,7 +126,11 @@ func (a *App) jump(n int) tea.Cmd {
 	if err := a.cfg.Save(); err != nil {
 		a.status = "couldn't save config: " + err.Error()
 	}
+	was := a.section()
 	a.step = n
+	if sec := a.section(); sec != was {
+		a.openSection(sec)
+	}
 	return a.cur().enter(a.cfg)
 }
 
@@ -216,6 +228,14 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				a.toggleSidebar()
 			}
 			return a, nil
+		case "ctrl+l":
+			a.cycleLayout()
+			a.status = sMuted.Render("layout: ") + sTitle.Render(a.layoutName())
+			return a, nil
+		case "ctrl+y":
+			cycleTheme()
+			a.status = sMuted.Render("theme: ") + sTitle.Render(themeName)
+			return a, nil
 		case "ctrl+s":
 			a.cur().leave(a.cfg)
 			if err := a.cfg.Save(); err != nil {
@@ -241,6 +261,8 @@ func (a *App) back() tea.Cmd {
 	switch a.cur().name() {
 	case "Deploy":
 		return a.jump(a.deployBack)
+	case "Mirrors":
+		return a.jump(a.mirrorsBack)
 	case "Manage":
 		return a.jump(0)
 	}
@@ -291,7 +313,7 @@ func (a *App) View() string {
 	inner := w - 2 - 2*padX
 	title := sTitle.Render(a.cur().title())
 	contentH := max(3, bodyH-2*padY-2)
-	content := a.cur().view(inner, contentH)
+	content := a.screenView(inner, contentH)
 	if lines := strings.Split(content, "\n"); len(lines) > contentH {
 		content = strings.Join(lines[:contentH], "\n") // never push the header off screen
 	}
@@ -327,6 +349,9 @@ func (a *App) stepper(w int) string {
 	if domain == "" {
 		domain = "(no domain yet)"
 	}
+	if a.cur().name() == "Mirrors" {
+		return " " + sAccent.Render("⇅ Mirrors") + sMuted.Render("  what deploys download") + server
+	}
 	if _, ok := a.cur().(toolScreen); ok {
 		return " " + sAccent.Render("◆ Manage") + sMuted.Render("  "+domain) + sFaint.Render("  ›  ") + sTitle.Render(a.cur().name()) + server
 	}
@@ -358,6 +383,16 @@ func (a *App) stepper(w int) string {
 		}
 	}
 	return line
+}
+
+// layoutAware screens lay themselves out differently in the compact layout.
+type layoutAware interface{ setCompact(bool) }
+
+func (a *App) screenView(w, h int) string {
+	if la, ok := a.cur().(layoutAware); ok {
+		la.setCompact(a.compact())
+	}
+	return a.cur().view(w, h)
 }
 
 // escListed reports whether the screen's own keys say what esc does.

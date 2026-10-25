@@ -246,7 +246,7 @@ func (s *componentsScreen) view(w, h int) string {
 		label := cat + "  " + fmt.Sprintf("%d/%d", on, n)
 		tab := sMuted.Padding(0, 2).Render(label)
 		if i == s.cat && s.filter.Value() == "" {
-			tab = lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(label)
+			tab = lipgloss.NewStyle().Foreground(cOnAccent).Background(cPurple).Bold(true).Padding(0, 2).Render(label)
 		}
 		tabs = append(tabs, mark("cat:"+strconv.Itoa(i), tab))
 	}

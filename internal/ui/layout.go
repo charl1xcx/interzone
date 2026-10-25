@@ -72,8 +72,8 @@ func (a *App) compact() bool {
 	return a.w < 80 || (a.w < 100 && a.w < 2*a.h)
 }
 
-// layoutLink is the clickable switch shown in the sidebar and the menu.
-func (a *App) layoutLink() string {
+// layoutName is the layout, with what auto picked.
+func (a *App) layoutName() string {
 	l := a.layout
 	if l == "auto" {
 		l = "auto (wide)"
@@ -81,7 +81,17 @@ func (a *App) layoutLink() string {
 			l = "auto (compact)"
 		}
 	}
-	return mark("app:layout", sFaint.Render("◫ layout: ")+sMuted.Render(l))
+	return l
+}
+
+// layoutLink is the clickable switch shown in the sidebar and the menu.
+func (a *App) layoutLink() string {
+	return mark("app:layout", sFaint.Render("◫ ")+sMuted.Render(a.layoutName())+sFaint.Render("  ctrl+l"))
+}
+
+// themeLink switches the theme the same way.
+func themeLink() string {
+	return mark("app:theme", sFaint.Render("◐ ")+sMuted.Render(themeName)+sFaint.Render("  ctrl+y"))
 }
 
 func (a *App) compactView() string {
@@ -117,11 +127,11 @@ func (a *App) compactView() string {
 	var content string
 	if a.menuOpen {
 		lines := a.menuLines(inner)
-		lines = append(lines, "", a.layoutLink())
+		lines = append(lines, "", a.layoutLink(), themeLink())
 		content = strings.Join(lines, "\n")
 	} else {
 		contentH := max(3, bodyH-2)
-		content = a.cur().view(inner, contentH)
+		content = a.screenView(inner, contentH)
 		if lines := strings.Split(content, "\n"); len(lines) > contentH {
 			content = strings.Join(lines[:contentH], "\n")
 		}

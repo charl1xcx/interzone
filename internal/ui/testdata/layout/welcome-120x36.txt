@@ -4,10 +4,10 @@
 │                        ││                                                                                            │
 │ ▸ Manage example.org   ││                                                                                            │
 │                        ││                                                                                            │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││                                                                                            │
-│                        ││                   ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀                                    │
-│                        ││                    █  █ ▀█  █  ██▄ █▀▄ ▄▀  █▄█ █ ▀█ ██▄                                    │
+│ ▸ Mirrors              ││                                                                                            │
+│                        ││                                                                                            │
+│ ▾ Servers              ││                   ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀                                    │
+│   ● example.org        ││                    █  █ ▀█  █  ██▄ █▀▄ ▄▀  █▄█ █ ▀█ ██▄                                    │
 │                        ││                                                                                            │
 │                        ││    Your own Matrix server, set up with matrix-docker-ansible-deploy,                       │
 │                        ││                   without editing a single YAML file.                                      │
@@ -29,8 +29,8 @@
 │                        ││    Press enter to begin ›                                                                  │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
-│                        ││                                                                                            │
-│ ◫ layout: auto (wide)  ││                                                                                            │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- enter begin   ·   i import a setup   ·   s servers   ·   ctrl+c quit                                                   
+ enter begin   ·   i import a setup   ·   s servers   ·   m mirrors   ·   ctrl+c quit                                   

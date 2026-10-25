@@ -87,7 +87,66 @@ func TestLayout(t *testing.T) {
 				a.menuOpen = true
 			}
 		}},
+		{"dashboard", openDashboard},
+		{"mirrors", openMirrors},
 	}
+	shootAll(t, sizes, shots)
+}
+
+// The dashboard and the mirror checks also have a layout for big terminals.
+func TestLayoutWide(t *testing.T) {
+	shootAll(t, []struct{ w, h int }{{180, 50}}, []struct {
+		name string
+		open func(a *App)
+	}{{"dashboard", openDashboard}, {"mirrors", openMirrors}})
+}
+
+func openDashboard(a *App) {
+	a.jump(a.index("Dashboard"))
+	ds := a.cur().(*dashboardScreen)
+	st := &deploy.ServerStatus{Load: [3]float64{1.2, 0.9, 0.7}, CPUs: 4, Uptime: 80 * time.Hour,
+		MemTotal: 8 << 30, MemAvail: 3 << 30, SwapTotal: 2 << 30, SwapFree: 1 << 30,
+		OS: "Debian GNU/Linux 12 (bookworm)", Kernel: "6.1.0-26-amd64", Docker: "27.3.1", Hostname: "vps1",
+		Disks: []deploy.Disk{{Mount: "/", Total: 80 << 30, Used: 62 << 30, Avail: 18 << 30}},
+		Timer: "Tue 2026-10-27 03:00:00 UTC", Taken: time.Now(),
+		Certs: []deploy.Cert{
+			{Host: "matrix.example.org", Services: "Synapse", NotAfter: time.Now().Add(60*24*time.Hour + time.Hour), Issuer: "R11"},
+			{Host: "element.example.org", Services: "Element Web", NotAfter: time.Now().Add(12*24*time.Hour + time.Hour), Issuer: "R11"},
+			{Host: "chat.other.net", Services: "Cinny", Err: "connection refused"},
+		},
+		Containers: []deploy.Container{
+			{Name: "matrix-mautrix-telegram", State: "exited", Status: "Exited (1) 2 hours ago", Image: "dock.mau.dev/mautrix/telegram:v0.15.2"},
+			{Name: "matrix-synapse", State: "running", Status: "Up 3 days", Image: "ghcr.io/element-hq/synapse:v1.120.0",
+				CPU: "4.10%", Mem: "610MiB / 7.8GiB", MemPerc: 7.6, Net: "1.2GB / 900MB", Restarts: 2, Health: "unhealthy"},
+			{Name: "matrix-postgres", State: "running", Status: "Up 3 days", Image: "postgres:17.2-alpine",
+				CPU: "0.80%", Mem: "220MiB / 7.8GiB", MemPerc: 2.7, Net: "40MB / 60MB", Health: "healthy"},
+			{Name: "matrix-traefik", State: "running", Status: "Up 3 days", Image: "traefik:v3.2.1",
+				CPU: "0.20%", Mem: "60MiB / 7.8GiB", MemPerc: 0.7, Net: "2.1GB / 2.0GB"},
+		}}
+	ds.st, ds.loading = st, false
+}
+
+func openMirrors(a *App) {
+	a.jump(a.index("Mirrors"))
+	ms := a.cur().(*mirrorsScreen)
+	ms.loading = [3]bool{}
+	ms.taken = time.Now()
+	ms.res = mirrorsResult{
+		Repos: []deploy.Check{
+			{Name: "playbook", Target: a.cfg.Sources.PlaybookGit, OK: true, Detail: "HEAD 1a2b3c4d5e"},
+			{Name: "auxiliary", Target: "https://itsjustadream.g0th.ir/mother-of-all-self-hosting/ansible-role-aux.git", OK: true, Detail: "v2.0.0-0"},
+			{Name: "cinny", Target: "https://itsjustadream.g0th.ir/mother-of-all-self-hosting/ansible-role-cinny.git", OK: false, Detail: "has no v4.12.8-0 yet; the mirror may be behind"},
+		},
+		Sources: []deploy.Check{{Name: "Container registry", Target: a.cfg.Sources.RegistryPrefix, OK: true, Detail: "HTTP 200"}},
+		Known:   []deploy.MirrorResult{{Mirror: config.KnownMirrors[0], OK: true, Detail: "fresh", Took: 120 * time.Millisecond}},
+		ImgErr:  "the images are worked out from the playbook on the server; set it up first",
+	}
+}
+
+func shootAll(t *testing.T, sizes []struct{ w, h int }, shots []struct {
+	name string
+	open func(a *App)
+}) {
 	for _, sz := range sizes {
 		for _, sh := range shots {
 			name := fmt.Sprintf("%s-%dx%d", sh.name, sz.w, sz.h)

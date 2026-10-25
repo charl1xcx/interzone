@@ -15,13 +15,13 @@
    · Move server                              
    · Servers                                  
                                               
- ▸ Servers                                    
+ ▸ Mirrors                                    
                                               
- ◫ layout: auto (compact)                     
+ ▾ Servers                                    
+   ● example.org                              
                                               
-                                              
-                                              
-                                              
+ ◫ auto (compact)  ctrl+l                     
+ ◐ interzone  ctrl+y                          
                                               
                                               
                                               

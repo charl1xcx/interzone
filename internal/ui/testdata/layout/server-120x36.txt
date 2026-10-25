@@ -9,10 +9,10 @@
 │                        ││                                                                                            │
 │ ▸ Manage example.org   ││      Install where?                                                                        │
 │                        ││        This machine      A remote server over SSH                                          │
-│ ▸ Servers              ││                                                                                            │
+│ ▸ Mirrors              ││                                                                                            │
 │                        ││      sudo password                                                                         │
-│                        ││      ›                                                                                     │
-│                        ││                                                                                            │
+│ ▾ Servers              ││      ›                                                                                     │
+│   ● example.org        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
 │                        ││                                                                                            │
@@ -29,8 +29,8 @@
 │                        ││                                                                                            │
 │                        ││     ▼ more below                                                                           │
 │                        ││                                                                                            │
-│                        ││   Press ctrl+t to test that every download source is reachable from here.                  │
-│ ◫ layout: auto (wide)  ││                                                                                            │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││   Press ctrl+t to test that every download source is reachable from here.                  │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ move · ←→ choose · space toggle · ctrl+t test sources · ctrl+r reveal · enter next · esc back · ctrl+c quit         

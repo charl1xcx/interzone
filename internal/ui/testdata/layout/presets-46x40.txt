@@ -4,14 +4,15 @@
  Choose your homeserver                       
                                               
  Start from a preset                          
-   Minimal chat      Synapse · 3 components   
- › Friends & family  Synapse · 6 components   
+   Minimal chat      Synapse · 4 components   
+ › Friends & family  Synapse · 7 components   
      Chat plus voice and video calls, an      
      admin panel and nightly database dumps.  
      Coturn TURN server, Exim email relay,    
-     Element Web, Element Call, Ketesa admin  
+     Element Web, Element Call, Matrix        
+     Authentication Service, Ketesa admin     
      panel, Postgres backup.                  
-   Bridge hub        Synapse · 10 components  
+   Bridge hub        Synapse · 11 components  
    Public community  Synapse · 9 components   
    Lightweight       Tuwunel · 2 components   
                                               
@@ -29,7 +30,6 @@
     ○  Tuwunel   lightweight Rust server      
     ○  Conduit   minimal Rust server          
     ○  Dendrite   second-gen Go server        
-                                              
                                               
                                               
                                               

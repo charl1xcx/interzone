@@ -37,4 +37,4 @@
                                               
 ──────────────────────────────────────────────
  enter begin · i import a setup · s servers
- ctrl+c quit
+ m mirrors · ctrl+c quit

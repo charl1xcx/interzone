@@ -135,7 +135,7 @@ var Components = []Component{
 
 	// ── Authentication ─────────────────────────────────────────────
 	{ID: "mas", Name: "Matrix Authentication Service", Category: "Authentication", EnableVar: "matrix_authentication_service_enabled", SynapseOnly: true,
-		Description: "Next-generation OAuth 2.0/OIDC login (required by Element X for some flows).", Doc: "configuring-playbook-matrix-authentication-service.md"},
+		Description: "OAuth 2.0/OIDC logins, which Element X needs. On by default with Synapse; untick it to keep Synapse's own logins.", Doc: "configuring-playbook-matrix-authentication-service.md"},
 	{ID: "double-puppet", Name: "Appservice Double Puppet", Category: "Authentication", EnableVar: "matrix_appservice_double_puppet_enabled",
 		Description: "Lets bridges show your messages sent from other apps as coming from you.", Doc: "configuring-playbook-appservice-double-puppet.md"},
 	{ID: "ketesa", Name: "Ketesa admin panel", Category: "Authentication", EnableVar: "matrix_ketesa_enabled", SynapseOnly: true,
@@ -431,12 +431,12 @@ type Preset struct {
 
 // Presets are the built-in stacks offered on the Homeserver step.
 var Presets = []Preset{
-	{"minimal", "Minimal chat", "Synapse and Element Web: the smallest usual setup.",
-		"synapse", []string{"coturn", "exim", "element"}},
+	{"minimal", "Minimal chat", "Synapse with MAS logins and Element Web: the smallest usual setup.",
+		"synapse", []string{"coturn", "exim", "element", "mas"}},
 	{"family", "Friends & family", "Chat plus voice and video calls, an admin panel and nightly database dumps.",
-		"synapse", []string{"coturn", "exim", "element", "element-call", "ketesa", "postgres-backup"}},
+		"synapse", []string{"coturn", "exim", "element", "element-call", "mas", "ketesa", "postgres-backup"}},
 	{"bridges", "Bridge hub", "Telegram, WhatsApp, Signal and Discord in one place, encrypted, with your own name on the other side.",
-		"synapse", []string{"coturn", "exim", "element", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
+		"synapse", []string{"coturn", "exim", "element", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
 	{"community", "Public community", "Open sign-up through MAS, two web clients, moderation, antispam and monitoring.",
 		"synapse", []string{"coturn", "exim", "element", "cinny", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}},
 	{"light", "Lightweight", "Tuwunel and Cinny for a Raspberry Pi or a 1 GB VPS.",

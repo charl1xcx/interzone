@@ -187,6 +187,9 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 		case "app:layout":
 			a.cycleLayout()
 			return a, nil
+		case "app:theme":
+			cycleTheme()
+			return a, nil
 		}
 		if a.menuOpen && !strings.HasPrefix(id, "side:") && !strings.HasPrefix(id, "key:") {
 			continue // the screen under the menu isn't shown
@@ -234,6 +237,7 @@ func (a *App) busy() bool {
 }
 
 func (a *App) sideClick(id string) tea.Cmd {
+	inMenu := a.menuOpen
 	a.menuOpen = false
 	if id == "side:fold" {
 		a.toggleSidebar()
@@ -268,7 +272,21 @@ func (a *App) sideClick(id string) tea.Cmd {
 			return nil
 		}
 		return a.switchServer(switchServerMsg{name: arg, cfg: c})
+	case "mirrors":
+		n, _ := strconv.Atoi(arg)
+		a.screens[a.index("Mirrors")].(*mirrorsScreen).show(n)
+		return a.jump(a.index("Mirrors"))
 	case "head":
+		if inMenu || !a.compact() && !a.sidebarRail() {
+			// The full menu: the heading folds or unfolds its section alone.
+			for sec, name := range sectionNames {
+				if name == arg {
+					a.toggleSection(sec)
+				}
+			}
+			a.menuOpen = inMenu
+			return nil
+		}
 		switch arg {
 		case "setup":
 			if a.section() != sideSetup {
@@ -276,6 +294,8 @@ func (a *App) sideClick(id string) tea.Cmd {
 			}
 		case "manage":
 			return a.sideClick("side:manage:Manage")
+		case "mirrors":
+			return a.jump(a.index("Mirrors"))
 		case "servers":
 			return a.jump(a.index("Servers"))
 		}

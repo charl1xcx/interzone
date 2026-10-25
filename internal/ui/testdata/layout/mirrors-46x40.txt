@@ -1,0 +1,40 @@
+ ◢◤ interzone                 ONLINE   ≡ menu
+ ⇅ Mirrors  what deploys download
+──────────────────────────────────────────────
+ Is everything there to download?             
+                                              
+ ▌Repos 2/3  ·  Mirrors 2/2  ·  Images –      
+ checked just now · r checks again            
+ The playbook, and the roles it pins at their 
+ versions from https://itsjustadream.g0th.ir/ 
+                                              
+ ✗ cinny  has no v4.12.8-0 yet; the mirror m… 
+   https://itsjustadrea…nsible-role-cinny.git 
+ ✓ playbook  HEAD 1a2b3c4d5e                  
+   https://itsjustadrea…docker-ansible-deploy 
+ ✓ auxiliary  v2.0.0-0                        
+   https://itsjustadrea…/ansible-role-aux.git 
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+──────────────────────────────────────────────
+ ←→ repos · mirrors · images · r check again
+ ↑↓ scroll · esc back · ctrl+c quit

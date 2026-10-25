@@ -78,7 +78,7 @@ func DataDir() string {
 // NewProfile returns fresh answers for another server, with its own playbook
 // copy, taking the network settings from base.
 func NewProfile(name string, base *Config) *Config {
-	c := Default()
+	c := Fresh()
 	c.PlaybookDir = filepath.Join(DataDir(), "servers", name, "matrix-docker-ansible-deploy")
 	if base != nil {
 		c.Sources = base.Sources

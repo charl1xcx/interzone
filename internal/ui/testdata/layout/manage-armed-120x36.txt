@@ -14,10 +14,10 @@
 │   · Move server        ││      ◆  Manage users  m                                                                    │
 │   · Servers            ││         List every account; reset passwords, grant or remove admin rights, deactivate o…   │
 │                        ││      ◆  Server dashboard  d                                                                │
-│ ▸ Servers              ││         Load, memory, disk space, certificate expiry and the state of every container.     │
+│ ▸ Mirrors              ││         Load, memory, disk space, certificate expiry and the state of every container.     │
 │                        ││      ◆  See what an update brings  n                                                       │
-│                        ││         Fetch the playbook without installing and list the new commits and component ve…   │
-│                        ││      ◆  Check container images  i                                                          │
+│ ▾ Servers              ││         Fetch the playbook without installing and list the new commits and component ve…   │
+│   ● example.org        ││      ◆  Check container images  i                                                          │
 │                        ││         Make sure every image the install needs can be pulled from your registry mirror…   │
 │                        ││      ◆  Back up the database  b                                                            │
 │                        ││         Dump the bundled Postgres database and copy it to /home/demo/.local/share/inter…   │
@@ -29,8 +29,8 @@
 │                        ││         Go back to the playbook commit and answers of an earlier successful deploy.        │
 │                        ││      ◆  View logs  l                                                                       │
 │                        ││         Follow the log of any Matrix service as it's written.                              │
-│                        ││      ◆  Fine-tune the roles  f                                                             │
-│ ◫ layout: auto (wide)  ││         Browse and change the default variables of every playbook role: Synapse, bridge…   │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││      ◆  Fine-tune the roles  f                                                             │
+│ ◐ interzone  ctrl+y    ││         Browse and change the default variables of every playbook role: Synapse, bridge…   │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         

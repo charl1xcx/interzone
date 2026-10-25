@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"interzone/internal/config"
@@ -183,12 +184,25 @@ func Status(args []string) error {
 	}
 	pct := func(a, b int64) string { return strconv.Itoa(int(float64(a)/float64(max(b, 1))*100+0.5)) + "%" }
 	fmt.Println(head.Render("==> " + c.Domain))
+	var sys []string
+	for _, x := range []string{st.OS, "kernel " + st.Kernel, "Docker " + st.Docker} {
+		if !strings.HasSuffix(x, " ") && x != "" {
+			sys = append(sys, x)
+		}
+	}
+	if len(sys) > 0 {
+		fmt.Printf("  %-14s %s\n", "System", strings.Join(sys, ", "))
+	}
 	if st.CPUs > 0 {
 		fmt.Printf("  %-14s %.2f %.2f %.2f on %d cores, up %s\n", "Load", st.Load[0], st.Load[1], st.Load[2], st.CPUs, st.Uptime.Round(time.Minute))
 	}
 	if st.MemTotal > 0 {
 		used := st.MemTotal - st.MemAvail
 		fmt.Printf("  %-14s %s of %s (%s)\n", "Memory", deploy.HumanSize(used), deploy.HumanSize(st.MemTotal), pct(used, st.MemTotal))
+	}
+	if st.SwapTotal > 0 {
+		used := st.SwapTotal - st.SwapFree
+		fmt.Printf("  %-14s %s of %s (%s)\n", "Swap", deploy.HumanSize(used), deploy.HumanSize(st.SwapTotal), pct(used, st.SwapTotal))
 	}
 	for _, d := range st.Disks {
 		fmt.Printf("  %-14s %s free of %s (%s used)\n", "Disk "+d.Mount, deploy.HumanSize(d.Avail), deploy.HumanSize(d.Total), pct(d.Used, d.Total))
@@ -217,10 +231,17 @@ func Status(args []string) error {
 	fmt.Println(head.Render("==> Containers"))
 	for _, ct := range st.Containers {
 		icon := good.Render("●")
-		if ct.State != "running" {
+		switch {
+		case ct.State != "running":
 			icon, failed = bad.Render("●"), true
+		case ct.Health == "unhealthy":
+			icon = warn.Render("●")
 		}
-		fmt.Printf("  %s %-40s %-8s %-22s %s\n", icon, ct.Name, ct.CPU, ct.Mem, muted.Render(ct.Status))
+		status := ct.Status
+		if ct.Restarts > 0 {
+			status += fmt.Sprintf(", %d restarts", ct.Restarts)
+		}
+		fmt.Printf("  %s %-40s %-8s %-22s %s\n", icon, ct.Name, ct.CPU, ct.Mem, muted.Render(status))
 	}
 	if failed {
 		return ErrFailed

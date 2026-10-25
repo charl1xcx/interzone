@@ -9,10 +9,10 @@
 │                        ││   ▌  › admin                                                                               │
 │ ▸ Manage example.org   ││   ▌  Created automatically after install.                                                  │
 │                        ││                                                                                            │
-│ ▸ Servers              ││      Admin password                                                                        │
+│ ▸ Mirrors              ││      Admin password                                                                        │
 │                        ││      › ••••••••••••••••••••                                                                │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││                                                                                            │
 │                        ││   ◆ Coturn TURN server ─────────────────────────────────────────────────────────────────   │
 │                        ││                                                                                            │
 │                        ││      Public IP address(es)                                                                 │
@@ -29,8 +29,8 @@
 │                        ││                                                                                            │
 │                        ││   ◆ Advanced ───────────────────────────────────────────────────────────────────────────   │
 │                        ││                                                                                            │
-│                        ││      Extra vars.yml lines                                                                  │
-│ ◫ layout: auto (wide)  ││     ▼ more below                                                                           │
-│ ctrl+b ‹ fold          ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││      Extra vars.yml lines                                                                  │
+│ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
+│ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  tab/↑↓ move   ·   space toggle   ·   ctrl+r reveal secrets   ·   enter next   ·   esc back   ·   ctrl+c quit           

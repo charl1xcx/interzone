@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Is everything there to download?                                                         │
+│ ▸ Manage example.org   ││                                                                                            │
+│                        ││   ╭──────────────────────────╮ ╭──────────────────────────╮ ╭──────────────────────────╮   │
+│ ▾ Mirrors              ││   │ 1  Repositories          │ │ 2  Mirrors               │ │ 3  Images                │   │
+│ ▌ ◆ Repositories       ││   │ 2/3  1 missing           │ │ 2/2  all there           │ │ –  not checked           │   │
+│   ✓ Mirrors            ││   │ ████████████████░░░░░░░░ │ │ ████████████████████████ │ │ ░░░░░░░░░░░░░░░░░░░░░░░░ │   │
+│   · Images             ││   ╰──────────────────────────╯ ╰──────────────────────────╯ ╰──────────────────────────╯   │
+│                        ││   checked just now · r checks again                                                        │
+│ ▾ Servers              ││   The playbook, and the roles it pins at their versions from                               │
+│   ● example.org        ││   https://itsjustadream.g0th.ir/                                                           │
+│                        ││                                                                                            │
+│                        ││   ✗ cinny            has no v4.12.8-0 yet; the … https://itsjustadre…ible-role-cinny.git   │
+│                        ││   ✓ playbook         HEAD 1a2b3c4d5e             https://itsjustadre…cker-ansible-deploy   │
+│                        ││   ✓ auxiliary        v2.0.0-0                    https://itsjustadre…nsible-role-aux.git   │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold  ctrl+b         ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ←→ repos · mirrors · images   ·   r check again   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                       
