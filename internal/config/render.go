@@ -342,17 +342,3 @@ func (c *Config) HostsINI() string {
 	b.WriteString(strings.Join(parts, " ") + "\n")
 	return b.String()
 }
-
-// DNSRecords lists the hostnames that must point at the server.
-func (c *Config) DNSRecords() []string {
-	recs := []string{"matrix." + c.Domain}
-	for _, comp := range catalog.Components {
-		if comp.Subdomain != "" && c.Enabled(comp) {
-			recs = append(recs, comp.Subdomain+"."+c.Domain)
-		}
-	}
-	if c.Components["base-domain"] {
-		recs = append(recs, c.Domain)
-	}
-	return recs
-}
