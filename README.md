@@ -154,6 +154,12 @@ install itself from a PyPI mirror).
 ./interzone --reset   # forget saved answers
 ```
 
+The menu on the left shows where you are: the setup steps, the Manage
+screens (with the action running, if any) and your servers. The section
+you're in is open and the others are folded; `ctrl+b` folds the whole menu
+to a rail of icons, and terminals narrower than 100 columns always get the
+rail.
+
 | Key | Action |
 |---|---|
 | `enter` / `↑↓` / `tab` | move through fields |
@@ -161,6 +167,7 @@ install itself from a PyPI mirror).
 | `ctrl+n` / `ctrl+p` | next / previous step |
 | `ctrl+r` | reveal secrets |
 | `ctrl+s` | save answers |
+| `ctrl+b` | fold or unfold the menu on the left |
 | `esc` | back |
 
 On the Review screen, `enter` deploys and `s` only writes the files and prints

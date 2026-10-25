@@ -42,10 +42,12 @@ type App struct {
 	status  string
 
 	deployBack int // where esc leads from the Deploy screen
+
+	sideCollapsed bool // the left menu is folded to its icon rail
 }
 
 func New(cfg *config.Config, loaded bool) *App {
-	a := &App{cfg: cfg, loaded: loaded}
+	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed()}
 	a.screens = []screen{
 		&welcomeScreen{loaded: loaded},
 		newNetworkScreen(),
@@ -162,6 +164,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !(deploying && ds.running) {
 				return a, a.back()
 			}
+		case "ctrl+b":
+			a.toggleSidebar()
+			return a, nil
 		case "ctrl+s":
 			a.cur().leave(a.cfg)
 			if err := a.cfg.Save(); err != nil {
@@ -200,14 +205,24 @@ func (a *App) View() string {
 	if a.w == 0 {
 		return ""
 	}
-	w := a.w
-	header := a.header(w)
-	stepper := a.stepper(w)
-	footer := a.footer(w)
+	header := a.header(a.w)
+	footer := a.footer(a.w)
+	// With the menu open, it shows the steps; the stepper line is only
+	// needed beside the folded rail.
+	sideW := a.sidebarWidth()
+	w := a.w - sideW
+	stepper := ""
+	if a.sidebarRail() {
+		stepper = a.stepper(w)
+	}
 
 	// The body panel's border takes 2 rows; its padding takes padY rows on
 	// each side, and the title plus a blank line take two more.
-	bodyH := a.h - lipgloss.Height(header) - lipgloss.Height(stepper) - lipgloss.Height(footer) - 2
+	stepH := 0
+	if stepper != "" {
+		stepH = lipgloss.Height(stepper)
+	}
+	bodyH := a.h - lipgloss.Height(header) - stepH - lipgloss.Height(footer) - 2
 	padY, padX := 1, 3
 	if bodyH < 24 {
 		padY = 0
@@ -223,8 +238,13 @@ func (a *App) View() string {
 		content = strings.Join(lines[:contentH], "\n") // never push the header off screen
 	}
 	body := sPanelFocus.Padding(padY, padX).Width(w - 2).Height(max(3, bodyH)).Render(title + "\n\n" + content)
+	body = lipgloss.JoinHorizontal(lipgloss.Top, a.sidebar(max(3, bodyH)), body)
 
-	return lipgloss.JoinVertical(lipgloss.Left, header, stepper, body, footer)
+	parts := []string{header}
+	if stepper != "" {
+		parts = append(parts, stepper)
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, append(parts, body, footer)...)
 }
 
 func (a *App) header(w int) string {

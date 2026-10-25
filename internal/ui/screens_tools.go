@@ -905,7 +905,7 @@ func (s *dashboardScreen) view(w, h int) string {
 			running++
 		}
 	}
-	lines = append(lines, "", sectionHeading(fmt.Sprintf("Containers  %d of %d running", running, len(st.Containers)), min(w, 80)))
+	lines = append(lines, "", sectionHeading(fmt.Sprintf("Containers  %d of %d running", running, len(st.Containers)), min(w-22, 80)))
 	top := strings.Join(lines, "\n")
 	room := max(3, h-lipgloss.Height(top)-2)
 	s.scroll = min(s.scroll, max(0, len(st.Containers)-room))
