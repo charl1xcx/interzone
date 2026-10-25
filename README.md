@@ -1,5 +1,26 @@
 # interzone
 
+> for autisaman
+>
+> ok so this thing exists bc of u which is honestly the most useful thing
+> uve done since u started a telegram channel to post rimbaud quotes for
+> people a decade younger than u. pushing 30 btw. we know
+>
+> every mirror every bridge every stupid little button u can click now. its
+> the first link of yours anyone will ever actually click. nobody clicked the
+> spotify ones. we all saw the new feature. we know u know
+>
+> with love\
+> not that much of it\
+> working mirrors\
+> green checkmarks\
+> deploys that dont fail at 4am which is when u'd be awake anyway\
+> for you
+>
+> anyway everything cool in this repo was me and everything cringe was
+> because of you. hope that clears things up
+> دمت گرم </3
+
 A friendly terminal wizard for
 [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy)
 (MDAD). Pick a homeserver, tick the bridges, bots and services you want, and
