@@ -30,6 +30,7 @@ type componentsScreen struct {
 
 	details  bool // the settings page is shown
 	settings settingsScreen
+	saver    *presetSaver
 }
 
 func newComponentsScreen() *componentsScreen {
@@ -43,19 +44,28 @@ func newComponentsScreen() *componentsScreen {
 
 func (s *componentsScreen) name() string { return "Components" }
 func (s *componentsScreen) title() string {
+	if s.saver != nil {
+		return "Save as a preset"
+	}
 	if s.details {
 		return s.settings.title()
 	}
 	return "Pick what you want on your server"
 }
 func (s *componentsScreen) typing() bool {
+	if s.saver != nil {
+		return s.saver.form.typing()
+	}
 	if s.details {
 		return s.settings.typing()
 	}
 	return s.filtering
 }
-func (s *componentsScreen) handlesEsc() bool { return s.details }
+func (s *componentsScreen) handlesEsc() bool { return s.details || s.saver != nil }
 func (s *componentsScreen) activeForm() *form {
+	if s.saver != nil {
+		return s.saver.form
+	}
 	if s.details {
 		return s.settings.form
 	}
@@ -81,18 +91,21 @@ func (s *componentsScreen) nextPage() (tea.Cmd, bool) {
 }
 
 func (s *componentsScreen) keys() [][2]string {
+	if s.saver != nil {
+		return s.saver.keys()
+	}
 	if s.details {
 		return s.settings.keys()
 	}
 	if s.filtering {
 		return [][2]string{{"type", "search"}, {"↑↓", "move"}, {"space", "toggle"}, {"enter", "done"}}
 	}
-	return [][2]string{{"←→", "category"}, {"↑↓", "move"}, {"space", "toggle"}, {"/", "search"}, {"enter", "next"}}
+	return [][2]string{{"←→", "category"}, {"↑↓", "move"}, {"space", "toggle"}, {"/", "search"}, {"p", "save as preset"}, {"enter", "next"}}
 }
 
 func (s *componentsScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
-	s.details = false
+	s.details, s.saver = false, nil
 	s.selected = map[string]bool{}
 	for k, v := range c.Components {
 		s.selected[k] = v
@@ -129,6 +142,13 @@ func (s *componentsScreen) available(c catalog.Component) bool {
 }
 
 func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
+	if s.saver != nil {
+		cmd, done := s.saver.update(s.cfg, msg)
+		if done {
+			s.saver = nil
+		}
+		return cmd
+	}
 	if s.details {
 		if k, ok := msg.(tea.KeyMsg); ok && k.String() == "esc" {
 			s.settings.leave(s.cfg)
@@ -190,6 +210,10 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 		s.cursor = max(0, s.cursor-1)
 	case "j":
 		s.cursor = min(len(items)-1, s.cursor+1)
+	case "p":
+		s.leave(s.cfg)
+		p, ok := currentPreset(s.cfg)
+		s.saver = newPresetSaver(s.cfg, p, ok)
 	case "/":
 		s.filtering = true
 		s.filter.SetValue("")
@@ -201,6 +225,9 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 }
 
 func (s *componentsScreen) view(w, h int) string {
+	if s.saver != nil {
+		return s.saver.view(w, h)
+	}
 	if s.details {
 		return s.settings.view(w, h)
 	}

@@ -33,4 +33,4 @@
 │ ◫ layout: auto (wide)  ││                                                                                            │
 │ ctrl+b ‹ fold          ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ←→ category   ·   ↑↓ move   ·   space toggle   ·   / search   ·   enter next   ·   esc back   ·   ctrl+c quit          
+ ←→ category · ↑↓ move · space toggle · / search · p save as preset · enter next · esc back · ctrl+c quit               

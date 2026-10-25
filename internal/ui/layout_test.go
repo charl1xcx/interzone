@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/muesli/termenv"
 
+	"interzone/internal/catalog"
 	"interzone/internal/config"
 	"interzone/internal/deploy"
 )
@@ -62,6 +63,10 @@ func TestLayout(t *testing.T) {
 		{"welcome", func(a *App) {}},
 		{"server", func(a *App) { a.jump(a.index("Server")) }},
 		{"homeserver", func(a *App) { a.jump(a.index("Homeserver")) }},
+		{"presets", func(a *App) {
+			a.cfg.ApplyPreset(catalog.Presets[1])
+			a.jump(a.index("Homeserver"))
+		}},
 		{"components", func(a *App) { a.jump(a.index("Components")) }},
 		{"settings", func(a *App) {
 			a.jump(a.index("Components"))

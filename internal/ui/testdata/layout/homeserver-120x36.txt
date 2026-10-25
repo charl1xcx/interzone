@@ -3,34 +3,34 @@
 │ ▾ Setup                ││                                                                                            │
 │   ● Server             ││   Choose your homeserver                                                                   │
 │ ▌ ◉ Homeserver         ││                                                                                            │
-│   ○ Components         ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│   ○ Review             ││   │  ◉  Synapse   the reference server · recommended                                 │     │
-│   ○ Deploy             ││   │     Most complete and best supported implementation. Every component in this     │     │
+│   ○ Components         ││   Start from a preset                                                                      │
+│   ○ Review             ││     Minimal chat      Synapse · 3 components                                               │
+│   ○ Deploy             ││     Friends & family  Synapse · 6 components                                               │
+│                        ││     Bridge hub        Synapse · 10 components                                              │
+│ ▸ Manage example.org   ││     Public community  Synapse · 9 components                                               │
+│                        ││     Lightweight       Tuwunel · 2 components                                               │
+│ ▸ Servers              ││                                                                                            │
+│                        ││   Or only the homeserver, and pick the components yourself                                 │
+│                        ││                                                                                            │
+│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
+│                        ││   │     Most complete and best supported implementation. Every component in this     │     │
 │                        ││   │     tool works with it.                                                          │     │
-│ ▸ Manage example.org   ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
-│                        ││                                                                                            │
-│ ▸ Servers              ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│                        ││   │  ○  Continuwuity   lightweight Rust server                                       │     │
-│                        ││   │     Community fork of conduwuit. Low memory use; some Synapse-only extras are    │     │
-│                        ││   │     hidden.                                                                      │     │
 │                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││      ○  Continuwuity   lightweight Rust server                                             │
+│                        ││      ○  Tuwunel   lightweight Rust server                                                  │
+│                        ││      ○  Conduit   minimal Rust server                                                      │
+│                        ││      ○  Dendrite   second-gen Go server                                                    │
 │                        ││                                                                                            │
-│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│                        ││   │  ○  Tuwunel   lightweight Rust server                                            │     │
-│                        ││   │     Enterprise-backed successor of conduwuit. Low memory use; some Synapse-only  │     │
-│                        ││   │     extras are hidden.                                                           │     │
-│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││                                                                                            │
-│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│                        ││   │  ○  Conduit   minimal Rust server                                                │     │
-│                        ││   │     The original Conduit. Very small footprint, fewer features.                  │     │
-│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││                                                                                            │
-│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│                        ││   │  ○  Dendrite   second-gen Go server                                              │     │
-│                        ││   │     In maintenance mode upstream. Only pick this if you know you need it.        │     │
-│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
 │ ◫ layout: auto (wide)  ││                                                                                            │
 │ ctrl+b ‹ fold          ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select   ·   enter choose   ·   esc back   ·   ctrl+c quit                                                          
+ ↑↓ select   ·   enter choose   ·   s save as preset   ·   esc back   ·   ctrl+c quit                                   

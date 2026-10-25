@@ -36,5 +36,5 @@
                                               
 ──────────────────────────────────────────────
  ←→ category · ↑↓ move · space toggle
- / search · enter next · esc back
- ctrl+c quit
+ / search · p save as preset · enter next
+ esc back · ctrl+c quit

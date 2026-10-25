@@ -151,7 +151,7 @@ func (a *App) compactFooter(w int) string {
 		for _, k := range a.cur().keys() {
 			parts = append(parts, hint(k[0], k[1]))
 		}
-		if a.step > 0 {
+		if a.step > 0 && !a.escListed() {
 			parts = append(parts, hint("esc", "back"))
 		}
 		parts = append(parts, hint("ctrl+c", "quit"))

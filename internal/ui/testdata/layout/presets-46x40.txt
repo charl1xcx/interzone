@@ -1,0 +1,40 @@
+ ◢◤ interzone                 ONLINE   ≡ menu
+ ●  ◉  ○  ○  ○  Homeserver
+──────────────────────────────────────────────
+ Choose your homeserver                       
+                                              
+ Start from a preset                          
+   Minimal chat      Synapse · 3 components   
+ › Friends & family  Synapse · 6 components   
+     Chat plus voice and video calls, an      
+     admin panel and nightly database dumps.  
+     Coturn TURN server, Exim email relay,    
+     Element Web, Element Call, Ketesa admin  
+     panel, Postgres backup.                  
+   Bridge hub        Synapse · 10 components  
+   Public community  Synapse · 9 components   
+   Lightweight       Tuwunel · 2 components   
+                                              
+ Or only the homeserver, and pick the         
+ components yourself                          
+                                              
+ ╭──────────────────────────────────────────╮ 
+ │  ◉  Synapse   the reference server ·     │ 
+ │  recommended                             │ 
+ │     Most complete and best supported     │ 
+ │     implementation. Every component in   │ 
+ │     this tool works with it.             │ 
+ ╰──────────────────────────────────────────╯ 
+    ○  Continuwuity   lightweight Rust server 
+    ○  Tuwunel   lightweight Rust server      
+    ○  Conduit   minimal Rust server          
+    ○  Dendrite   second-gen Go server        
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+──────────────────────────────────────────────
+ ↑↓ select · enter choose · s save as preset
+ esc back · ctrl+c quit

@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▾ Setup                ││                                                                                            │
+│   ● Server             ││   Choose your homeserver                                                                   │
+│ ▌ ◉ Homeserver         ││                                                                                            │
+│   ○ Components         ││   Start from a preset                                                                      │
+│   ○ Review             ││     Minimal chat      Synapse · 3 components                                               │
+│   ○ Deploy             ││   › Friends & family  Synapse · 6 components  ● now                                        │
+│                        ││       Chat plus voice and video calls, an admin panel and nightly database dumps.          │
+│ ▸ Manage example.org   ││       Coturn TURN server, Exim email relay, Element Web, Element Call, Ketesa admin        │
+│                        ││       panel, Postgres backup.                                                              │
+│ ▸ Servers              ││     Bridge hub        Synapse · 10 components                                              │
+│                        ││     Public community  Synapse · 9 components                                               │
+│                        ││     Lightweight       Tuwunel · 2 components                                               │
+│                        ││                                                                                            │
+│                        ││   Or only the homeserver, and pick the components yourself                                 │
+│                        ││                                                                                            │
+│                        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
+│                        ││   │     Most complete and best supported implementation. Every component in this     │     │
+│                        ││   │     tool works with it.                                                          │     │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│                        ││      ○  Continuwuity   lightweight Rust server                                             │
+│                        ││      ○  Tuwunel   lightweight Rust server                                                  │
+│                        ││      ○  Conduit   minimal Rust server                                                      │
+│                        ││      ○  Dendrite   second-gen Go server                                                    │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ layout: auto (wide)  ││                                                                                            │
+│ ctrl+b ‹ fold          ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ select   ·   enter choose   ·   s save as preset   ·   esc back   ·   ctrl+c quit                                   

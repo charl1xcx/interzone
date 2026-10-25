@@ -3,6 +3,16 @@
 ──────────────────────────────────────────────
  Choose your homeserver                       
                                               
+ Start from a preset                          
+   Minimal chat      Synapse · 3 components   
+   Friends & family  Synapse · 6 components   
+   Bridge hub        Synapse · 10 components  
+   Public community  Synapse · 9 components   
+   Lightweight       Tuwunel · 2 components   
+                                              
+ Or only the homeserver, and pick the         
+ components yourself                          
+                                              
  ╭──────────────────────────────────────────╮ 
  │  ◉  Synapse   the reference server ·     │ 
  │  recommended                             │ 
@@ -10,13 +20,9 @@
  │     implementation. Every component in   │ 
  │     this tool works with it.             │ 
  ╰──────────────────────────────────────────╯ 
-                                              
     ○  Continuwuity   lightweight Rust server 
-                                              
     ○  Tuwunel   lightweight Rust server      
-                                              
     ○  Conduit   minimal Rust server          
-                                              
     ○  Dendrite   second-gen Go server        
                                               
                                               
@@ -29,12 +35,6 @@
                                               
                                               
                                               
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
 ──────────────────────────────────────────────
- ↑↓ select · enter choose · esc back
- ctrl+c quit
+ ↑↓ select · enter choose · s save as preset
+ esc back · ctrl+c quit

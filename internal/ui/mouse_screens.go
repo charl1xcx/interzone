@@ -82,15 +82,8 @@ func (s *welcomeScreen) click(id string) (tea.Cmd, bool) {
 	return nil, false
 }
 
-func (s *homeserverScreen) click(id string) (tea.Cmd, bool) {
-	if _, _, ok := rowClick(id, "hs:", &s.sel, len(catalog.Homeservers)); ok {
-		return nav(1), true
-	}
-	return nil, false
-}
-
 func (s *componentsScreen) click(id string) (tea.Cmd, bool) {
-	if s.details {
+	if s.details || s.saver != nil {
 		return nil, false // the settings form takes it
 	}
 	items := s.items()

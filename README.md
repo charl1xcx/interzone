@@ -59,6 +59,18 @@ Need help, found a bug, or just like the project? Join the Matrix space
 - **Everything MDAD offers:** 82 components across clients, auth, storage,
   bridges, bots, monitoring, backups and calls, with search (`/`).
   Required settings are asked for; secrets are generated.
+- **Presets** to start from on the Homeserver step: Minimal chat (Synapse,
+  Element), Friends & family (adds Element Call, Ketesa and database
+  dumps), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
+  puppeting and encryption), Public community (MAS sign-up, Element and
+  Cinny, Draupnir, antispam, monitoring) and Lightweight (Tuwunel and
+  Cinny). Picking one sets the homeserver and ticks exactly its components;
+  settings you already typed in are kept. `s` there or `p` on Components
+  saves the current homeserver and components as your own preset (no
+  settings or secrets), and saving under an existing name changes that
+  preset; `d` deletes one of yours or puts a built-in one back. Your
+  presets live in `~/.config/interzone/presets.json`, shared by all your
+  servers.
 - **Blackout-ready.** Each source can be redirected:
 
   | What | Default | How it's used |
@@ -226,7 +238,8 @@ with Pillow).
 ```
 
 The wizard has four steps before the deploy: **Server** (where it runs,
-where downloads come from, HTTPS certificates, networking), **Homeserver**,
+where downloads come from, HTTPS certificates, networking), **Homeserver**
+(a preset, or only the homeserver),
 **Components** (pick them, then fill in what they need on the second page)
 and **Review**.
 

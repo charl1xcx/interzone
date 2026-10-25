@@ -137,6 +137,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if _, ok := a.cur().(toolScreen); ok {
 			return a, a.cur().update(m)
 		}
+		if ps, ok := a.cur().(presetSaving); ok && ps.savingPreset() {
+			return a, a.cur().update(m)
+		}
 		return a, a.go_(1)
 	case switchServerMsg:
 		return a, tea.Batch(a.switchServer(m), a.restartHealth())
@@ -144,6 +147,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, a.onHealth(m)
 	case gotoMsg:
 		return a, a.jump(a.index(string(m)))
+	case noteMsg:
+		a.status = sGood.Render(string(m))
+		return a, nil
 	case autoBackMsg:
 		if _, ok := a.cur().(*deployScreen); ok {
 			a.status = sGood.Render("✓ " + m.text)
@@ -354,12 +360,22 @@ func (a *App) stepper(w int) string {
 	return line
 }
 
+// escListed reports whether the screen's own keys say what esc does.
+func (a *App) escListed() bool {
+	for _, k := range a.cur().keys() {
+		if k[0] == "esc" {
+			return true
+		}
+	}
+	return false
+}
+
 func (a *App) footer(w int) string {
 	var parts []string
 	for _, k := range a.cur().keys() {
 		parts = append(parts, hint(k[0], k[1]))
 	}
-	if a.step > 0 {
+	if a.step > 0 && !a.escListed() {
 		parts = append(parts, hint("esc", "back"))
 	}
 	parts = append(parts, hint("ctrl+c", "quit"))

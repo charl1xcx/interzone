@@ -60,6 +60,8 @@ type Config struct {
 
 	Components map[string]bool
 	Values     map[string]string
+	// Preset is the ID of the preset the stack was last started from.
+	Preset string `json:",omitempty"`
 
 	AdminUser     string
 	AdminPassword string
