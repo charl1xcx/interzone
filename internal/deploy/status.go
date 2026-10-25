@@ -28,8 +28,9 @@ type ServerStatus struct {
 	Disks      []Disk
 	Containers []Container
 	Certs      []Cert
-	Hosts      []string // what Traefik serves for Matrix
-	Timer      string   // next scheduled backup, if any
+	Hosts      []string            // what Traefik serves for Matrix
+	Served     map[string][]string // host: the containers serving it
+	Timer      string              // next scheduled backup, if any
 	Taken      time.Time
 }
 
@@ -47,6 +48,7 @@ type Container struct {
 
 type Cert struct {
 	Host     string
+	Services string // what's served there, e.g. "Element Web, Cinny"
 	NotAfter time.Time
 	Issuer   string
 	Err      string
@@ -68,7 +70,7 @@ const statusPlay = `- name: interzone status
         docker ps -a --filter name=^matrix- --format 'ps={{json .}}'
         ids=$(docker ps -q --filter name=^matrix-)
         if [ -n "$ids" ]; then docker stats --no-stream --format 'stats={{json .}}' $ids; fi
-        docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Labels}}'
+        docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Names}} {{.Labels}}'
       changed_when: false
 `
 
@@ -88,19 +90,34 @@ func Status(ctx context.Context, c *config.Config) (*ServerStatus, error) {
 		hosts = c.DNSRecords()
 	}
 	st.Certs = CheckCerts(ctx, c, hosts)
+	known := c.HostServices()
+	for i, ct := range st.Certs {
+		st.Certs[i].Services = known[ct.Host]
+		if st.Certs[i].Services == "" {
+			st.Certs[i].Services = strings.Join(st.Served[ct.Host], ", ")
+		}
+	}
 	return st, err
 }
 
 var hostRule = regexp.MustCompile("Host\\(`([^`]+)`\\)")
 
-// servedHosts adds the hostnames in a container's Traefik rules to hosts.
-func servedHosts(hosts []string, labels string) []string {
+// served notes the hostnames in a container's Traefik rules, from a
+// "name labels" line.
+func (st *ServerStatus) served(line string) {
+	name, labels, _ := strings.Cut(line, " ")
+	name = strings.TrimPrefix(name, "matrix-")
+	if st.Served == nil {
+		st.Served = map[string][]string{}
+	}
 	for _, m := range hostRule.FindAllStringSubmatch(labels, -1) {
-		if !slices.Contains(hosts, m[1]) {
-			hosts = append(hosts, m[1])
+		if !slices.Contains(st.Hosts, m[1]) {
+			st.Hosts = append(st.Hosts, m[1])
+		}
+		if !slices.Contains(st.Served[m[1]], name) {
+			st.Served[m[1]] = append(st.Served[m[1]], name)
 		}
 	}
-	return hosts
 }
 
 func parseStatus(st *ServerStatus, out string) {
@@ -147,7 +164,7 @@ func parseStatus(st *ServerStatus, out string) {
 		case "timer":
 			st.Timer = strings.TrimSpace(v)
 		case "labels":
-			st.Hosts = servedHosts(st.Hosts, v)
+			st.served(v)
 		case "ps":
 			var p struct{ Names, State, Status string }
 			if json.Unmarshal([]byte(v), &p) == nil {

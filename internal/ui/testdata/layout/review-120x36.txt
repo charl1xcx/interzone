@@ -14,9 +14,9 @@
 │                        ││                                                                                            │
 │                        ││   Pre-deploy checks  ⠋ checking the server and DNS…                                        │
 │                        ││                                                                                            │
-│                        ││     ○  matrix.example.org                                                                  │
-│                        ││     ○  element.example.org                                                                 │
-│                        ││     ○  cinny.example.org                                                                   │
+│                        ││     ○  Synapse      matrix.example.org                                                     │
+│                        ││     ○  Element Web  element.example.org                                                    │
+│                        ││     ○  Cinny        cinny.example.org                                                      │
 │                        ││                                                                                            │
 │                        ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
 │                        ││   │ vars.yml preview                                                                   │   │

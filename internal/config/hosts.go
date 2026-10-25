@@ -21,15 +21,49 @@ import (
 
 // DNSRecords lists the hostnames that must point at the server.
 func (c *Config) DNSRecords() []string {
+	recs, _ := c.hostTable()
+	return recs
+}
+
+// ServicesOn names what is served on host, such as "Element Web, Cinny",
+// or "" for a hostname this setup doesn't use.
+func (c *Config) ServicesOn(host string) string { return c.HostServices()[host] }
+
+// HostServices is ServicesOn for every hostname.
+func (c *Config) HostServices() map[string]string {
+	_, on := c.hostTable()
+	out := map[string]string{}
+	for h, what := range on {
+		out[h] = strings.Join(what, ", ")
+	}
+	return out
+}
+
+// hostTable is DNSRecords with what each hostname serves.
+func (c *Config) hostTable() ([]string, map[string][]string) {
 	r := c.hostResolver()
-	recs := []string{r.host("matrix_server_fqn_matrix", "matrix."+c.Domain)}
-	add := func(h string) {
-		if h != "" && !contains(recs, h) {
+	var recs []string
+	on := map[string][]string{}
+	serve := func(h, what string) {
+		if h == "" {
+			return
+		}
+		if !contains(recs, h) {
 			recs = append(recs, h)
 		}
+		if !contains(on[h], what) {
+			on[h] = append(on[h], what)
+		}
 	}
+	hs := c.Homeserver
+	for _, h := range catalog.Homeservers {
+		if h.ID == c.Homeserver {
+			hs = h.Name
+		}
+	}
+	serve(r.host("matrix_server_fqn_matrix", "matrix."+c.Domain), hs)
 	for _, comp := range catalog.Components {
-		if !c.Enabled(comp) {
+		if !c.Enabled(comp) || comp.ID == "exim" { // exim's hostname is only the name it sends mail as
 			continue
 		}
 		guess := ""
@@ -44,16 +78,16 @@ func (c *Config) DNSRecords() []string {
 				}
 			}
 			found = true
-			add(r.host(v, guess))
+			serve(r.host(v, guess), comp.Name)
 		}
 		if !found {
-			add(guess)
+			serve(guess, comp.Name)
 		}
 	}
 	if c.Components["base-domain"] {
-		add(c.Domain)
+		serve(c.Domain, "base domain")
 	}
-	return recs
+	return recs, on
 }
 
 func contains(list []string, s string) bool {

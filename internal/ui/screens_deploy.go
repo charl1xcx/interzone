@@ -299,9 +299,21 @@ func (s *reviewScreen) checksView(w int) []string {
 		head += "  " + s.spin.View() + sMuted.Render(" checking the server and DNS…")
 	}
 	lines := []string{head, ""}
+	on := s.cfg.HostServices()
+	svcW := 0
+	for _, svc := range on {
+		svcW = max(svcW, lipgloss.Width(svc)+2)
+	}
+	svcW = min(svcW, max(12, w/4))
+	service := func(host string) string {
+		if w < 60 {
+			return sMuted.Render(on[host]) + "\n     " // its own line on a phone
+		}
+		return lipgloss.NewStyle().Width(svcW).Render(sMuted.Render(truncate(on[host], svcW-2)))
+	}
 	if s.checks == nil {
 		for _, r := range s.cfg.DNSRecords() {
-			lines = append(lines, sFaint.Render("  ○  ")+r)
+			lines = append(lines, sFaint.Render("  ○  ")+service(r)+r)
 		}
 		return lines
 	}
@@ -335,9 +347,15 @@ func (s *reviewScreen) checksView(w int) []string {
 			}
 			if w < 60 { // the detail goes under the name
 				name = sTitle.Render(f.Name)
+				if g == "DNS" {
+					name = service(f.Name) + name
+				}
 				detail := style.Width(max(16, w-5)).Render(f.Detail)
 				rows = append(rows, "  "+icon+"  "+name+"\n     "+strings.ReplaceAll(detail, "\n", "\n     "))
 				continue
+			}
+			if g == "DNS" {
+				name = service(f.Name) + name
 			}
 			pad := 5 + lipgloss.Width(name)
 			detail := style.Width(max(16, w-pad)).Render(f.Detail)
@@ -901,7 +919,7 @@ func (s *deployScreen) resultView(w int) string {
 		}
 	case deploy.ActionMigrate:
 		lines = append(lines,
-			sWarn.Render("Point these DNS records at the new server now: ")+sTitle.Render(strings.Join(c.DNSRecords(), ", ")),
+			sWarn.Render("Point these DNS records at the new server now: ")+sTitle.Render(hostList(c)),
 			sMuted.Render("The old server's Matrix services are stopped and disabled; its /matrix stays until you delete it."))
 	}
 	lines = append(lines, sMuted.Render("Homeserver  ")+sTitle.Render(scheme+"matrix."+c.Domain))
@@ -965,4 +983,18 @@ func imageSummary(res *deploy.Result, w int) []string {
 		lines = append(lines, sMuted.Render("  "+truncate(m, w-8)))
 	}
 	return append(lines, sMuted.Render("Copy them into your registry mirror, or switch the container registry in the setup."))
+}
+
+// hostList is the DNS records with what each serves, for a sentence:
+// "Synapse: matrix.example.org; Element Web: element.example.org".
+func hostList(c *config.Config) string {
+	on := c.HostServices()
+	var parts []string
+	for _, h := range c.DNSRecords() {
+		if on[h] != "" {
+			h = on[h] + ": " + h
+		}
+		parts = append(parts, h)
+	}
+	return strings.Join(parts, "; ")
 }

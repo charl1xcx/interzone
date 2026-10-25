@@ -199,6 +199,10 @@ func Status(args []string) error {
 	failed := false
 	if len(st.Certs) > 0 {
 		fmt.Println(head.Render("==> Certificates"))
+		svcW := 0
+		for _, ct := range st.Certs {
+			svcW = max(svcW, min(40, len(ct.Services)))
+		}
 		for _, ct := range st.Certs {
 			style := good
 			switch {
@@ -207,7 +211,7 @@ func Status(args []string) error {
 			case ct.DaysLeft() < 21:
 				style = warn
 			}
-			fmt.Printf("  %-32s %s\n", ct.Host, style.Render(ct.String()))
+			fmt.Printf("  %-*s %-32s %s\n", svcW, ct.Services, ct.Host, style.Render(ct.String()))
 		}
 	}
 	fmt.Println(head.Render("==> Containers"))

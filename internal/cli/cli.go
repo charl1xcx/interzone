@@ -317,6 +317,10 @@ func runAction(c *config.Config, opts deploy.Options, quiet bool) (*deploy.Resul
 }
 
 func printFindings(fs []deploy.Finding) {
+	svcW := 0
+	for _, f := range fs {
+		svcW = max(svcW, min(32, len(f.Service)))
+	}
 	for _, f := range fs {
 		icon, style := good.Render("✓"), muted
 		switch f.Level {
@@ -324,6 +328,10 @@ func printFindings(fs []deploy.Finding) {
 			icon, style = warn.Render("!"), warn
 		case deploy.Fail:
 			icon, style = bad.Render("✗"), bad
+		}
+		if svcW > 0 {
+			fmt.Printf("  %s  %s %-24s %s\n", icon, muted.Render(fmt.Sprintf("%-*s", svcW, f.Service)), f.Name, style.Render(f.Detail))
+			continue
 		}
 		fmt.Printf("  %s  %-24s %s\n", icon, f.Name, style.Render(f.Detail))
 	}

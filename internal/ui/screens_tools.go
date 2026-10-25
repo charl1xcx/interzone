@@ -938,6 +938,11 @@ func (s *dashboardScreen) view(w, h int) string {
 	}
 	if len(st.Certs) > 0 {
 		lines = append(lines, "", sectionHeading("Certificates", min(w, 80)))
+		svcW := 0
+		for _, c := range st.Certs {
+			svcW = max(svcW, lipgloss.Width(c.Services)+2)
+		}
+		svcW = min(svcW, max(12, w/4))
 		for _, c := range st.Certs {
 			style := sGood
 			switch {
@@ -948,7 +953,8 @@ func (s *dashboardScreen) view(w, h int) string {
 			case c.DaysLeft() < 21:
 				style = sWarn
 			}
-			lines = append(lines, "  "+lipgloss.NewStyle().Width(32).Render(sTitle.Render(truncate(c.Host, 30)))+style.Render(c.String()))
+			svc := lipgloss.NewStyle().Width(svcW).Render(sMuted.Render(truncate(c.Services, svcW-2)))
+			lines = append(lines, truncateANSI("  "+svc+lipgloss.NewStyle().Width(32).Render(sTitle.Render(truncate(c.Host, 30)))+style.Render(c.String()), w))
 		}
 	}
 	running := 0
@@ -1266,7 +1272,7 @@ func (s *migrateScreen) view(w, h int) string {
 		return info + "\n\n" + confirmView(w,
 			sWarn.Render("Move "+s.cfg.Domain+" from "+from+" to "+to+"?"),
 			sSub.Render("Matrix is down from the moment the old server stops until the new one is installed. Afterwards, point these DNS records at the new server: "+
-				strings.Join(s.cfg.DNSRecords(), ", ")+"."),
+				hostList(s.cfg)+"."),
 			"", keyLink("y")+sMuted.Render(" start   ")+keyLink("esc")+sMuted.Render(" back"))
 	}
 	return s.form.View(w, h-lipgloss.Height(info)-3) + "\n\n" + info

@@ -14,9 +14,12 @@
                                               
  Pre-deploy checks  ⠋ checking the server and 
                                               
-   ○  matrix.example.org                      
-   ○  element.example.org                     
-   ○  cinny.example.org                       
+   ○  Synapse                                 
+      matrix.example.org                      
+   ○  Element Web                             
+      element.example.org                     
+   ○  Cinny                                   
+      cinny.example.org                       
                                               
  ╭──────────────────────────────────────────╮ 
  │ vars.yml preview                         │ 
@@ -29,9 +32,6 @@
  │ matrix_playbook_migration_validated_vers │ 
  │ matrix_domain: 'example.org'             │ 
  │ matrix_homeserver_implementation: synaps │ 
- │ matrix_homeserver_generic_secret_key: •• │ 
- │ matrix_playbook_reverse_proxy_type: play │ 
- │ devture_systemd_docker_base_ipv6_enabled │ 
  ╰──────────────────────────────────────────╯ 
                                               
 ──────────────────────────────────────────────

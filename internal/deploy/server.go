@@ -27,10 +27,11 @@ const (
 
 // Finding is the outcome of one pre-deploy check.
 type Finding struct {
-	Group  string // "Server" or "DNS"
-	Name   string
-	Level  Level
-	Detail string
+	Group   string // "Server" or "DNS"
+	Name    string
+	Service string // DNS: what the hostname serves
+	Level   Level
+	Detail  string
 }
 
 // probeScript prints key=value facts about the machine it runs on. It is
@@ -301,14 +302,14 @@ func dnsChecks(ctx context.Context, c *config.Config, serverIPs []string) []Find
 		}
 	}
 
-	recs := c.DNSRecords()
+	recs, on := c.DNSRecords(), c.HostServices()
 	out := make([]Finding, len(recs))
 	var wg sync.WaitGroup
 	for i, rec := range recs {
 		wg.Add(1)
 		go func(i int, rec string) {
 			defer wg.Done()
-			f := Finding{Group: "DNS", Name: rec}
+			f := Finding{Group: "DNS", Name: rec, Service: on[rec]}
 			lctx, cancel := context.WithTimeout(ctx, 6*time.Second)
 			defer cancel()
 			ips, err := net.DefaultResolver.LookupHost(lctx, rec)

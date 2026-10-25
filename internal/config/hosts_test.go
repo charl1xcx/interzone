@@ -36,6 +36,13 @@ func TestDNSRecords(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 
+	if got := c.ServicesOn("matrix.example.org"); got != "Synapse, Ketesa admin panel" {
+		t.Errorf("on matrix.: %q", got)
+	}
+	if got := c.ServicesOn("chat.other.net"); got != "Cinny" {
+		t.Errorf("on chat.: %q", got)
+	}
+
 	// Without a playbook, the usual subdomains.
 	c.PlaybookDir = ""
 	if got := c.DNSRecords(); !slices.Contains(got, "chat.other.net") || !slices.Contains(got, "element.example.org") {
