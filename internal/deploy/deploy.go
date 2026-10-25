@@ -4,6 +4,7 @@ package deploy
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -639,22 +640,16 @@ func (r *Runner) logs(ctx context.Context) error {
 		"-m", "ansible.builtin.command", "-a", "journalctl -u "+r.opts.Service+" -n 300 --no-pager -o short-iso")
 }
 
-// ListServices returns the matrix-* systemd services on the server.
+// ListServices returns the matrix-* systemd services on the server. It
+// asks over plain ssh (no Ansible start-up), which takes well under a
+// second on the shared connection.
 func ListServices(ctx context.Context, c *config.Config) ([]string, error) {
-	bin, err := lookPath("ansible")
+	cmd := targetCmd(ctx, c.Target, "systemctl list-units --type=service --all --no-legend --plain 'matrix-*'")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("ansible isn't installed yet; run a full install first")
-	}
-	cmd := exec.CommandContext(ctx, bin, "matrix_servers", "-i", "inventory/hosts", "--become",
-		"-m", "ansible.builtin.command", "-a", "systemctl list-units --type=service --all --no-legend --plain matrix-*")
-	cmd.Dir = c.PlaybookDir
-	cmd.Env = Env(c)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		if m := ansibleMsg.FindSubmatch(out); m != nil {
-			return nil, fmt.Errorf("%s", m[1])
-		}
-		return nil, fmt.Errorf("couldn't reach the server (%v)", err)
+		return nil, fmt.Errorf("couldn't reach the server (%s)", lastLine(stderr.String(), err))
 	}
 	var units []string
 	for _, l := range strings.Split(string(out), "\n") {
@@ -667,6 +662,43 @@ func ListServices(ctx context.Context, c *config.Config) ([]string, error) {
 		return nil, fmt.Errorf("no matrix services found on the server")
 	}
 	return units, nil
+}
+
+// FollowLogs streams a service's journal, starting with its last 200
+// lines, until ctx ends. The channel closes when the stream does; a last
+// line starting with "✗ " says why, if it broke.
+func FollowLogs(ctx context.Context, c *config.Config, unit string) (<-chan string, error) {
+	if !unitName.MatchString(unit) {
+		return nil, fmt.Errorf("invalid service name %q", unit)
+	}
+	cmd := targetCmd(ctx, c.Target, asRoot("journalctl -u "+unit+" -n 200 -f --no-pager -o short-iso"))
+	cmd.Stdin = strings.NewReader(c.Target.BecomePass + "\n")
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
+	cmd.Stderr = cmd.Stdout
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+	ch := make(chan string, 256)
+	go func() {
+		defer close(ch)
+		sc := bufio.NewScanner(out)
+		sc.Buffer(make([]byte, 64*1024), 1024*1024)
+		var last string
+		for sc.Scan() {
+			last = sc.Text()
+			select {
+			case ch <- last:
+			case <-ctx.Done():
+			}
+		}
+		if err := cmd.Wait(); err != nil && ctx.Err() == nil {
+			ch <- "✗ the log stream ended (" + lastLine(last, err) + ")"
+		}
+	}()
+	return ch, nil
 }
 
 var ansibleMsg = regexp.MustCompile(`"msg": "((?:[^"\\]|\\.)*)"`)

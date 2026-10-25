@@ -37,6 +37,10 @@ type reviewScreen struct {
 	verbose  bool // list passed checks too
 	confirm  bool // enter was pressed once despite failed checks
 	spin     spinner.Model
+
+	last     *deploy.Deploy // the last successful deploy, if any
+	diff     []diffLine     // vars.yml then → now
+	showDiff bool
 }
 
 func newReviewScreen() *reviewScreen {
@@ -51,6 +55,9 @@ func (s *reviewScreen) title() string { return "Everything look right?" }
 func (s *reviewScreen) typing() bool  { return false }
 func (s *reviewScreen) keys() [][2]string {
 	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"↑↓", "scroll vars.yml"}, {"s", "save files only"}}
+	if s.last != nil {
+		k = append(k, [2]string{"x", map[bool]string{true: "whole vars.yml", false: "what changes"}[s.showDiff]})
+	}
 	if len(s.missing) == 0 {
 		k = append([][2]string{{"enter", "deploy"}}, k...)
 	}
@@ -66,10 +73,41 @@ func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
 	if c.SSL.Mode == "custom" {
 		cert, key = c.SSL.CertPath, c.SSL.KeyPath
 	}
-	s.yaml = c.VarsYAML(config.MigrationVersion(c.PlaybookDir), cert, key)
-	s.vp.SetContent(highlightYAML(s.yaml))
-	s.vp.GotoTop()
+	mv := config.MigrationVersion(c.PlaybookDir)
+	s.yaml = c.VarsYAML(mv, cert, key)
+	s.last, s.diff = nil, nil
+	if h := deploy.History(); len(h) > 0 {
+		if prev, err := config.LoadFile(filepath.Join(h[0].Dir, "config.json")); err == nil {
+			s.last = &h[0]
+			s.diff = lineDiff(strings.Split(prev.VarsYAML(mv, cert, key), "\n"), strings.Split(s.yaml, "\n"))
+		}
+	}
+	s.showDiff = s.last != nil
+	s.setPreview()
 	return s.runChecks()
+}
+
+func (s *reviewScreen) setPreview() {
+	if s.showDiff {
+		if a, r := diffChanges(s.diff); a+r == 0 {
+			s.vp.SetContent(sMuted.Render("Nothing in vars.yml changes. An update still pulls the newest playbook and images."))
+		} else {
+			s.vp.SetContent(diffView(s.diff, 2))
+		}
+	} else {
+		s.vp.SetContent(highlightYAML(s.yaml))
+	}
+	s.vp.GotoTop()
+}
+
+// previewTitle heads the vars.yml panel.
+func (s *reviewScreen) previewTitle() string {
+	if !s.showDiff {
+		return sMuted.Render("vars.yml preview")
+	}
+	a, r := diffChanges(s.diff)
+	return sMuted.Render("vars.yml since the deploy of "+s.last.Time.Local().Format("Jan 2 15:04")+"  ") +
+		sGood.Render(fmt.Sprintf("+%d", a)) + " " + sBad.Render(fmt.Sprintf("-%d", r))
 }
 
 func (s *reviewScreen) runChecks() tea.Cmd {
@@ -117,6 +155,12 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 			return s.runChecks()
 		case "v":
 			s.verbose = !s.verbose
+			return nil
+		case "x":
+			if s.last != nil {
+				s.showDiff = !s.showDiff
+				s.setPreview()
+			}
 			return nil
 		}
 	}
@@ -189,15 +233,15 @@ func (s *reviewScreen) view(w, h int) string {
 	if wide {
 		s.vp.Width = w - lw - 4
 		s.vp.Height = h - 4
-		right := sPanel.Width(w - lw - 2).Render(sMuted.Render("vars.yml preview") + "\n\n" + s.vp.View())
+		right := sPanel.Width(w - lw - 2).Render(s.previewTitle() + "\n\n" + s.vp.View())
 		return lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(lw).Render(left), right)
 	}
 	s.vp.Width = w - 4
-	s.vp.Height = h - lipgloss.Height(left) - 4
+	s.vp.Height = h - lipgloss.Height(left) - 5
 	if s.vp.Height < 3 {
 		return left
 	}
-	return left + "\n\n" + sPanel.Width(w-2).Render(s.vp.View())
+	return left + "\n\n" + sPanel.Width(w-2).Render(s.previewTitle()+"\n"+s.vp.View())
 }
 
 // checksView lists the pre-deploy checks. Passed server checks collapse

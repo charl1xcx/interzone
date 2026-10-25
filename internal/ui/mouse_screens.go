@@ -124,7 +124,7 @@ func (s *manageScreen) click(id string) (tea.Cmd, bool) {
 			return nil, ok
 		}
 		if runsAtOnce[acts[i].id] && !(again && s.armed) {
-			s.armed = true // the row now says "click again to run"
+			s.armed, s.armedKey = true, "" // the row now says "click again to run"
 			return nil, true
 		}
 		return s.choose(acts[i].id), true

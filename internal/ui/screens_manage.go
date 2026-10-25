@@ -36,6 +36,7 @@ const (
 	modeList manageMode = iota
 	modeUser
 	modeServices
+	modeLogs
 )
 
 type manageAction struct {
@@ -48,11 +49,18 @@ type manageAction struct {
 var runsAtOnce = map[string]bool{"update": true, "check": true, "restart": true, "backup": true,
 	"registration": true, "images": true, "selfupdate": true}
 
+// hotkeys run Manage actions from the list with one key; the runsAtOnce
+// ones need it pressed twice.
+var hotkeys = map[string]string{"update": "u", "check": "c", "restart": "r", "user": "a", "registration": "g",
+	"users": "m", "dashboard": "d", "changes": "n", "images": "i", "backup": "b", "schedule": "s",
+	"restore": "e", "rollback": "z", "logs": "l", "tuning": "f", "setup": "w", "migrate": "v", "servers": "o"}
+
 type manageScreen struct {
-	cfg    *config.Config
-	cursor int
-	armed  bool // a click selected a runsAtOnce action; the next click runs it
-	mode   manageMode
+	cfg      *config.Config
+	cursor   int
+	armed    bool   // a click or hotkey selected a runsAtOnce action; doing it again runs it
+	armedKey string // the hotkey that armed it, or "" for a click
+	mode     manageMode
 
 	userForm *form
 
@@ -61,6 +69,8 @@ type manageScreen struct {
 	unitsErr error
 	unit     int
 	spin     spinner.Model
+
+	logs liveLogs
 }
 
 func newManageScreen() *manageScreen {
@@ -77,6 +87,8 @@ func (s *manageScreen) title() string {
 		return "Add a user"
 	case modeServices:
 		return "Which service's logs?"
+	case modeLogs:
+		return "Logs"
 	}
 	return "Manage " + s.cfg.Domain
 }
@@ -87,8 +99,10 @@ func (s *manageScreen) keys() [][2]string {
 		return [][2]string{{"tab/↑↓", "move"}, {"space", "toggle"}, {"ctrl+r", "reveal"}, {"enter", "register"}}
 	case modeServices:
 		return [][2]string{{"↑↓", "select"}, {"enter", "show logs"}}
+	case modeLogs:
+		return [][2]string{{"↑↓", "scroll"}, {"end", "follow"}}
 	}
-	return [][2]string{{"↑↓", "select"}, {"enter", "run"}}
+	return [][2]string{{"↑↓", "select"}, {"enter", "run"}, {"a–z", "shortcuts"}}
 }
 
 // inSubview reports whether esc should return to the action list rather
@@ -97,11 +111,12 @@ func (s *manageScreen) inSubview() bool { return s.mode != modeList }
 
 func (s *manageScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
+	s.logs.stop()
 	s.mode, s.armed = modeList, false
 	return nil
 }
 
-func (s *manageScreen) leave(*config.Config) {}
+func (s *manageScreen) leave(*config.Config) { s.logs.stop() }
 
 func (s *manageScreen) actions() []manageAction {
 	c := s.cfg
@@ -146,7 +161,7 @@ func (s *manageScreen) actions() []manageAction {
 		manageAction{id: "rollback", title: "Roll back",
 			desc: "Go back to the playbook commit and answers of an earlier successful deploy."},
 		manageAction{id: "logs", title: "View logs",
-			desc: "Show the last 300 log lines of any Matrix service."},
+			desc: "Follow the log of any Matrix service as it's written."},
 		manageAction{id: "tuning", title: "Fine-tune the roles",
 			desc: "Browse and change the default variables of every playbook role: " + homeserverName(c.Homeserver) + ", bridges, Traefik, Postgres and the rest. Applied on the next update."},
 		manageAction{id: "setup", title: "Change the setup",
@@ -173,14 +188,24 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case servicesMsg:
 		s.loading = false
-		s.units, s.unitsErr = m.units, m.err
-		s.unit = 0
+		s.unitsErr = m.err
+		if m.err != nil {
+			return nil // a list loaded before stays
+		}
+		saveCache("services", m.units)
+		cur := ""
+		if s.unit < len(s.units) {
+			cur = s.units[s.unit]
+		}
+		s.units, s.unit = m.units, 0
 		for i, u := range s.units {
-			if u == "matrix-"+s.cfg.Homeserver {
+			if u == cur || cur == "" && u == "matrix-"+s.cfg.Homeserver {
 				s.unit = i
 			}
 		}
 		return nil
+	case logLinesMsg:
+		return s.logs.add(m)
 	case spinner.TickMsg:
 		if s.loading {
 			var cmd tea.Cmd
@@ -196,7 +221,13 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 	if !ok {
 		return nil
 	}
-	s.armed = false
+	wasArmed := s.armed && s.armedKey == k.String()
+	s.armed, s.armedKey = false, ""
+	if k.String() == "esc" && s.mode == modeLogs {
+		s.logs.stop()
+		s.mode = modeServices
+		return nil
+	}
 	if k.String() == "esc" && s.mode != modeList {
 		s.mode = modeList
 		return nil
@@ -214,10 +245,13 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 			s.unit = min(len(s.units)-1, s.unit+1)
 		case "enter":
 			if len(s.units) > 0 {
-				s.mode = modeList
-				return run(deploy.Options{Action: deploy.ActionLogs, Service: s.units[s.unit]})
+				s.mode = modeLogs
+				return s.logs.start(s.cfg, s.units[s.unit])
 			}
 		}
+		return nil
+	case modeLogs:
+		s.logs.key(k.String())
 		return nil
 	}
 
@@ -232,6 +266,17 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 		if a.disabled != "" {
 			return nil
 		}
+		return s.choose(a.id)
+	}
+	for i, a := range acts {
+		if hotkeys[a.id] != k.String() || a.disabled != "" {
+			continue
+		}
+		if runsAtOnce[a.id] && !(wasArmed && s.cursor == i) {
+			s.cursor, s.armed, s.armedKey = i, true, k.String()
+			return nil
+		}
+		s.cursor = i
 		return s.choose(a.id)
 	}
 	return nil
@@ -274,6 +319,14 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 	case "logs":
 		s.mode = modeServices
 		s.loading, s.units, s.unitsErr = true, nil, nil
+		if units, _, ok := loadCache[[]string]("services"); ok {
+			s.units, s.unit = units, 0 // shown while the fresh list loads
+			for i, u := range units {
+				if u == "matrix-"+s.cfg.Homeserver {
+					s.unit = i
+				}
+			}
+		}
 		cfg := *s.cfg
 		return tea.Batch(s.spin.Tick, func() tea.Msg {
 			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
@@ -303,6 +356,8 @@ func (s *manageScreen) view(w, h int) string {
 		return s.userForm.View(w, h)
 	case modeServices:
 		return s.servicesView(w, h)
+	case modeLogs:
+		return s.logs.view(w, h)
 	}
 	acts := s.actions()
 	s.cursor = min(s.cursor, len(acts)-1)
@@ -323,12 +378,19 @@ func (s *manageScreen) view(w, h int) string {
 		var d string
 		if cur && s.armed && a.disabled == "" {
 			d = sWarn.Render("click again to run")
+			if s.armedKey != "" {
+				d = sWarn.Render("press " + s.armedKey + " again to run")
+			}
 		} else if cur {
 			d = sSub.Width(textW).Render(desc)
 		} else {
 			d = sFaint.Render(truncate(desc, textW))
 		}
-		blocks = append(blocks, markRow("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad), w))
+		hot := ""
+		if k := hotkeys[a.id]; k != "" && a.disabled == "" {
+			hot = "  " + sMuted.Render(k)
+		}
+		blocks = append(blocks, markRow("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+hot+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad), w))
 	}
 	out := strings.Join(blocks, "\n\n")
 	if lipgloss.Height(out) <= h {
@@ -346,12 +408,20 @@ func (s *manageScreen) view(w, h int) string {
 }
 
 func (s *manageScreen) servicesView(w, h int) string {
-	if s.loading {
+	if s.loading && len(s.units) == 0 {
 		return s.spin.View() + sMuted.Render(" asking the server which services exist…")
 	}
-	if s.unitsErr != nil {
+	if s.unitsErr != nil && len(s.units) == 0 {
 		return sBad.Render("✗ "+s.unitsErr.Error()) + "\n\n" + sMuted.Render("Press esc to go back.")
 	}
+	head := ""
+	switch {
+	case s.loading:
+		head = s.spin.View() + sFaint.Render(" refreshing…") + "\n\n"
+	case s.unitsErr != nil:
+		head = sBad.Render(truncate("✗ "+s.unitsErr.Error(), w)) + "\n\n"
+	}
+	h -= lipgloss.Height(head)
 	start := max(0, min(s.unit-h/2, len(s.units)-h))
 	var rows []string
 	for i := start; i < len(s.units) && i < start+h; i++ {
@@ -361,5 +431,5 @@ func (s *manageScreen) servicesView(w, h int) string {
 			rows = append(rows, mark("unit:"+strconv.Itoa(i), "   "+sMuted.Render(s.units[i])))
 		}
 	}
-	return strings.Join(rows, "\n")
+	return head + strings.Join(rows, "\n")
 }

@@ -94,6 +94,9 @@ func (a *App) compactView() string {
 	if a.cfg.Sources.Blackout {
 		mode = badge("BLACKOUT", cAmber)
 	}
+	if hb := a.healthBadge(true); hb != "" {
+		mode = hb + " " + mode
+	}
 	brand := gradient("◢◤ interzone")
 	gap := w - lipgloss.Width(brand) - lipgloss.Width(mode) - lipgloss.Width(menu) - 4
 	header := " " + brand + strings.Repeat(" ", max(1, gap)) + mode + "  " + menu

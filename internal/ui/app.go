@@ -10,6 +10,7 @@ import (
 	zone "github.com/lrstanley/bubblezone"
 
 	"interzone/internal/config"
+	"interzone/internal/deploy"
 )
 
 type screen interface {
@@ -51,6 +52,9 @@ type App struct {
 	sideCollapsed bool   // the left menu is folded to its icon rail
 	layout        string // auto, compact or wide (layout.go)
 	menuOpen      bool   // the compact layout shows the menu
+
+	health    *deploy.Health // the header's dot (health.go)
+	healthGen int
 }
 
 func New(cfg *config.Config, loaded bool) *App {
@@ -94,7 +98,7 @@ func (a *App) index(name string) int {
 // wizard is the screens shown in the stepper, Welcome and Manage excluded.
 func (a *App) wizard() []screen { return a.screens[1:a.index("Manage")] }
 
-func (a *App) Init() tea.Cmd { return a.cur().enter(a.cfg) }
+func (a *App) Init() tea.Cmd { return tea.Batch(a.cur().enter(a.cfg), a.checkHealth()) }
 
 func (a *App) cur() screen { return a.screens[a.step] }
 
@@ -135,7 +139,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return a, a.go_(1)
 	case switchServerMsg:
-		return a, a.switchServer(m)
+		return a, tea.Batch(a.switchServer(m), a.restartHealth())
+	case healthMsg, healthTickMsg:
+		return a, a.onHealth(m)
 	case gotoMsg:
 		return a, a.jump(a.index(string(m)))
 	case autoBackMsg:
@@ -298,6 +304,9 @@ func (a *App) header(w int) string {
 	mode := badge("ONLINE", cMint)
 	if a.cfg.Sources.Blackout {
 		mode = badge("BLACKOUT-READY", cAmber)
+	}
+	if hb := a.healthBadge(false); hb != "" {
+		mode = hb + "   " + mode
 	}
 	gap := w - lipgloss.Width(brand) - lipgloss.Width(mode) - 2
 	return " " + brand + strings.Repeat(" ", max(1, gap)) + mode

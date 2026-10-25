@@ -465,9 +465,10 @@ func (s *backupsScreen) view(w, h int) string {
 // ── Users ──────────────────────────────────────────────────────────
 
 type usersMsg struct {
-	users []deploy.MatrixUser
-	token string
-	err   error
+	server string
+	users  []deploy.MatrixUser
+	token  string
+	err    error
 }
 
 type userOpMsg struct {
@@ -495,6 +496,7 @@ type userOp struct {
 
 type usersScreen struct {
 	cfg    *config.Config
+	server string // whose users are listed
 	login  deploy.AdminLogin
 	users  []deploy.MatrixUser
 	cursor int
@@ -535,17 +537,23 @@ func (s *usersScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
 	s.login = deploy.AdminLogin{User: c.AdminUser, Password: c.AdminPassword, Token: c.AdminToken}
 	s.mode, s.info, s.password, s.err = usersList, "", "", nil
+	if srv := config.Active(); srv != s.server {
+		s.server, s.users, s.cursor, s.busy = srv, nil, 0, false
+		if users, _, ok := loadCache[[]deploy.MatrixUser]("users"); ok {
+			s.users = users // shown while the fresh list loads
+		}
+	}
 	return s.reload()
 }
 
 func (s *usersScreen) reload() tea.Cmd {
 	s.busy, s.err = true, nil
-	cfg, login := *s.cfg, s.login
+	cfg, login, srv := *s.cfg, s.login, s.server
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		users, err := deploy.ListUsers(ctx, &cfg, &login)
-		return usersMsg{users, login.Token, err}
+		return usersMsg{srv, users, login.Token, err}
 	})
 }
 
@@ -577,6 +585,9 @@ func (s *usersScreen) run(op *userOp) tea.Cmd {
 func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case usersMsg:
+		if m.server != s.server {
+			return nil // from before switching servers
+		}
 		s.busy = false
 		s.saveToken(m.token)
 		if _, bad := m.err.(deploy.ErrAdminLogin); bad {
@@ -586,6 +597,7 @@ func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		s.err = m.err
 		if m.err == nil {
+			saveCache("users", m.users)
 			s.users = m.users
 			s.cursor = min(s.cursor, max(0, len(s.users)-1))
 		}
@@ -642,10 +654,10 @@ func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		return nil
 	}
+	s.cursor = cursorKey(k.String(), s.cursor, len(s.users))
 	if s.busy {
 		return nil
 	}
-	s.cursor = cursorKey(k.String(), s.cursor, len(s.users))
 	var u deploy.MatrixUser
 	if s.cursor < len(s.users) {
 		u = s.users[s.cursor]
@@ -780,12 +792,14 @@ func errString(err error) string {
 // ── Dashboard ──────────────────────────────────────────────────────
 
 type statusMsg struct {
-	st  *deploy.ServerStatus
-	err error
+	server string
+	st     *deploy.ServerStatus
+	err    error
 }
 
 type dashboardScreen struct {
 	cfg     *config.Config
+	server  string // whose status is shown
 	st      *deploy.ServerStatus
 	err     error
 	loading bool
@@ -805,6 +819,12 @@ func (s *dashboardScreen) keys() [][2]string {
 }
 func (s *dashboardScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
+	if srv := config.Active(); srv != s.server {
+		s.server, s.st, s.err, s.loading, s.scroll = srv, nil, nil, false, 0
+		if st, _, ok := loadCache[deploy.ServerStatus]("status"); ok {
+			s.st = &st // shown while the fresh one loads
+		}
+	}
 	return s.refresh()
 }
 
@@ -813,19 +833,26 @@ func (s *dashboardScreen) refresh() tea.Cmd {
 		return nil
 	}
 	s.loading = true
-	cfg := *s.cfg
+	cfg, srv := *s.cfg, s.server
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 		st, err := deploy.Status(ctx, &cfg)
-		return statusMsg{st, err}
+		return statusMsg{srv, st, err}
 	})
 }
 
 func (s *dashboardScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case statusMsg:
-		s.loading, s.st, s.err = false, m.st, m.err
+		if m.server != s.server {
+			return nil // from before switching servers
+		}
+		s.loading, s.err = false, m.err
+		if m.err == nil && m.st != nil {
+			s.st = m.st
+			saveCache("status", *m.st)
+		}
 	case spinner.TickMsg:
 		return spinning(s.loading, &s.spin, m)
 	case tea.KeyMsg:
@@ -930,11 +957,11 @@ func (s *dashboardScreen) view(w, h int) string {
 			lipgloss.NewStyle().Width(9).Render(sMuted.Render(c.CPU))+
 			lipgloss.NewStyle().Width(24).Render(sMuted.Render(truncate(c.Mem, 22)))+state)
 	}
-	ago := sFaint.Render("  updated " + st.Taken.Format("15:04:05"))
+	when := sFaint.Render("  updated " + ago(st.Taken))
 	if s.loading {
-		ago = "  " + s.spin.View() + sFaint.Render(" refreshing…")
+		when = "  " + s.spin.View() + sFaint.Render(" refreshing · last "+ago(st.Taken))
 	}
-	return top + ago + "\n" + strings.Join(rows, "\n")
+	return top + when + "\n" + strings.Join(rows, "\n")
 }
 
 func roundDuration(d time.Duration) string {

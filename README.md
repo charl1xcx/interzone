@@ -131,7 +131,9 @@ Need help, found a bug, or just like the project? Join the Matrix space
 - **Checks before it touches anything.** The Review screen logs into the
   server and checks root access, OS, CPU, Python, memory, disk and ports
   80/443/8448, then resolves every DNS record the setup needs and compares
-  it with the server's addresses.
+  it with the server's addresses. Once you've deployed, it shows what
+  changes in `vars.yml` since the last successful deploy (`x` switches to
+  the whole file).
 - **Checks after deploying.** The playbook's self-check runs at the end and
   lists which services answer and which don't.
 - **Checks images before installing.** The install asks the playbook which
@@ -140,8 +142,10 @@ Need help, found a bug, or just like the project? Join the Matrix space
   reported up front instead of halfway through.
 - **Manage an existing server:** update, run the self-check, restart, add
   users (Synapse/Dendrite), close registration (Conduit, Continuwuity,
-  Tuwunel), back up the Postgres database to this computer, and read any
-  service's logs. Also:
+  Tuwunel), back up the Postgres database to this computer, and follow any
+  service's log live. Every action has a one-letter shortcut on Manage
+  (`u` update, `r` restart, `d` dashboard, `l` logs, `b` back up …); the
+  ones that change the server right away want the letter twice. Also:
   - **Update preview:** the new playbook commits and the component
     versions they change, before installing anything.
   - **Rollback:** every successful install records its playbook commit and
@@ -158,6 +162,12 @@ Need help, found a bug, or just like the project? Join the Matrix space
     inside the Synapse container. Nothing needs to be exposed publicly.
   - **Dashboard:** load, memory, disks, the backup timer, certificate expiry
     for every hostname, and each container's state, CPU and memory.
+    The Dashboard, Users and the logs' service list open with what they
+    showed last time and refresh in the background.
+  - **Health in the header:** once a server is installed, a dot says
+    whether `matrix.<domain>` answers over HTTPS from this computer and how
+    many days its certificate has left, checked every minute
+    (`INTERZONE_HEALTH=off` turns it off).
   - **Fine-tune:** every variable of every playbook role, the playbook's
     own and the ones installed from `requirements.yml` (about 100 roles
     and 8,600 settings), with its documentation, the role's default, the
@@ -189,6 +199,13 @@ To build without internet, run `go mod vendor` while you still have access
 and build with `go build -mod=vendor`. The resulting binary is static and has
 no runtime dependencies besides `git`, `ssh` and Ansible (which interzone can
 install itself from a PyPI mirror).
+
+`go test ./...` includes layout tests that draw the main screens at phone
+(46×40) and desktop (120×36) size and compare them with
+`internal/ui/testdata/layout`; after an intended change, accept the new
+drawings with `go test ./internal/ui -run Layout -update`. The README's
+screenshots are retaken with `scripts/screenshots/shots.sh` (tmux, Python
+with Pillow).
 
 ## Use
 
