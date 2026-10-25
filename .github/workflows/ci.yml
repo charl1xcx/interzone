@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - run: go vet ./...
+      - run: go test ./...
+
+  release:
+    # A v* tag builds the release binaries and publishes them, on GitHub
+    # only: Forgejo reads this directory too and has its own releases.
+    if: startsWith(github.ref, 'refs/tags/v') && github.server_url == 'https://github.com'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build
+        env:
+          V: ${{ github.ref_name }}
+        run: |
+          mkdir dist
+          for a in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$a go build -trimpath -ldflags "-s -w -X main.version=$V" -o dist/interzone-linux-$a .
+          done
+          (cd dist && sha256sum interzone-linux-* > SHA256SUMS)
+          ./dist/interzone-linux-amd64 -version
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ github.ref_name }}
+        run: |
+          # The tag's annotation (or commit message) becomes the notes.
+          git fetch --force origin "refs/tags/$V:refs/tags/$V"
+          notes=$(git tag -l --format='%(contents)' "$V")
+          gh release create "$V" dist/* --title "interzone $V" --notes "${notes:-interzone $V}" --verify-tag
