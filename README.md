@@ -30,6 +30,11 @@ progress view.
 It is built to keep working during a **country-wide internet blackout**:
 every download can come from mirrors inside the country.
 
+## Community
+
+Need help, found a bug, or just like the project? Join the Matrix space
+[#interzone:foid.ir](https://matrix.to/#/#interzone:foid.ir).
+
 ## Features
 
 - **Any homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.
