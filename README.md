@@ -152,6 +152,7 @@ install itself from a PyPI mirror).
 ```sh
 ./interzone           # start the wizard (or the Manage menu, once installed)
 ./interzone --reset   # forget saved answers
+./interzone -no-mouse # leave the mouse to the terminal
 ```
 
 The menu on the left shows where you are: the setup steps, the Manage
@@ -169,6 +170,12 @@ rail.
 | `ctrl+s` | save answers |
 | `ctrl+b` | fold or unfold the menu on the left |
 | `esc` | back |
+
+Everything also works with the mouse: click a menu entry, a field, an option,
+a checkbox or a key in the bar at the bottom. In lists, the first click selects
+a row and a second click opens it. The wheel scrolls. While interzone has the
+mouse, hold `shift` to select text in most terminals, or start it with
+`-no-mouse`.
 
 On the Review screen, `enter` deploys and `s` only writes the files and prints
 the `ansible-playbook` command to run later.

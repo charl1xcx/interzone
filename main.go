@@ -38,6 +38,7 @@ func main() {
 
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	reset := flag.Bool("reset", false, "forget saved answers and start fresh")
+	noMouse := flag.Bool("no-mouse", false, "don't take the mouse, so the terminal can select text without shift")
 	flag.Usage = func() {
 		fmt.Fprintln(flag.CommandLine.Output(), cli.Usage+"\n\nOptions:")
 		flag.PrintDefaults()
@@ -59,7 +60,11 @@ func main() {
 		cfg, loaded = config.Default(), false
 	}
 
-	p := tea.NewProgram(ui.New(cfg, loaded), tea.WithAltScreen())
+	opts := []tea.ProgramOption{tea.WithAltScreen()}
+	if !*noMouse {
+		opts = append(opts, tea.WithMouseCellMotion())
+	}
+	p := tea.NewProgram(ui.New(cfg, loaded), opts...)
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "interzone:", err)
 		os.Exit(1)

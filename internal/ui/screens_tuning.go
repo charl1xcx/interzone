@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -475,7 +476,7 @@ func (s *tuningScreen) view(w, h int) string {
 	}
 	if s.err != nil {
 		return sWarn.Render("The playbook isn't downloaded yet, so its settings can't be listed.") + "\n\n" +
-			sMuted.Render("Press ") + sKey.Render("f") + sMuted.Render(" to download it from "+s.cfg.Sources.PlaybookGit+".") + "\n\n" +
+			sMuted.Render("Press ") + keyLink("f") + sMuted.Render(" to download it from "+s.cfg.Sources.PlaybookGit+".") + "\n\n" +
 			sFaint.Render(s.err.Error())
 	}
 	w = min(w, 120)
@@ -518,20 +519,20 @@ func (s *tuningScreen) view(w, h int) string {
 		if i == s.cursor {
 			bar, nameStyle = sAccent.Render("▌")+"  ", sTitle
 		}
-		mark := " "
+		dot := " "
 		valStyle := sFaint
 		if over {
-			mark, valStyle = sPink.Render("●"), sPink
+			dot, valStyle = sPink.Render("●"), sPink
 		} else if !v.Derived {
 			valStyle = sSub
 		}
 		name := lipgloss.NewStyle().Width(nameW).Render(nameStyle.Render(truncate(v.Name, nameW-2)))
-		rows = append(rows, bar+mark+" "+name+valStyle.Render(truncate(first, max(8, w-nameW-6))))
+		rows = append(rows, mark("tvar:"+strconv.Itoa(i), bar+dot+" "+name+valStyle.Render(truncate(first, max(8, w-nameW-6)))))
 	}
 	if len(items) == 0 {
 		rows = append(rows, sMuted.Render("   nothing matches"))
 	}
-	return head + "\n" + filter + "\n\n" + strings.Join(rows, "\n") + "\n\n" + detail
+	return head + "\n" + mark("tfilter", filter) + "\n\n" + strings.Join(rows, "\n") + "\n\n" + detail
 }
 
 func (s *tuningScreen) rolesView(w, h int) string {
@@ -564,9 +565,9 @@ func (s *tuningScreen) rolesView(w, h int) string {
 		if i == s.roleCursor {
 			bar, nameStyle = sAccent.Render("▌")+"  ", sTitle
 		}
-		mark := " "
+		dot := " "
 		if row.change > 0 {
-			mark = sPink.Render("●")
+			dot = sPink.Render("●")
 		}
 		count := plural(len(r.Vars), "setting")
 		if s.query() != "" && row.matching > 0 {
@@ -579,15 +580,15 @@ func (s *tuningScreen) rolesView(w, h int) string {
 		if r.inUse {
 			info += sGood.Render("  in use")
 		}
-		lines = append(lines, bar+mark+" "+lipgloss.NewStyle().Width(nameW).Render(nameStyle.Render(truncate(r.Name, nameW-2)))+
-			lipgloss.NewStyle().Width(labelW).Render(sSub.Render(truncate(r.label, labelW-2)))+info)
+		lines = append(lines, mark("trole:"+strconv.Itoa(i), truncateANSI(bar+dot+" "+lipgloss.NewStyle().Width(nameW).Render(nameStyle.Render(truncate(r.Name, nameW-2)))+
+			lipgloss.NewStyle().Width(labelW).Render(sSub.Render(truncate(r.label, labelW-2)))+info, w)))
 	}
 	if len(rows) == 0 {
 		lines = append(lines, sMuted.Render("   nothing matches"))
 	}
 	listH := max(3, h-lipgloss.Height(foot)-4)
 	start := max(0, min(s.roleCursor-listH/2, len(lines)-listH))
-	return head + "\n" + filter + "\n\n" + strings.Join(lines[start:min(len(lines), start+listH)], "\n") + foot
+	return head + "\n" + mark("tfilter", filter) + "\n\n" + strings.Join(lines[start:min(len(lines), start+listH)], "\n") + foot
 }
 
 func (s *tuningScreen) detailView(w int) string {

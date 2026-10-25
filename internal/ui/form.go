@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textarea"
@@ -115,10 +116,14 @@ type form struct {
 	focus  int
 	reveal bool
 	width  int
+	id     string // prefix of its click zones
 }
 
+var formCount int
+
 func newForm(fields ...*field) *form {
-	f := &form{fields: fields}
+	formCount++
+	f := &form{fields: fields, id: "form" + strconv.Itoa(formCount) + ":"}
 	f.focus = -1
 	f.move(1)
 	return f
@@ -295,7 +300,7 @@ func (f *form) View(width, height int) string {
 			lines = append(lines, "")
 		}
 		first = false
-		lines = append(lines, strings.Split(f.renderField(fl, i == f.focus, width), "\n")...)
+		lines = append(lines, strings.Split(markLines(f.id+"f"+strconv.Itoa(i), f.renderField(fl, i, i == f.focus, width)), "\n")...)
 		if i == f.focus {
 			focusStart, focusEnd = start, len(lines)
 		}
@@ -313,10 +318,10 @@ func (f *form) View(width, height int) string {
 	top = max(0, min(top, len(lines)-height))
 	view := lines[top : top+height]
 	if top > 0 {
-		view[0] = sFaint.Render("  ▲ more above")
+		view[0] = mark(f.id+"up", sFaint.Render("  ▲ more above"))
 	}
 	if top+height < len(lines) {
-		view[len(view)-1] = sFaint.Render("  ▼ more below")
+		view[len(view)-1] = mark(f.id+"down", sFaint.Render("  ▼ more below"))
 	}
 	return strings.Join(view, "\n")
 }
@@ -331,7 +336,7 @@ func sectionHeading(title string, width int) string {
 	return head + " " + sFaint.Render(strings.Repeat("─", rule))
 }
 
-func (f *form) renderField(fl *field, focused bool, width int) string {
+func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 	bar := "   "
 	label := sMuted.Render(fl.label)
 	prompt := sFaint.Render("› ")
@@ -363,11 +368,11 @@ func (f *form) renderField(fl *field, focused bool, width int) string {
 			if fl.labels != nil {
 				name = fl.labels[i]
 			}
+			opt := sMuted.Padding(0, 2).Render(name)
 			if i == fl.choice {
-				parts = append(parts, lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(name))
-			} else {
-				parts = append(parts, sMuted.Padding(0, 2).Render(name))
+				opt = lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(name)
 			}
+			parts = append(parts, mark(f.id+"c"+strconv.Itoa(idx)+"."+strconv.Itoa(i), opt))
 		}
 		body = strings.Join(parts, "  ")
 	case fArea:
@@ -395,4 +400,51 @@ func helpLine(fl *field, focused bool, bar string, width int) string {
 	}
 	help := lipgloss.NewStyle().Foreground(cMuted).Italic(true).Width(max(20, width)).Render(fl.help)
 	return "\n" + bar + strings.ReplaceAll(help, "\n", "\n"+bar)
+}
+
+// focusOn moves the focus to field i.
+func (f *form) focusOn(i int) {
+	if i == f.focus || i < 0 || i >= len(f.fields) || !f.fields[i].visible() {
+		return
+	}
+	f.focus = i - 1
+	if !f.move(1) {
+		f.focus = i
+	}
+}
+
+// click handles a click on one of the form's zones: a field takes the
+// focus (a toggle also flips), a choice option is picked.
+func (f *form) click(id string) (tea.Cmd, bool) {
+	rest, ok := strings.CutPrefix(id, f.id)
+	if !ok {
+		return nil, false
+	}
+	switch {
+	case rest == "up":
+		f.move(-1)
+	case rest == "down":
+		f.move(1)
+	case strings.HasPrefix(rest, "c"):
+		a, b, _ := strings.Cut(rest[1:], ".")
+		i, err1 := strconv.Atoi(a)
+		j, err2 := strconv.Atoi(b)
+		if err1 != nil || err2 != nil || i >= len(f.fields) || j >= len(f.fields[i].choices) {
+			return nil, false
+		}
+		f.focusOn(i)
+		f.fields[i].choice = j
+	case strings.HasPrefix(rest, "f"):
+		i, err := strconv.Atoi(rest[1:])
+		if err != nil || i >= len(f.fields) {
+			return nil, false
+		}
+		f.focusOn(i)
+		if fl := f.fields[i]; fl.kind == fToggle {
+			fl.on = !fl.on
+		}
+	default:
+		return nil, false
+	}
+	return nil, true
 }

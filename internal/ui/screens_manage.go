@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
@@ -318,7 +319,7 @@ func (s *manageScreen) view(w, h int) string {
 		} else {
 			d = sFaint.Render(truncate(desc, textW))
 		}
-		blocks = append(blocks, bar+icon+"  "+style.Render(a.title)+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad))
+		blocks = append(blocks, markLines("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad)))
 	}
 	out := strings.Join(blocks, "\n\n")
 	if lipgloss.Height(out) <= h {
@@ -346,9 +347,9 @@ func (s *manageScreen) servicesView(w, h int) string {
 	var rows []string
 	for i := start; i < len(s.units) && i < start+h; i++ {
 		if i == s.unit {
-			rows = append(rows, sAccent.Render("▌")+"  "+sTitle.Render(s.units[i]))
+			rows = append(rows, mark("unit:"+strconv.Itoa(i), sAccent.Render("▌")+"  "+sTitle.Render(s.units[i])))
 		} else {
-			rows = append(rows, "   "+sMuted.Render(s.units[i]))
+			rows = append(rows, mark("unit:"+strconv.Itoa(i), "   "+sMuted.Render(s.units[i])))
 		}
 	}
 	return strings.Join(rows, "\n")

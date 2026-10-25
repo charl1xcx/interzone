@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -155,11 +156,11 @@ func (s *componentsScreen) view(w, h int) string {
 			}
 		}
 		label := cat + "  " + fmt.Sprintf("%d/%d", on, n)
+		tab := sMuted.Padding(0, 2).Render(label)
 		if i == s.cat && s.filter.Value() == "" {
-			tabs = append(tabs, lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(label))
-		} else {
-			tabs = append(tabs, sMuted.Padding(0, 2).Render(label))
+			tab = lipgloss.NewStyle().Foreground(lipgloss.Color("#111018")).Background(cPurple).Bold(true).Padding(0, 2).Render(label)
 		}
+		tabs = append(tabs, mark("cat:"+strconv.Itoa(i), tab))
 	}
 
 	count := 0
@@ -174,6 +175,7 @@ func (s *componentsScreen) view(w, h int) string {
 	if s.filtering || s.filter.Value() != "" {
 		top = s.filter.View()
 	}
+	top = mark("compfilter", top)
 	top += strings.Repeat(" ", max(2, w-lipgloss.Width(top)-lipgloss.Width(total))) + total
 
 	items := s.items()
@@ -188,7 +190,7 @@ func (s *componentsScreen) view(w, h int) string {
 	// one shows its full description), so scroll by whole items.
 	blocks := make([]string, len(items))
 	for i, it := range items {
-		blocks[i] = s.row(it, i == s.cursor, w)
+		blocks[i] = markLines("comp:"+strconv.Itoa(i), s.row(it, i, i == s.cursor, w))
 	}
 	used := func(from, to int) int {
 		n := 0
@@ -245,17 +247,17 @@ func tabStrip(tabs []string, cur, w int) string {
 	}
 	left, right := "  ", "  "
 	if lo > 0 {
-		left = sAccent.Render("‹ ")
+		left = mark("key:←", sAccent.Render("‹ "))
 	}
 	if hi < len(tabs) {
-		right = sAccent.Render(" ›")
+		right = mark("key:→", sAccent.Render(" ›"))
 	}
 	return left + strings.Join(tabs[lo:hi], "") + right
 }
 
 // row renders one component: a name line with tags and a description.
 // The current one gets a full description plus its DNS name and docs.
-func (s *componentsScreen) row(c catalog.Component, cur bool, w int) string {
+func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) string {
 	box := sFaint.Render("○")
 	if s.selected[c.ID] {
 		box = sGood.Render("●")
@@ -283,7 +285,7 @@ func (s *componentsScreen) row(c catalog.Component, cur bool, w int) string {
 	if cur {
 		bar = sAccent.Render("▌") + "  "
 	}
-	line := bar + box + "  " + style.Render(c.Name)
+	line := bar + mark("compbox:"+strconv.Itoa(i), box) + "  " + style.Render(c.Name)
 	if len(tags) > 0 {
 		line += "    " + strings.Join(tags, sFaint.Render("  ·  "))
 	}

@@ -3,6 +3,7 @@ package ui
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -112,22 +113,23 @@ func (a *App) sidebar(h int) string {
 			}
 			return sFaint.Render(" " + glyph)
 		}
-		lines := []string{icon(sideSetup, "◇"), "", icon(sideManage, "◆"), "", icon(sideServers, "▤")}
+		lines := []string{mark("side:head:setup", icon(sideSetup, "◇")), "", mark("side:head:manage", icon(sideManage, "◆")), "",
+			mark("side:head:servers", icon(sideServers, "▤"))}
 		if !a.sideCollapsed {
 			lines = append(lines, "", "", sFaint.Render(" ⋯")) // too narrow; ctrl+b does nothing here
 		} else {
-			lines = append(lines, "", "", sFaint.Render(" ›"))
+			lines = append(lines, "", "", mark("side:fold", sFaint.Render(" ›")))
 		}
 		return sPanel.Padding(0).Width(sidebarRailW - 2).Height(h).Render(strings.Join(lines, "\n"))
 	}
 
 	inner := sidebarW - 4
-	item := func(on bool, mark, label string) string {
+	item := func(on bool, dot, label string) string {
 		label = truncate(label, inner-4)
 		if on {
-			return sAccent.Render("▌") + " " + mark + " " + sTitle.Render(label)
+			return sAccent.Render("▌") + " " + dot + " " + sTitle.Render(label)
 		}
-		return "  " + mark + " " + sMuted.Render(label)
+		return "  " + dot + " " + sMuted.Render(label)
 	}
 	head := func(s sideSection, title string, open bool) string {
 		switch {
@@ -141,18 +143,20 @@ func (a *App) sidebar(h int) string {
 
 	var lines []string
 	// Setup wizard
-	lines = append(lines, head(sideSetup, "Setup", false))
+	lines = append(lines, mark("side:head:setup", head(sideSetup, "Setup", false)))
 	if sec == sideSetup {
 		for i, s := range a.wizard() {
 			idx := i + 1
+			var line string
 			switch {
 			case idx == a.step:
-				lines = append(lines, item(true, sAccent.Render("◉"), s.name()))
+				line = item(true, sAccent.Render("◉"), s.name())
 			case idx < a.step:
-				lines = append(lines, item(false, sGood.Render("●"), s.name()))
+				line = item(false, sGood.Render("●"), s.name())
 			default:
-				lines = append(lines, item(false, sFaint.Render("○"), s.name()))
+				line = item(false, sFaint.Render("○"), s.name())
 			}
+			lines = append(lines, mark("side:step:"+strconv.Itoa(idx), line))
 		}
 	}
 	lines = append(lines, "")
@@ -162,18 +166,18 @@ func (a *App) sidebar(h int) string {
 	if a.cfg.Domain != "" {
 		title = "Manage " + a.cfg.Domain
 	}
-	lines = append(lines, head(sideManage, truncate(title, inner-2), false))
+	lines = append(lines, mark("side:head:manage", head(sideManage, truncate(title, inner-2), false)))
 	if sec == sideManage {
 		cur := a.manageCurrent()
 		for _, m := range manageMenu {
 			if m.screen == "Users" && a.cfg.Homeserver != "synapse" {
 				continue
 			}
-			mark := sFaint.Render("·")
+			dot := sFaint.Render("·")
 			if m.screen == cur {
-				mark = sAccent.Render("◆")
+				dot = sAccent.Render("◆")
 			}
-			lines = append(lines, item(m.screen == cur, mark, m.label))
+			lines = append(lines, mark("side:manage:"+m.screen, item(m.screen == cur, dot, m.label)))
 			if m.screen == cur && a.cur().name() == "Deploy" {
 				lines = append(lines, "    "+sPink.Render("↳ ")+sSub.Render(truncate(a.deployLabel(), inner-6)))
 			}
@@ -187,19 +191,19 @@ func (a *App) sidebar(h int) string {
 		profiles = []config.Profile{{Name: config.DefaultProfile, Domain: a.cfg.Domain}}
 	}
 	showServers := sec == sideServers || sec == sideNone || len(profiles) > 1
-	lines = append(lines, head(sideServers, "Servers", showServers))
+	lines = append(lines, mark("side:head:servers", head(sideServers, "Servers", showServers)))
 	if showServers {
 		for _, p := range profiles {
 			active := p.Name == config.Active()
-			mark := sFaint.Render("○")
+			dot := sFaint.Render("○")
 			if active {
-				mark = sGood.Render("●")
+				dot = sGood.Render("●")
 			}
 			label := p.Name
 			if p.Domain != "" && p.Name == config.DefaultProfile {
 				label = p.Domain
 			}
-			lines = append(lines, item(active && sec == sideServers, mark, label))
+			lines = append(lines, mark("side:server:"+p.Name, item(active && sec == sideServers, dot, label)))
 		}
 	}
 
@@ -208,7 +212,7 @@ func (a *App) sidebar(h int) string {
 	if gap := h - lipgloss.Height(body) - 1; gap > 0 {
 		body += strings.Repeat("\n", gap)
 	}
-	body += "\n" + sFaint.Render("ctrl+b ‹ fold")
+	body += "\n" + mark("side:fold", sFaint.Render("ctrl+b ‹ fold"))
 	return sPanel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
 }
 

@@ -672,7 +672,7 @@ func (s *deployScreen) resultView(w int) string {
 		}
 		return panel(cRed, append(lines,
 			sMuted.Render("Full log: ")+s.logPath(),
-			sMuted.Render(hint)+sKey.Render("r")+sMuted.Render(" to try again."))...)
+			sMuted.Render(hint)+keyLink("r")+sMuted.Render(" to try again."))...)
 	}
 	res := s.result
 	if res == nil {

@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 
 	"interzone/internal/config"
 )
@@ -47,6 +48,7 @@ type App struct {
 }
 
 func New(cfg *config.Config, loaded bool) *App {
+	zone.NewGlobal()
 	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed()}
 	a.screens = []screen{
 		&welcomeScreen{loaded: loaded},
@@ -113,6 +115,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.w, a.h = m.Width, m.Height
+	case tea.MouseMsg:
+		return a.mouse(m)
 	case navMsg:
 		return a, a.go_(int(m))
 	case formDoneMsg:
@@ -205,6 +209,7 @@ func (a *App) View() string {
 	if a.w == 0 {
 		return ""
 	}
+	marked = marked[:0]
 	header := a.header(a.w)
 	footer := a.footer(a.w)
 	// With the menu open, it shows the steps; the stepper line is only
@@ -244,7 +249,7 @@ func (a *App) View() string {
 	if stepper != "" {
 		parts = append(parts, stepper)
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, append(parts, body, footer)...)
+	return zone.Scan(lipgloss.JoinVertical(lipgloss.Left, append(parts, body, footer)...))
 }
 
 func (a *App) header(w int) string {
@@ -302,12 +307,12 @@ func (a *App) stepper(w int) string {
 func (a *App) footer(w int) string {
 	var parts []string
 	for _, k := range a.cur().keys() {
-		parts = append(parts, sKey.Render(k[0])+" "+sMuted.Render(k[1]))
+		parts = append(parts, hint(k[0], k[1]))
 	}
 	if a.step > 0 {
-		parts = append(parts, sKey.Render("esc")+" "+sMuted.Render("back"))
+		parts = append(parts, hint("esc", "back"))
 	}
-	parts = append(parts, sKey.Render("ctrl+c")+" "+sMuted.Render("quit"))
+	parts = append(parts, hint("ctrl+c", "quit"))
 	line := " " + strings.Join(parts, sFaint.Render("   ·   "))
 	if lipgloss.Width(line) > w {
 		line = " " + strings.Join(parts, sFaint.Render(" · "))
@@ -316,6 +321,14 @@ func (a *App) footer(w int) string {
 		line = " " + a.status
 	}
 	return truncateANSI(line, w)
+}
+
+// hint is a footer key hint; a one-key hint is clickable as a whole.
+func hint(key, desc string) string {
+	if _, ok := keyMsg(key); ok {
+		return mark("key:"+key, sKey.Render(key)+" "+sMuted.Render(desc))
+	}
+	return keyLink(key) + " " + sMuted.Render(desc)
 }
 
 func truncateANSI(s string, w int) string {

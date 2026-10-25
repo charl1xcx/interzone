@@ -58,16 +58,16 @@ func listRows(rows []string, cur, h int) string {
 	var out []string
 	for i := start; i < len(rows) && i < start+h; i++ {
 		if i == cur {
-			out = append(out, sAccent.Render("▌")+"  "+rows[i])
+			out = append(out, mark("row:"+strconv.Itoa(i), sAccent.Render("▌")+"  "+rows[i]))
 		} else {
-			out = append(out, "   "+rows[i])
+			out = append(out, mark("row:"+strconv.Itoa(i), "   "+rows[i]))
 		}
 	}
 	return strings.Join(out, "\n")
 }
 
 func errorView(err error) string {
-	return sBad.Render("✗ "+err.Error()) + "\n\n" + sMuted.Render("Press ") + sKey.Render("r") + sMuted.Render(" to try again or esc to go back.")
+	return sBad.Render("✗ "+err.Error()) + "\n\n" + sMuted.Render("Press ") + keyLink("r") + sMuted.Render(" to try again or esc to go back.")
 }
 
 func confirmView(w int, lines ...string) string {
@@ -290,7 +290,7 @@ func (s *historyScreen) view(w, h int) string {
 			sWarn.Render("Roll back to "+d.Time.Local().Format("2006-01-02 15:04")+"?"),
 			sSub.Render("The playbook goes back to "+d.Commit[:min(10, len(d.Commit))]+" and your answers to the ones used then (today's are kept in config.before-rollback.json). The database is backed up first."),
 			sSub.Render("Newer homeserver versions may have changed the database in ways an older one can't read; if it fails to start, restore the backup taken now with Manage › Restore."),
-			"", sKey.Render("y")+sMuted.Render(" roll back   ")+sKey.Render("esc")+sMuted.Render(" cancel"))
+			"", keyLink("y")+sMuted.Render(" roll back   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	return out
 }
@@ -357,7 +357,7 @@ func (s *restoreScreen) view(w, h int) string {
 	}
 	if len(s.list) == 0 {
 		return sMuted.Render("No backups of "+s.cfg.Domain+" in "+deploy.BackupDir()+".") + "\n\n" +
-			sMuted.Render("Make one with Manage › Back up the database, or press ") + sKey.Render("d") +
+			sMuted.Render("Make one with Manage › Back up the database, or press ") + keyLink("d") +
 			sMuted.Render(" to download the server's scheduled backups.")
 	}
 	var rows []string
@@ -371,7 +371,7 @@ func (s *restoreScreen) view(w, h int) string {
 		out += "\n\n" + confirmView(w,
 			sWarn.Render("Replace the database of "+s.cfg.Domain+" with the dump from "+b.Time.Local().Format("2006-01-02 15:04")+"?"),
 			sSub.Render("Every service stops, the current database is dumped to "+deploy.BackupDir()+" first, then emptied and loaded from this file. Messages sent since the dump are lost."),
-			"", sKey.Render("y")+sMuted.Render(" restore   ")+sKey.Render("esc")+sMuted.Render(" cancel"))
+			"", keyLink("y")+sMuted.Render(" restore   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	return out
 }
@@ -442,7 +442,7 @@ func (s *backupsScreen) apply() tea.Cmd {
 func (s *backupsScreen) view(w, h int) string {
 	info := []string{
 		sSub.Render("Each scheduled backup is a full pg_dumpall, the same as Manage › Back up the database."),
-		sSub.Render("Press ") + sKey.Render("ctrl+d") + sSub.Render(" to copy them to ") + sTitle.Render(deploy.BackupDir()) +
+		sSub.Render("Press ") + keyLink("ctrl+d") + sSub.Render(" to copy them to ") + sTitle.Render(deploy.BackupDir()) +
 			sSub.Render("; Manage › Restore lists them there."),
 	}
 	if n := len(deploy.ListBackups(s.cfg.Domain)); n > 0 {
@@ -722,11 +722,11 @@ func (s *usersScreen) view(w, h int) string {
 	foot := strings.Join(status, "\n")
 	if s.mode == usersConfirm && s.op != nil {
 		foot = confirmView(w, sWarn.Render(strings.ToUpper(s.op.desc[:1])+s.op.desc[1:]+"?"), "",
-			sKey.Render("y")+sMuted.Render(" yes   ")+sKey.Render("esc")+sMuted.Render(" cancel"))
+			keyLink("y")+sMuted.Render(" yes   ")+keyLink("esc")+sMuted.Render(" cancel"))
 		if s.op.body["deactivated"] == true {
 			foot = confirmView(w, sWarn.Render("Deactivate "+s.op.user+"?"),
 				sSub.Render("They are signed out everywhere and can't sign in again until reactivated."), "",
-				sKey.Render("y")+sMuted.Render(" deactivate   ")+sKey.Render("esc")+sMuted.Render(" cancel"))
+				keyLink("y")+sMuted.Render(" deactivate   ")+keyLink("esc")+sMuted.Render(" cancel"))
 		}
 	}
 	if len(s.users) == 0 {
@@ -1086,7 +1086,7 @@ func (s *serversScreen) view(w, h int) string {
 	if s.confirm {
 		out += "\n\n" + confirmView(w, sWarn.Render("Forget "+s.list[s.cursor].Name+"?"),
 			sSub.Render("Only interzone's saved answers are deleted. Nothing changes on the server itself."), "",
-			sKey.Render("y")+sMuted.Render(" forget   ")+sKey.Render("esc")+sMuted.Render(" cancel"))
+			keyLink("y")+sMuted.Render(" forget   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	if s.err != "" {
 		out += "\n\n" + sBad.Render("✗ "+s.err)
@@ -1187,7 +1187,7 @@ func (s *migrateScreen) view(w, h int) string {
 			sWarn.Render("Move "+s.cfg.Domain+" from "+from+" to "+to+"?"),
 			sSub.Render("Matrix is down from the moment the old server stops until the new one is installed. Afterwards, point these DNS records at the new server: "+
 				strings.Join(s.cfg.DNSRecords(), ", ")+"."),
-			"", sKey.Render("y")+sMuted.Render(" start   ")+sKey.Render("esc")+sMuted.Render(" back"))
+			"", keyLink("y")+sMuted.Render(" start   ")+keyLink("esc")+sMuted.Render(" back"))
 	}
 	return s.form.View(w, h-lipgloss.Height(info)-3) + "\n\n" + info
 }

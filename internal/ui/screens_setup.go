@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -81,10 +82,11 @@ func (s *welcomeScreen) view(w, h int) string {
 	switch {
 	case s.installed:
 		opt := func(i int, title, desc string) string {
+			id := "welcome:" + strconv.Itoa(i)
 			if i == s.choice {
-				return sAccent.Render("▌ ◉  ") + sTitle.Render(title) + "\n" + sAccent.Render("▌") + "    " + sMuted.Render(desc)
+				return markLines(id, sAccent.Render("▌ ◉  ")+sTitle.Render(title)+"\n"+sAccent.Render("▌")+"    "+sMuted.Render(desc))
 			}
-			return "  " + sFaint.Render("○  ") + sMuted.Render(title) + "\n" + "     " + sFaint.Render(desc)
+			return markLines(id, "  "+sFaint.Render("○  ")+sMuted.Render(title)+"\n"+"     "+sFaint.Render(desc))
 		}
 		parts = append(parts,
 			sGood.Render("✓ This computer already set up ")+sTitle.Render(s.domain),
@@ -93,9 +95,9 @@ func (s *welcomeScreen) view(w, h int) string {
 			"",
 			opt(1, "Change the setup", "Walk through the wizard again with your saved answers."))
 	case s.loaded:
-		parts = append(parts, sGood.Render("✓ Picked up your previous answers."), "", "", sAccent.Render("Press enter to begin ›"))
+		parts = append(parts, sGood.Render("✓ Picked up your previous answers."), "", "", mark("key:enter", sAccent.Render("Press enter to begin ›")))
 	default:
-		parts = append(parts, sAccent.Render("Press enter to begin ›"))
+		parts = append(parts, mark("key:enter", sAccent.Render("Press enter to begin ›")))
 	}
 	block := lipgloss.JoinVertical(lipgloss.Left, parts...)
 	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, block)
@@ -249,7 +251,7 @@ func (s *networkScreen) checksView(w int) string {
 		return s.spin.View() + sMuted.Render(" testing every source…")
 	}
 	if s.checks == nil {
-		return sMuted.Render("Press ") + sKey.Render("ctrl+t") + sMuted.Render(" to test that every source is reachable from here.")
+		return sMuted.Render("Press ") + keyLink("ctrl+t") + sMuted.Render(" to test that every source is reachable from here.")
 	}
 	var lines []string
 	for _, c := range s.checks {
@@ -385,7 +387,7 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 	for i, hs := range catalog.Homeservers {
 		tag := sMuted.Render("   " + hs.Tagline)
 		if i != s.sel && compact {
-			cards = append(cards, "   "+sFaint.Render("○  ")+sMuted.Render(hs.Name)+tag)
+			cards = append(cards, mark("hs:"+strconv.Itoa(i), "   "+sFaint.Render("○  ")+sMuted.Render(hs.Name)+tag))
 			continue
 		}
 		style, name := card, sFaint.Render("○  ")+sTitle.Render(hs.Name)
@@ -393,7 +395,7 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 			style, name = card.BorderForeground(cPurple), sAccent.Render("◉  ")+gradient(hs.Name)
 		}
 		desc := sSub.Width(cardW - 9).Render(hs.Description)
-		cards = append(cards, style.Render(name+tag+"\n   "+strings.ReplaceAll(desc, "\n", "\n   ")))
+		cards = append(cards, markLines("hs:"+strconv.Itoa(i), style.Render(name+tag+"\n   "+strings.ReplaceAll(desc, "\n", "\n   "))))
 	}
 	return strings.Join(cards, "\n\n")
 }
