@@ -380,3 +380,9 @@ Files:
 - deploy history for rollback: `~/.config/interzone/history/<server>/`
 - other servers: answers in `~/.config/interzone/servers/`, playbooks in
   `~/.local/share/interzone/servers/<name>/`
+
+## License
+
+MIT, see [LICENSE](LICENSE). The playbook interzone drives,
+[matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy),
+is AGPL-3.0 and keeps its own license.
