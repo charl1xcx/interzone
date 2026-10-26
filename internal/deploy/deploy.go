@@ -512,7 +512,7 @@ func (r *Runner) selfCheck(ctx context.Context) error {
 		case strings.HasPrefix(ev.Line, "ok:") && strings.HasPrefix(task, "Report working "):
 			r.result.Passed = append(r.result.Passed, strings.TrimPrefix(task, "Report working "))
 		case ev.Failed:
-			r.result.Problems = append(r.result.Problems, failureMessage(task, ev.Line))
+			r.result.Problems = append(r.result.Problems, FailureMessage(task, ev.Line))
 		}
 	}
 	err := r.playbookRun(ctx, StepSelfCheck, args...)
@@ -529,9 +529,9 @@ func (r *Runner) selfCheck(ctx context.Context) error {
 	return nil
 }
 
-// failureMessage pulls the "msg" out of an Ansible failure line, without
-// the full error dump MDAD appends.
-func failureMessage(task, line string) string {
+// FailureMessage pulls the "msg" out of an Ansible failure line, without
+// the full error dump MDAD appends. Without one it's the task's name.
+func FailureMessage(task, line string) string {
 	msg := strings.TrimPrefix(task, "Fail if ")
 	if _, js, ok := strings.Cut(line, "=> "); ok {
 		var v struct {
@@ -701,8 +701,6 @@ func FollowLogs(ctx context.Context, c *config.Config, unit string) (<-chan stri
 	}()
 	return ch, nil
 }
-
-var ansibleMsg = regexp.MustCompile(`"msg": "((?:[^"\\]|\\.)*)"`)
 
 var taskLine = regexp.MustCompile(`^(?:TASK|PLAY|RUNNING HANDLER) \[(.*)\]`)
 

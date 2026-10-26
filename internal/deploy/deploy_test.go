@@ -4,12 +4,12 @@ import "testing"
 
 func TestFailureMessage(t *testing.T) {
 	line := `fatal: [matrix.example.org -> 127.0.0.1]: FAILED! => {"changed": false, "msg": "Failed checking Element Web is up at ` + "`element.example.org`" + `. Full error: {'status': -1}"}`
-	got := failureMessage("Fail if Element Web not working", line)
+	got := FailureMessage("Fail if Element Web not working", line)
 	want := "Failed checking Element Web is up at `element.example.org`."
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
-	if got := failureMessage("Fail if Element Web not working", "fatal: unreachable"); got != "Element Web not working" {
+	if got := FailureMessage("Fail if Element Web not working", "fatal: unreachable"); got != "Element Web not working" {
 		t.Fatalf("fallback: got %q", got)
 	}
 }

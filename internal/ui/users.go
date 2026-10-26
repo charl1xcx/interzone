@@ -289,7 +289,7 @@ func (s *usersScreen) rows() []userRow {
 
 // keep reports whether u passes the filter.
 func (s *usersScreen) keep(u *deploy.MatrixUser) bool {
-	recent := !u.LastSeen.IsZero() && time.Since(u.LastSeen) < activeFor
+	recent := seenLately(u)
 	switch userFilters[s.filter] {
 	case "admins":
 		return u.Admin
@@ -635,7 +635,7 @@ func (s *usersScreen) stats(w int) string {
 		if u.Admin {
 			admins++
 		}
-		if !u.LastSeen.IsZero() && time.Since(u.LastSeen) < activeFor {
+		if seenLately(&u) {
 			active++
 		}
 		if time.Since(u.Created) < activeFor {
@@ -855,7 +855,7 @@ func (s *usersScreen) bridgeCard(r userRow, w int) string {
 		if u.Bot {
 			bot = u.ID
 		}
-		if !u.LastSeen.IsZero() && time.Since(u.LastSeen) < activeFor {
+		if seenLately(&u) {
 			active++
 		}
 	}
@@ -889,6 +889,10 @@ func flow(chips []string, w int) []string {
 		lines = append(lines, line)
 	}
 	return lines
+}
+
+func seenLately(u *deploy.MatrixUser) bool {
+	return !u.LastSeen.IsZero() && time.Since(u.LastSeen) < activeFor
 }
 
 // activity is a dot for how recently someone was around.

@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -697,13 +696,8 @@ func (s *deployScreen) handle(ev deploy.Event) {
 	if ev.Failed {
 		s.fails++
 		s.lastErr = ev.Line
-		if _, js, ok := strings.Cut(ev.Line, "=> "); ok {
-			var v struct {
-				Msg string `json:"msg"`
-			}
-			if json.Unmarshal([]byte(js), &v) == nil && v.Msg != "" {
-				s.lastErr = v.Msg
-			}
+		if msg := deploy.FailureMessage("", ev.Line); msg != "" {
+			s.lastErr = msg
 		}
 	}
 	s.appendLog(styleLogLine(ev.Line, ev.Failed))
