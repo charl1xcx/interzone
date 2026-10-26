@@ -367,6 +367,9 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 	if c.Status != "" {
 		tags = append(tags, tagChip(c.Status, cAmber))
 	}
+	if c.Suggested && s.available(c) {
+		tags = append(tags, tagChip("suggested", cMint))
+	}
 	if len(c.Fields) > 0 && s.available(c) {
 		tags = append(tags, tagChip("needs settings", cPink))
 	}

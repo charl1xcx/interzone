@@ -1,9 +1,11 @@
 package ui
 
 import (
+	"strings"
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 
 	"interzone/internal/catalog"
 	"interzone/internal/config"
@@ -76,5 +78,19 @@ func TestApplyPreset(t *testing.T) {
 	}
 	if a.cfg.Preset != catalog.Presets[len(catalog.Presets)-1].ID {
 		t.Errorf("preset %q", a.cfg.Preset)
+	}
+}
+
+// Sable is pointed out among the clients.
+func TestSableSuggested(t *testing.T) {
+	a := demoApp(t, 120, 36)
+	a.jump(a.index("Components"))
+	cs := a.cur().(*componentsScreen)
+	for _, c := range catalog.Components {
+		if c.ID == "sable" {
+			if row := ansi.Strip(cs.row(c, 0, false, 100)); !strings.Contains(row, "suggested") {
+				t.Errorf("no suggestion on Sable's row: %q", row)
+			}
+		}
 	}
 }

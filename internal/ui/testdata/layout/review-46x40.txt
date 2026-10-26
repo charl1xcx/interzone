@@ -5,7 +5,7 @@
  │ ◎  Domain        example.org             │ 
  │ ◆  Homeserver    Synapse                 │ 
  │ ⌂  Install on    this machine            │ 
- │ ▦  Components    5                       │ 
+ │ ▦  Components    4                       │ 
  │ ◈  Certificates  Let's Encrypt           │ 
  │ ⇩  Images from   mechatok.g0th.ir/       │ 
  ╰──────────────────────────────────────────╯ 

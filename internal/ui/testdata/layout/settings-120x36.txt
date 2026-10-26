@@ -19,18 +19,18 @@
 │                        ││      › comma, separated, values                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
-│                        ││   ◆ Exim email relay ───────────────────────────────────────────────────────────────────   │
-│                        ││                                                                                            │
-│                        ││      Sender address                                                                        │
-│                        ││      ›                                                                                     │
-│                        ││                                                                                            │
-│                        ││      ○  Relay through another SMTP server  off                                             │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
 │                        ││   ◆ Advanced ───────────────────────────────────────────────────────────────────────────   │
 │                        ││                                                                                            │
-│ ◫ auto (wide)  ctrl+l  ││      Extra vars.yml lines                                                                  │
-│ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
+│                        ││      Extra vars.yml lines                                                                  │
+│                        ││      │                                                                                     │
+│                        ││      │                                                                                     │
+│                        ││      │                                                                                     │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  tab/↑↓ move   ·   space toggle   ·   ctrl+r reveal secrets   ·   enter next   ·   esc back   ·   ctrl+c quit           

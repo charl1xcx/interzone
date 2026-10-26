@@ -7,7 +7,7 @@
 │ ▌ ◉ Review             ││   │ ◎  Domain        example.org                                         │                 │
 │   ○ Deploy             ││   │ ◆  Homeserver    Synapse                                             │                 │
 │                        ││   │ ⌂  Install on    this machine                                        │                 │
-│ ▸ Manage example.org   ││   │ ▦  Components    5                                                   │                 │
+│ ▸ Manage example.org   ││   │ ▦  Components    4                                                   │                 │
 │                        ││   │ ◈  Certificates  Let's Encrypt                                       │                 │
 │ ▸ Mirrors              ││   │ ⇩  Images from   mechatok.g0th.ir/                                   │                 │
 │                        ││   ╰──────────────────────────────────────────────────────────────────────╯                 │

@@ -1,11 +1,11 @@
  ◢◤ 3/5 Components                              
  Pick what you want on your server              
-     Core services  2/6   ›         5 selected  
+     Core services  1/6   ›         4 selected  
  ╭────────────────────────────────────────────╮ 
  │ ●  Coturn TURN server    needs settings    │ 
  │    Relays voice/video calls for users beh… │ 
  ╰────────────────────────────────────────────╯ 
-   ●  Exim email relay    needs settings        
+   ○  Exim email relay    needs settings        
       Lets services send email (password reset… 
    ○  Serve the base domain                     
       Host a simple page and .well-known files… 

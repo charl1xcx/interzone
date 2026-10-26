@@ -37,6 +37,10 @@ type Component struct {
 	// DefaultOn components are enabled by MDAD unless explicitly disabled,
 	// so their enable variable is always written out.
 	DefaultOn bool
+	// StartOff keeps a DefaultOn component unticked in a new setup.
+	StartOff bool
+	// Suggested components are pointed out on the Components step.
+	Suggested bool
 	// Extra variables written verbatim when the component is enabled.
 	Extra       map[string]string
 	Fields      []Field
@@ -88,7 +92,7 @@ var Components = []Component{
 	{ID: "coturn", Name: "Coturn TURN server", Category: "Core services", EnableVar: "coturn_enabled", DefaultOn: true,
 		Description: "Relays voice/video calls for users behind NAT. Strongly recommended.", Doc: "configuring-playbook-turn.md",
 		Fields: []Field{{Var: "coturn_turn_external_ip_addresses", Label: "Public IP address(es)", Help: "Leave empty to auto-detect (auto-detection needs internet).", Kind: List}}},
-	{ID: "exim", Name: "Exim email relay", Category: "Core services", EnableVar: "exim_relay_enabled", DefaultOn: true,
+	{ID: "exim", Name: "Exim email relay", Category: "Core services", EnableVar: "exim_relay_enabled", DefaultOn: true, StartOff: true,
 		Description: "Lets services send email (password resets, notifications).", Doc: "configuring-playbook-email.md",
 		Fields: []Field{
 			{Var: "exim_relay_sender_address", Label: "Sender address", Help: "Leave empty for matrix@matrix.<domain>.", Kind: Text},
@@ -122,7 +126,7 @@ var Components = []Component{
 		Description: "The flagship Matrix web client.", Doc: "configuring-playbook-client-element-web.md"},
 	{ID: "cinny", Name: "Cinny", Category: "Clients", EnableVar: "cinny_enabled", Subdomain: "cinny",
 		Description: "A simple, elegant web client.", Doc: "configuring-playbook-client-cinny.md"},
-	{ID: "sable", Name: "Sable", Category: "Clients", EnableVar: "sable_enabled", Subdomain: "sable",
+	{ID: "sable", Name: "Sable", Category: "Clients", EnableVar: "sable_enabled", Subdomain: "sable", Suggested: true,
 		Description: "Web client focused on a clean, elegant interface.", Doc: "configuring-playbook-client-sable.md"},
 	{ID: "hydrogen", Name: "Hydrogen", Category: "Clients", EnableVar: "hydrogen_enabled", Subdomain: "hydrogen",
 		Description: "Lightweight client with legacy and mobile browser support.", Doc: "configuring-playbook-client-hydrogen.md"},
@@ -419,14 +423,14 @@ type Preset struct {
 
 // Presets are the built-in stacks offered on the Homeserver step.
 var Presets = []Preset{
-	{"minimal", "Minimal chat", "Synapse with MAS logins and Element Web: the smallest usual setup.",
-		"synapse", []string{"coturn", "exim", "element", "mas"}},
+	{"minimal", "Minimal chat", "Synapse with MAS logins, Element Web and Sable: the smallest usual setup.",
+		"synapse", []string{"coturn", "element", "sable", "mas"}},
 	{"family", "Friends & family", "Chat plus voice and video calls, and an admin panel.",
-		"synapse", []string{"coturn", "exim", "element", "element-call", "mas", "ketesa"}},
+		"synapse", []string{"coturn", "element", "sable", "element-call", "mas", "ketesa"}},
 	{"bridges", "Bridge hub", "Telegram, WhatsApp, Signal and Discord in one place, encrypted, with your own name on the other side.",
-		"synapse", []string{"coturn", "exim", "element", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
-	{"community", "Public community", "Open sign-up through MAS, two web clients, moderation, antispam and monitoring.",
-		"synapse", []string{"coturn", "exim", "element", "cinny", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}},
-	{"light", "Lightweight", "Tuwunel and Cinny for a Raspberry Pi or a 1 GB VPS.",
-		"tuwunel", []string{"coturn", "cinny"}},
+		"synapse", []string{"coturn", "element", "sable", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
+	{"community", "Public community", "Open sign-up through MAS, three web clients, moderation, antispam and monitoring.",
+		"synapse", []string{"coturn", "element", "cinny", "sable", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}},
+	{"light", "Lightweight", "Tuwunel with Cinny and Sable for a Raspberry Pi or a 1 GB VPS.",
+		"tuwunel", []string{"coturn", "cinny", "sable"}},
 }

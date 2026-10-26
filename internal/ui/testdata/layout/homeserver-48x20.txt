@@ -2,7 +2,7 @@
  Choose your homeserver                         
    ▲ more above                                 
    Public community  Synapse · 9 components     
-   Lightweight       Tuwunel · 2 components     
+   Lightweight       Tuwunel · 3 components     
  Or only the homeserver, and pick the           
  components yourself                            
  ╭────────────────────────────────────────────╮ 

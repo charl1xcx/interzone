@@ -3,7 +3,7 @@
 │ ▾ Setup                ││                                                                                            │
 │   ● Server             ││   Pick what you want on your server                                                        │
 │   ● Homeserver         ││                                                                                            │
-│ ▌ ◉ Components         ││       Core services  2/6    Clients  2/7    Authentication  1/9   ›          5 selected    │
+│ ▌ ◉ Components         ││       Core services  1/6    Clients  2/7    Authentication  1/9   ›          4 selected    │
 │   ○ Review             ││                                                                                            │
 │   ○ Deploy             ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
 │                        ││   │ ●  Coturn TURN server    needs settings                                            │   │
@@ -12,7 +12,7 @@
 │ ▸ Mirrors              ││   │    docs/configuring-playbook-turn.md                                               │   │
 │                        ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││     ●  Exim email relay    needs settings                                                  │
+│   ● example.org        ││     ○  Exim email relay    needs settings                                                  │
 │                        ││        Lets services send email (password resets, notifications).                          │
 │                        ││                                                                                            │
 │                        ││     ○  Serve the base domain                                                               │

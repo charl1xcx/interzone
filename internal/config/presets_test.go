@@ -2,6 +2,7 @@ package config
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"interzone/internal/catalog"
@@ -65,6 +66,25 @@ func TestPresetsLeaveBackupsOff(t *testing.T) {
 		c.ApplyPreset(p)
 		if c.Backups.Enabled {
 			t.Errorf("%s turned the backups on", p.ID)
+		}
+	}
+}
+
+// A new setup starts without the email relay, and since the playbook turns
+// it on by itself, it's written out as off. Every preset has Sable and no
+// relay.
+func TestEximStartsOff(t *testing.T) {
+	c := Fresh()
+	c.Domain = "example.org"
+	if c.Components["exim"] {
+		t.Fatal("a new setup has exim ticked")
+	}
+	if y := c.VarsYAML("", "", ""); !strings.Contains(y, "exim_relay_enabled: false") {
+		t.Errorf("exim isn't written as off:\n%s", y)
+	}
+	for _, p := range catalog.Presets {
+		if !slices.Contains(p.Components, "sable") || slices.Contains(p.Components, "exim") {
+			t.Errorf("%s: %v", p.ID, p.Components)
 		}
 	}
 }

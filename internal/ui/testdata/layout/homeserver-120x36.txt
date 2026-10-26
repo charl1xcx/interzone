@@ -8,7 +8,7 @@
 │   ○ Deploy             ││     Friends & family  Synapse · 6 components                                               │
 │                        ││     Bridge hub        Synapse · 11 components                                              │
 │ ▸ Manage example.org   ││     Public community  Synapse · 9 components                                               │
-│                        ││     Lightweight       Tuwunel · 2 components                                               │
+│                        ││     Lightweight       Tuwunel · 3 components                                               │
 │ ▸ Mirrors              ││                                                                                            │
 │                        ││   Or only the homeserver, and pick the components yourself                                 │
 │ ▾ Servers              ││                                                                                            │

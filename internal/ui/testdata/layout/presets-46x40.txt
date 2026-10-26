@@ -9,15 +9,15 @@
    │ an admin panel.                        │ 
    │                                        │ 
    │ Core   • Coturn TURN server            │ 
-   │        • Exim email relay              │ 
    │ Apps   • Element Web                   │ 
+   │        • Sable                         │ 
    │ Login  • Matrix Authentication Service │ 
    │        • Ketesa admin panel            │ 
    │ Calls  • Element Call                  │ 
    ╰────────────────────────────────────────╯ 
    Bridge hub        Synapse · 11 components  
    Public community  Synapse · 9 components   
-   Lightweight       Tuwunel · 2 components   
+   Lightweight       Tuwunel · 3 components   
                                               
  Or only the homeserver, and pick the         
  components yourself                          

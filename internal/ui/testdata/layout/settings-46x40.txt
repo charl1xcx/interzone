@@ -17,20 +17,20 @@
     › comma, separated, values                
                                               
                                               
- ◆ Exim email relay ───────────────────────── 
-                                              
-    Sender address                            
-    ›                                         
-                                              
-    ○  Relay through another SMTP server  off 
-                                              
-                                              
  ◆ Advanced ───────────────────────────────── 
                                               
     Extra vars.yml lines                      
     │                                         
     │                                         
     │                                         
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
                                               
                                               
                                               

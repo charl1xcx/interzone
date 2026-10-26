@@ -127,7 +127,7 @@ func Default() *Config {
 		PlaybookDir:      filepath.Join(DataDir(), "matrix-docker-ansible-deploy"),
 	}
 	for _, comp := range catalog.Components {
-		if comp.DefaultOn {
+		if comp.DefaultOn && !comp.StartOff {
 			c.Components[comp.ID] = true
 		}
 	}

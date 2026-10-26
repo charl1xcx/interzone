@@ -10,15 +10,15 @@
 │ ▸ Manage example.org   ││     │ Chat plus voice and video calls, and an admin panel.                           │     │
 │                        ││     │                                                                                │     │
 │ ▸ Mirrors              ││     │ Core   • Coturn TURN server                                                    │     │
-│                        ││     │        • Exim email relay                                                      │     │
-│ ▾ Servers              ││     │ Apps   • Element Web                                                           │     │
+│                        ││     │ Apps   • Element Web                                                           │     │
+│ ▾ Servers              ││     │        • Sable                                                                 │     │
 │   ● example.org        ││     │ Login  • Matrix Authentication Service                                         │     │
 │                        ││     │        • Ketesa admin panel                                                    │     │
 │                        ││     │ Calls  • Element Call                                                          │     │
 │                        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││     Bridge hub        Synapse · 11 components                                              │
 │                        ││     Public community  Synapse · 9 components                                               │
-│                        ││     Lightweight       Tuwunel · 2 components                                               │
+│                        ││     Lightweight       Tuwunel · 3 components                                               │
 │                        ││                                                                                            │
 │                        ││   Or only the homeserver, and pick the components yourself                                 │
 │                        ││                                                                                            │

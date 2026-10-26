@@ -79,11 +79,12 @@ Need help, found a bug, or just like the project? Join the Matrix space
   logins. Servers that are already installed keep what they have, since
   moving existing accounts to MAS is a migration of its own.
 - **Presets** to start from on the Homeserver step: Minimal chat (Synapse,
-  MAS, Element), Friends & family (adds Element Call and
+  MAS, Element and Sable), Friends & family (adds Element Call and
   Ketesa), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
-  puppeting and encryption), Public community (MAS sign-up, Element and
-  Cinny, Draupnir, antispam, monitoring) and Lightweight (Tuwunel and
-  Cinny). Picking one sets the homeserver and ticks exactly its components;
+  puppeting and encryption), Public community (MAS sign-up, Element, Cinny
+  and Sable, Draupnir, antispam, monitoring) and Lightweight (Tuwunel,
+  Cinny and Sable). None sends email: tick the Exim relay on Components
+  if you want it. Picking one sets the homeserver and ticks exactly its components;
   settings you already typed in are kept. `s` there or `p` on Components
   saves the current homeserver and components as your own preset (no
   settings or secrets), and saving under an existing name changes that

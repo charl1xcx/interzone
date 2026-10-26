@@ -9,12 +9,12 @@
  ◆ Coturn TURN server ───────────────────────── 
     Public IP address(es)  –                    
                                                 
- ◆ Exim email relay ─────────────────────────── 
-    Sender address  –                           
-    Relay through another… off                  
-                                                
  ◆ Advanced ─────────────────────────────────── 
     Extra vars.yml lines  empty                 
+                                                
+                                                
+                                                
+                                                
                                                 
                                                 
     ‹ back       ≡ menu        next ›       ⋯  
