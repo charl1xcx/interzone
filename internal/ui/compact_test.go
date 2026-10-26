@@ -104,12 +104,8 @@ func TestPresetGroups(t *testing.T) {
 			p = x
 		}
 	}
-	n, backups := 0, false
+	n := 0
 	for _, g := range presetGroups(p) {
-		if g.label == "Backups" { // the family preset's scheduled backups
-			backups = true
-			continue
-		}
 		n += len(g.items)
 		if g.label == "" {
 			t.Errorf("a group without a label: %v", g.items)
@@ -117,9 +113,6 @@ func TestPresetGroups(t *testing.T) {
 	}
 	if n != len(p.Components) {
 		t.Errorf("%d of %d components grouped", n, len(p.Components))
-	}
-	if !backups {
-		t.Errorf("the scheduled backups aren't listed")
 	}
 }
 

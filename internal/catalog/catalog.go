@@ -408,27 +408,25 @@ func ByID(id string) (Component, bool) {
 	return Component{}, false
 }
 
-// Preset is a starting stack: a homeserver and the components to tick,
-// and whether interzone's scheduled backups come with it.
+// Preset is a starting stack: a homeserver and the components to tick.
 type Preset struct {
 	ID          string
 	Name        string
 	Description string
 	Homeserver  string
 	Components  []string
-	Backups     bool `json:",omitempty"`
 }
 
 // Presets are the built-in stacks offered on the Homeserver step.
 var Presets = []Preset{
 	{"minimal", "Minimal chat", "Synapse with MAS logins and Element Web: the smallest usual setup.",
-		"synapse", []string{"coturn", "exim", "element", "mas"}, false},
-	{"family", "Friends & family", "Chat plus voice and video calls, an admin panel and nightly database dumps.",
-		"synapse", []string{"coturn", "exim", "element", "element-call", "mas", "ketesa"}, true},
+		"synapse", []string{"coturn", "exim", "element", "mas"}},
+	{"family", "Friends & family", "Chat plus voice and video calls, and an admin panel.",
+		"synapse", []string{"coturn", "exim", "element", "element-call", "mas", "ketesa"}},
 	{"bridges", "Bridge hub", "Telegram, WhatsApp, Signal and Discord in one place, encrypted, with your own name on the other side.",
-		"synapse", []string{"coturn", "exim", "element", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}, false},
+		"synapse", []string{"coturn", "exim", "element", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
 	{"community", "Public community", "Open sign-up through MAS, two web clients, moderation, antispam and monitoring.",
-		"synapse", []string{"coturn", "exim", "element", "cinny", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}, false},
+		"synapse", []string{"coturn", "exim", "element", "cinny", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}},
 	{"light", "Lightweight", "Tuwunel and Cinny for a Raspberry Pi or a 1 GB VPS.",
-		"tuwunel", []string{"coturn", "cinny"}, false},
+		"tuwunel", []string{"coturn", "cinny"}},
 }

@@ -79,8 +79,8 @@ Need help, found a bug, or just like the project? Join the Matrix space
   logins. Servers that are already installed keep what they have, since
   moving existing accounts to MAS is a migration of its own.
 - **Presets** to start from on the Homeserver step: Minimal chat (Synapse,
-  MAS, Element), Friends & family (adds Element Call, Ketesa and database
-  dumps), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
+  MAS, Element), Friends & family (adds Element Call and
+  Ketesa), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
   puppeting and encryption), Public community (MAS sign-up, Element and
   Cinny, Draupnir, antispam, monitoring) and Lightweight (Tuwunel and
   Cinny). Picking one sets the homeserver and ticks exactly its components;
@@ -192,9 +192,9 @@ Need help, found a bug, or just like the project? Join the Matrix space
     the next update.
   - **Restore** any database dump on this computer: services stop, the
     current database is dumped first, then replaced.
-  - **Scheduled backups:** a systemd timer on the server dumps the database
-    by itself (`/matrix/interzone-backups`, keeping the newest N);
-    download them for Restore.
+  - **Scheduled backups** (off until you turn them on): a systemd timer on
+    the server dumps the database by itself (`/matrix/interzone-backups`,
+    keeping the newest N); download them for Restore.
   - **Users** (Synapse): totals at the top (people, active in the last
     30 days, admins, new, rooms, media), then everyone with how recently
     they were seen; the one selected opens into a card with when they

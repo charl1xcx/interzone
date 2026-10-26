@@ -58,24 +58,13 @@ func TestPresets(t *testing.T) {
 	}
 }
 
-// A preset that comes with backups turns them on; one without leaves them
-// as they were.
-func TestApplyPresetBackups(t *testing.T) {
-	c := Default()
-	c.ApplyPreset(catalog.Presets[0])
-	if c.Backups.Enabled {
-		t.Errorf("%s turned the backups on", catalog.Presets[0].ID)
-	}
+// No preset turns on scheduled backups; they're off until asked for.
+func TestPresetsLeaveBackupsOff(t *testing.T) {
 	for _, p := range catalog.Presets {
-		if p.Backups {
-			c.ApplyPreset(p)
+		c := Default()
+		c.ApplyPreset(p)
+		if c.Backups.Enabled {
+			t.Errorf("%s turned the backups on", p.ID)
 		}
-	}
-	if !c.Backups.Enabled {
-		t.Errorf("no preset turned the backups on")
-	}
-	c.ApplyPreset(catalog.Presets[0])
-	if !c.Backups.Enabled {
-		t.Errorf("a preset without backups turned them off")
 	}
 }
