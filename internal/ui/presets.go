@@ -357,6 +357,9 @@ func presetGroups(p catalog.Preset) []bulletGroup {
 			groups = append(groups, g)
 		}
 	}
+	if p.Backups {
+		groups = append(groups, bulletGroup{label: "Backups", items: []string{"Daily database dumps"}})
+	}
 	return groups
 }
 

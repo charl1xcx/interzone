@@ -5,17 +5,17 @@
 │ ▌ ◉ Homeserver         ││                                                                                            │
 │   ○ Components         ││   Start from a preset                                                                      │
 │   ○ Review             ││     Minimal chat      Synapse · 4 components                                               │
-│   ○ Deploy             ││   › Friends & family  Synapse · 7 components  ● now                                        │
+│   ○ Deploy             ││   › Friends & family  Synapse · 6 components  ● now                                        │
 │                        ││     ╭────────────────────────────────────────────────────────────────────────────────╮     │
 │ ▸ Manage example.org   ││     │ Chat plus voice and video calls, an admin panel and nightly database dumps.    │     │
 │                        ││     │                                                                                │     │
-│ ▸ Mirrors              ││     │ Core   • Coturn TURN server                                                    │     │
-│                        ││     │        • Exim email relay                                                      │     │
-│ ▾ Servers              ││     │ Apps   • Element Web                                                           │     │
-│   ● example.org        ││     │ Login  • Matrix Authentication Service                                         │     │
-│                        ││     │        • Ketesa admin panel                                                    │     │
-│                        ││     │ Admin  • Postgres backup                                                       │     │
-│                        ││     │ Calls  • Element Call                                                          │     │
+│ ▸ Mirrors              ││     │ Core     • Coturn TURN server                                                  │     │
+│                        ││     │          • Exim email relay                                                    │     │
+│ ▾ Servers              ││     │ Apps     • Element Web                                                         │     │
+│   ● example.org        ││     │ Login    • Matrix Authentication Service                                       │     │
+│                        ││     │          • Ketesa admin panel                                                  │     │
+│                        ││     │ Calls    • Element Call                                                        │     │
+│                        ││     │ Backups  • Daily database dumps                                                │     │
 │                        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││     Bridge hub        Synapse · 11 components                                              │
 │                        ││     Public community  Synapse · 9 components                                               │

@@ -2,7 +2,7 @@
  Choose your homeserver                         
  Start from a preset                            
    Minimal chat      Synapse · 4 components     
- › Friends & family  Synapse · 7 components  ●  
+ › Friends & family  Synapse · 6 components  ●  
      Chat plus voice and video calls, an admin… 
    Bridge hub        Synapse · 11 components    
    Public community  Synapse · 9 components     

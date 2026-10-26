@@ -142,7 +142,8 @@ func presetID(name string) string {
 }
 
 // ApplyPreset sets the homeserver and makes the ticked components exactly
-// the preset's. Settings already filled in stay, for if they're ticked again.
+// the preset's, and turns on scheduled backups if it comes with them.
+// Settings already filled in stay, for if they're ticked again.
 func (c *Config) ApplyPreset(p catalog.Preset) {
 	c.Homeserver = p.Homeserver
 	c.Components = map[string]bool{}
@@ -150,6 +151,9 @@ func (c *Config) ApplyPreset(p catalog.Preset) {
 		if slices.Contains(p.Components, comp.ID) && (!comp.SynapseOnly || p.Homeserver == "synapse") {
 			c.Components[comp.ID] = true
 		}
+	}
+	if p.Backups {
+		c.Backups.Enabled = true
 	}
 	c.Preset = p.ID
 	c.FillGenerated()

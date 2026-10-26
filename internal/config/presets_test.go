@@ -57,3 +57,25 @@ func TestPresets(t *testing.T) {
 		t.Errorf("tuwunel: %v", c.Components)
 	}
 }
+
+// A preset that comes with backups turns them on; one without leaves them
+// as they were.
+func TestApplyPresetBackups(t *testing.T) {
+	c := Default()
+	c.ApplyPreset(catalog.Presets[0])
+	if c.Backups.Enabled {
+		t.Errorf("%s turned the backups on", catalog.Presets[0].ID)
+	}
+	for _, p := range catalog.Presets {
+		if p.Backups {
+			c.ApplyPreset(p)
+		}
+	}
+	if !c.Backups.Enabled {
+		t.Errorf("no preset turned the backups on")
+	}
+	c.ApplyPreset(catalog.Presets[0])
+	if !c.Backups.Enabled {
+		t.Errorf("a preset without backups turned them off")
+	}
+}

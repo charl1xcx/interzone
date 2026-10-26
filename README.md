@@ -43,7 +43,7 @@ Click a screenshot to see it full size.
 <td width="33%" valign="top"><p align="center"><a href="docs/screenshots/homeserver.png"><img src="docs/screenshots/homeserver.png" alt="Choosing a homeserver" width="280"></a></p>
 <b>Homeserver:</b> Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.</td>
 <td width="33%" valign="top"><p align="center"><a href="docs/screenshots/components.png"><img src="docs/screenshots/components.png" alt="Picking bridges, clients and services" width="280"></a></p>
-<b>Components:</b> 81 bridges, bots, clients and services.</td>
+<b>Components:</b> 79 bridges, bots, clients and services.</td>
 </tr>
 <tr>
 <td width="33%" valign="top"><p align="center"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" alt="Filling in the components' settings" width="280"></a></p>
@@ -70,7 +70,7 @@ Need help, found a bug, or just like the project? Join the Matrix space
 
 - **Any homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.
   Synapse-only components are greyed out for the others.
-- **Everything MDAD offers:** 81 components across clients, auth, storage,
+- **Everything MDAD offers:** 79 components across clients, auth, storage,
   bridges, bots, monitoring, backups and calls, with search (`/`).
   Required settings are asked for; secrets are generated.
 - **MAS with Synapse:** a new Synapse server gets the Matrix

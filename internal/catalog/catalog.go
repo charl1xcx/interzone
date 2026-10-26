@@ -229,14 +229,6 @@ var Components = []Component{
 		Description: "Bridge SMS/RCS through Google Messages on your phone.", Doc: "configuring-playbook-bridge-mautrix-gmessages.md"},
 	{ID: "gvoice", Name: "Google Voice (mautrix)", Category: "Bridges", EnableVar: "matrix_bridge_mautrix_gvoice_enabled",
 		Description: "Bridge Google Voice.", Doc: "configuring-playbook-bridge-mautrix-gvoice.md"},
-	{ID: "wsproxy", Name: "mautrix-wsproxy (SMS/iMessage)", Category: "Bridges", EnableVar: "matrix_bridge_mautrix_wsproxy_enabled", Subdomain: "wsproxy",
-		Description: "Websocket proxy for Android SMS or Apple iMessage bridges.", Doc: "configuring-playbook-bridge-mautrix-wsproxy.md",
-		Fields: []Field{
-			{Var: "matrix_bridge_mautrix_wsproxy_android_appservice_token", Label: "Android appservice token", Kind: Secret},
-			{Var: "matrix_bridge_mautrix_wsproxy_android_homeserver_token", Label: "Android homeserver token", Kind: Secret},
-			{Var: "matrix_bridge_mautrix_wsproxy_imessage_appservice_token", Label: "iMessage appservice token", Kind: Secret},
-			{Var: "matrix_bridge_mautrix_wsproxy_imessage_homeserver_token", Label: "iMessage homeserver token", Kind: Secret},
-		}},
 	{ID: "rustpush", Name: "iMessage (RustPush)", Category: "Bridges", EnableVar: "matrix_bridge_rustpush_enabled",
 		Description: "Bridge Apple iMessage.", Doc: "configuring-playbook-bridge-rustpush.md"},
 	{ID: "appservice-irc", Name: "IRC (matrix-appservice-irc)", Category: "Bridges", EnableVar: "matrix_bridge_appservice_irc_enabled",
@@ -371,8 +363,6 @@ var Components = []Component{
 			{Var: "backup_borg_storage_encryption_passphrase", Label: "Encryption passphrase", Kind: Secret, Required: true},
 			{Var: "backup_borg_ssh_key_private", Label: "SSH private key", Kind: YAML, Help: "Optional. First line |, then the key indented by two spaces."},
 		}},
-	{ID: "postgres-backup", Name: "Postgres backup", Category: "Administration", EnableVar: "postgres_backup_enabled",
-		Description: "Periodic local database dumps (database only).", Doc: "configuring-playbook-postgres-backup.md"},
 
 	// ── Calls & extras ─────────────────────────────────────────────
 	{ID: "element-call", Name: "Element Call", Category: "Calls & extras", EnableVar: "matrix_element_call_enabled", Subdomain: "call.element",
@@ -418,25 +408,27 @@ func ByID(id string) (Component, bool) {
 	return Component{}, false
 }
 
-// Preset is a starting stack: a homeserver and the components to tick.
+// Preset is a starting stack: a homeserver and the components to tick,
+// and whether interzone's scheduled backups come with it.
 type Preset struct {
 	ID          string
 	Name        string
 	Description string
 	Homeserver  string
 	Components  []string
+	Backups     bool `json:",omitempty"`
 }
 
 // Presets are the built-in stacks offered on the Homeserver step.
 var Presets = []Preset{
 	{"minimal", "Minimal chat", "Synapse with MAS logins and Element Web: the smallest usual setup.",
-		"synapse", []string{"coturn", "exim", "element", "mas"}},
+		"synapse", []string{"coturn", "exim", "element", "mas"}, false},
 	{"family", "Friends & family", "Chat plus voice and video calls, an admin panel and nightly database dumps.",
-		"synapse", []string{"coturn", "exim", "element", "element-call", "mas", "ketesa", "postgres-backup"}},
+		"synapse", []string{"coturn", "exim", "element", "element-call", "mas", "ketesa"}, true},
 	{"bridges", "Bridge hub", "Telegram, WhatsApp, Signal and Discord in one place, encrypted, with your own name on the other side.",
-		"synapse", []string{"coturn", "exim", "element", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
+		"synapse", []string{"coturn", "exim", "element", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}, false},
 	{"community", "Public community", "Open sign-up through MAS, two web clients, moderation, antispam and monitoring.",
-		"synapse", []string{"coturn", "exim", "element", "cinny", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}},
+		"synapse", []string{"coturn", "exim", "element", "cinny", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}, false},
 	{"light", "Lightweight", "Tuwunel and Cinny for a Raspberry Pi or a 1 GB VPS.",
-		"tuwunel", []string{"coturn", "cinny"}},
+		"tuwunel", []string{"coturn", "cinny"}, false},
 }

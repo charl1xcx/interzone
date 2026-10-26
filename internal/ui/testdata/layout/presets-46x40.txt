@@ -3,19 +3,19 @@
                                               
  Start from a preset                          
    Minimal chat      Synapse · 4 components   
- › Friends & family  Synapse · 7 components   
+ › Friends & family  Synapse · 6 components   
    ╭────────────────────────────────────────╮ 
    │ Chat plus voice and video calls, an    │ 
    │ admin panel and nightly database       │ 
    │ dumps.                                 │ 
    │                                        │ 
-   │ Core   • Coturn TURN server            │ 
-   │        • Exim email relay              │ 
-   │ Apps   • Element Web                   │ 
-   │ Login  • Matrix Authentication Service │ 
-   │        • Ketesa admin panel            │ 
-   │ Admin  • Postgres backup               │ 
-   │ Calls  • Element Call                  │ 
+   │ Core     • Coturn TURN server          │ 
+   │          • Exim email relay            │ 
+   │ Apps     • Element Web                 │ 
+   │ Login    • Matrix Authentication Serv… │ 
+   │          • Ketesa admin panel          │ 
+   │ Calls    • Element Call                │ 
+   │ Backups  • Daily database dumps        │ 
    ╰────────────────────────────────────────╯ 
    Bridge hub        Synapse · 11 components  
    Public community  Synapse · 9 components   
