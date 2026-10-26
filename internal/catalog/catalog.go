@@ -383,8 +383,6 @@ var Components = []Component{
 		Description: "Self-hosted video conferencing.", Doc: "configuring-playbook-jitsi.md"},
 	{ID: "etherpad", Name: "Etherpad", Category: "Calls & extras", EnableVar: "etherpad_enabled", Subdomain: "etherpad",
 		Description: "Collaborative documents you can embed in rooms.", Doc: "configuring-playbook-etherpad.md"},
-	{ID: "matrixto", Name: "Matrix.to", Category: "Calls & extras", EnableVar: "matrix_matrixto_enabled", Subdomain: "mt",
-		Description: "Self-hosted link sharing service. Handy when matrix.to is unreachable.", Doc: "configuring-playbook-matrixto.md"},
 	{ID: "cactus", Name: "Cactus Comments", Category: "Calls & extras", EnableVar: "matrix_cactus_comments_enabled",
 		Description: "Federated comment system for websites.", Doc: "configuring-playbook-cactus-comments.md",
 		Extra: map[string]string{"matrix_cactus_comments_client_enabled": "true"}},
