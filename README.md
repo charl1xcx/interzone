@@ -30,26 +30,36 @@ progress view.
 It is built to keep working during a **country-wide internet blackout**:
 every download can come from mirrors inside the country.
 
-![interzone's welcome screen](docs/screenshots/welcome.png)
+<a href="docs/screenshots/welcome.png"><img src="docs/screenshots/welcome.png" alt="interzone's welcome screen" width="600"></a>
 
 ## Screenshots
 
-| | |
-|---|---|
-| ![The Server step](docs/screenshots/server.png) | ![Choosing a homeserver](docs/screenshots/homeserver.png) |
-| **Server:** where it runs, where downloads come from, HTTPS and networking, in one form. | **Homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite. |
-| ![Picking bridges, clients and services](docs/screenshots/components.png) | ![Filling in the components' settings](docs/screenshots/settings.png) |
-| **Components:** 82 bridges, bots, clients and services. | **…and their settings** on the step's second page. |
-| ![The Manage menu](docs/screenshots/manage.png) | ![Fine-tuning the playbook's roles](docs/screenshots/tuning.png) |
-| **Manage the server:** updates, users, backups, rollback, logs and more. | **Fine-tune:** search and change the settings of every playbook role. |
+Click a screenshot to see it full size.
 
-![Managing the server's users](docs/screenshots/users.png)
-
-**Users:** totals, a card per person, bridge accounts grouped out of the way, search, filter and sort.
-
-![The compact layout on a phone-sized terminal](docs/screenshots/phone.png)
-
-**On a phone** (Termux or any narrow terminal) the compact layout drops the sidebar and puts thumb-sized buttons along the bottom, so nothing needs ctrl or esc.
+<table>
+<tr>
+<td width="33%" valign="top"><a href="docs/screenshots/server.png"><img src="docs/screenshots/server.png" alt="The Server step" width="280"></a><br>
+<b>Server:</b> where it runs, where downloads come from, HTTPS and networking, in one form.</td>
+<td width="33%" valign="top"><a href="docs/screenshots/homeserver.png"><img src="docs/screenshots/homeserver.png" alt="Choosing a homeserver" width="280"></a><br>
+<b>Homeserver:</b> Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.</td>
+<td width="33%" valign="top"><a href="docs/screenshots/components.png"><img src="docs/screenshots/components.png" alt="Picking bridges, clients and services" width="280"></a><br>
+<b>Components:</b> 82 bridges, bots, clients and services.</td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" alt="Filling in the components' settings" width="280"></a><br>
+<b>…and their settings</b> on the step's second page.</td>
+<td width="33%" valign="top"><a href="docs/screenshots/manage.png"><img src="docs/screenshots/manage.png" alt="The Manage menu" width="280"></a><br>
+<b>Manage the server:</b> updates, users, backups, rollback, logs and more.</td>
+<td width="33%" valign="top"><a href="docs/screenshots/tuning.png"><img src="docs/screenshots/tuning.png" alt="Fine-tuning the playbook's roles" width="280"></a><br>
+<b>Fine-tune:</b> search and change the settings of every playbook role.</td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="docs/screenshots/users.png"><img src="docs/screenshots/users.png" alt="Managing the server's users" width="280"></a><br>
+<b>Users:</b> totals, a card per person, bridge accounts grouped out of the way, search, filter and sort.</td>
+<td width="33%" valign="top"><a href="docs/screenshots/phone.png"><img src="docs/screenshots/phone.png" alt="The compact layout on a phone-sized terminal" width="280"></a><br>
+<b>On a phone</b> (Termux or any narrow terminal) the compact layout drops the sidebar and puts thumb-sized buttons along the bottom, so nothing needs ctrl or esc.</td>
+</tr>
+</table>
 
 ## Community
 
