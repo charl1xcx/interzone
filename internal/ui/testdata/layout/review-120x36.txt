@@ -3,16 +3,20 @@
 │ ▾ Setup                ││                                                                                            │
 │   ● Server             ││   Everything look right?                                                                   │
 │   ● Homeserver         ││                                                                                            │
-│   ● Components         ││   Domain          example.org                                                              │
-│ ▌ ◉ Review             ││   Homeserver      Synapse                                                                  │
-│   ○ Deploy             ││   Install on      this machine                                                             │
-│                        ││   Components      5                                                                        │
-│ ▸ Manage example.org   ││   Certificates    Let's Encrypt                                                            │
-│                        ││   Images from     mechatok.g0th.ir/                                                        │
-│ ▸ Mirrors              ││                                                                                            │
-│                        ││   ✓ Ready to deploy.                                                                       │
+│   ● Components         ││   ╭──────────────────────────────────────────────────────────────────────╮                 │
+│ ▌ ◉ Review             ││   │ ◎  Domain        example.org                                         │                 │
+│   ○ Deploy             ││   │ ◆  Homeserver    Synapse                                             │                 │
+│                        ││   │ ⌂  Install on    this machine                                        │                 │
+│ ▸ Manage example.org   ││   │ ▦  Components    5                                                   │                 │
+│                        ││   │ ◈  Certificates  Let's Encrypt                                       │                 │
+│ ▸ Mirrors              ││   │ ⇩  Images from   mechatok.g0th.ir/                                   │                 │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────╯                 │
 │ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││   Pre-deploy checks  ⠋ checking the server and DNS…                                        │
+│   ● example.org        ││   ╭──────────────────────────────────────────────────────────────────────╮                 │
+│                        ││   │ ✓ Ready to deploy.                                                   │                 │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────╯                 │
+│                        ││                                                                                            │
+│                        ││   Pre-deploy checks  ⠋ checking the server and DNS…                                        │
 │                        ││                                                                                            │
 │                        ││     ○  Synapse      matrix.example.org                                                     │
 │                        ││     ○  Element Web  element.example.org                                                    │
@@ -25,10 +29,6 @@
 │                        ││   │ # "Extra vars" box inside interzone so they survive.                               │   │
 │                        ││   │ ---                                                                                │   │
 │                        ││   │                                                                                    │   │
-│                        ││   │ # ── Basics ──────────────────────────────────────────────────────                 │   │
-│                        ││   │ matrix_playbook_migration_validated_version: ''  # filled in from the playbook dur │   │
-│                        ││   │ matrix_domain: 'example.org'                                                       │   │
-│                        ││   │ matrix_homeserver_implementation: synapse                                          │   │
 │ ◫ auto (wide)  ctrl+l  ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold  ctrl+b         ││                                                                                            │

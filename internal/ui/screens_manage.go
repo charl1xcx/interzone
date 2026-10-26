@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -42,6 +43,26 @@ const (
 type manageAction struct {
 	id, title, desc string
 	disabled        string // why it can't be used, if it can't
+}
+
+// manageGroups are the headings Manage lists its actions under, and
+// actionGroup and actionIcons place and mark each action.
+var manageGroups = []string{"Keep it running", "People", "Data", "Look closer", "Change things"}
+
+var actionGroup = map[string]int{
+	"update": 0, "check": 0, "restart": 0, "changes": 0, "images": 0, "selfupdate": 0,
+	"user": 1, "registration": 1, "users": 1,
+	"backup": 2, "schedule": 2, "restore": 2, "rollback": 2,
+	"dashboard": 3, "logs": 3, "tuning": 3,
+	"setup": 4, "migrate": 4, "servers": 4,
+}
+
+var actionIcons = map[string]string{
+	"update": "↻", "check": "✓", "restart": "↯", "changes": "±", "images": "▣", "selfupdate": "⇪",
+	"user": "+", "registration": "⊕", "users": "@",
+	"backup": "⇩", "schedule": "◷", "restore": "↺", "rollback": "↶",
+	"dashboard": "▦", "logs": "≡", "tuning": "✎",
+	"setup": "◇", "migrate": "⇢", "servers": "▤",
 }
 
 // runsAtOnce are the Manage actions that start changing the server as
@@ -130,9 +151,6 @@ func (s *manageScreen) actions() []manageAction {
 		{id: "user", title: "Add a user",
 			desc: "Register a new account, optionally as a server administrator."},
 	}
-	if c.Homeserver != "synapse" && c.Homeserver != "dendrite" {
-		acts[3].disabled = "Only Synapse and Dendrite can register users from Ansible; use a registration token or open registration instead."
-	}
 	switch c.Homeserver {
 	case "conduit", "continuwuity", "tuwunel":
 		if c.RegistrationOpen() {
@@ -175,12 +193,15 @@ func (s *manageScreen) actions() []manageAction {
 	)
 	for i := range acts {
 		switch {
+		case acts[i].id == "user" && c.Homeserver != "synapse" && c.Homeserver != "dendrite":
+			acts[i].disabled = "Only Synapse and Dendrite can register users from Ansible; use a registration token or open registration instead."
 		case acts[i].id == "users" && c.Homeserver != "synapse":
 			acts[i].disabled = "Needs Synapse's admin API; " + homeserverName(c.Homeserver) + " doesn't have one."
 		case c.Components["external-postgres"] && (acts[i].id == "backup" || acts[i].id == "schedule" || acts[i].id == "restore"):
 			acts[i].disabled = "You use an external Postgres server; back it up where it runs."
 		}
 	}
+	sort.SliceStable(acts, func(i, j int) bool { return actionGroup[acts[i].id] < actionGroup[acts[j].id] })
 	return acts
 }
 
@@ -361,52 +382,64 @@ func (s *manageScreen) view(w, h int) string {
 	}
 	acts := s.actions()
 	s.cursor = min(s.cursor, len(acts)-1)
-	var blocks []string
+	tw := min(w, maxFormWidth)
+	var lines []string
+	cur := 0 // the line the cursor's entry starts on
 	for i, a := range acts {
-		cur := i == s.cursor
-		bar, style := "   ", lipgloss.NewStyle().Foreground(cText)
-		if cur {
-			bar, style = sAccent.Render("▌")+"  ", sTitle
-		}
-		icon := sPink.Render("◆")
-		desc := a.desc
-		if a.disabled != "" {
-			icon, style, desc = sFaint.Render("⊘"), sFaint, a.disabled
-		}
-		pad := bar + "   "
-		textW := max(20, min(w, maxFormWidth)-lipgloss.Width(pad))
-		var d string
-		if cur && s.armed && a.disabled == "" {
-			d = sWarn.Render("click again to run")
-			if s.armedKey != "" {
-				d = sWarn.Render("press " + s.armedKey + " again to run")
+		if g := actionGroup[a.id]; i == 0 || g != actionGroup[acts[i-1].id] {
+			if i > 0 && !tight {
+				lines = append(lines, "")
 			}
-		} else if cur && tight {
-			d = sSub.Render(truncate(desc, textW))
-		} else if cur {
-			d = sSub.Width(textW).Render(desc)
-		} else {
-			d = sFaint.Render(truncate(desc, textW))
+			lines = append(lines, rule(manageGroups[g], tw))
+		}
+		icon, style := sPink.Render(actionIcons[a.id]), lipgloss.NewStyle().Foreground(cText)
+		if a.disabled != "" {
+			icon, style = sFaint.Render("⊘"), sFaint
 		}
 		hot := ""
 		if k := hotkeys[a.id]; k != "" && a.disabled == "" {
-			hot = "  " + sMuted.Render(k)
+			hot = keyChip(k)
 		}
-		blocks = append(blocks, markRow("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+hot+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad), w))
+		id := "act:" + strconv.Itoa(i)
+		if i != s.cursor {
+			row := "  " + icon + "  " + style.Render(truncate(a.title, tw-12))
+			if hot != "" {
+				row += strings.Repeat(" ", max(1, tw-lipgloss.Width(row)-lipgloss.Width(hot)-2)) + hot
+			}
+			lines = append(lines, markRow(id, row, w))
+			continue
+		}
+		cur = len(lines)
+		inner := tw - 4
+		head := icon + "  " + sTitle.Render(truncate(a.title, inner-8))
+		if hot != "" {
+			head += strings.Repeat(" ", max(1, inner-lipgloss.Width(head)-lipgloss.Width(hot))) + hot
+		}
+		desc := a.desc
+		if a.disabled != "" {
+			desc = a.disabled
+		}
+		var body []string
+		switch {
+		case s.armed && a.disabled == "" && s.armedKey != "":
+			body = []string{sWarn.Render("press " + s.armedKey + " again to run")}
+		case s.armed && a.disabled == "":
+			body = []string{sWarn.Render("click again to run")}
+		case tight:
+			body = []string{sSub.Render(truncate(desc, inner-3))}
+		default:
+			body = strings.Split(sSub.Width(inner-3).Render(desc), "\n")
+		}
+		for j := range body { // under the title, past the icon
+			body[j] = "   " + body[j]
+		}
+		lines = append(lines, markLines(id, picked(append([]string{head}, body...), tw)))
 	}
-	out := strings.Join(blocks, "\n\n")
-	if lipgloss.Height(out) <= h && !tight {
+	out := strings.Join(lines, "\n")
+	if lipgloss.Height(out) <= h {
 		return out
 	}
-	// Too tall: one block per entry, scrolled to keep the cursor in view.
-	lines := strings.Split(strings.Join(blocks, "\n"), "\n")
-	top := 0
-	for i := 0; i < s.cursor; i++ {
-		top += lipgloss.Height(blocks[i])
-	}
-	curH := lipgloss.Height(blocks[s.cursor])
-	start := max(0, min(top-(h-curH)/2, len(lines)-h))
-	return strings.Join(lines[start:min(len(lines), start+h)], "\n")
+	return windowAround(out, cur, h)
 }
 
 func (s *manageScreen) servicesView(w, h int) string {

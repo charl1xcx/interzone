@@ -320,27 +320,74 @@ func (s *homeserverScreen) presetRows(w int) string {
 		row := pointer + name + pad + "  " + sMuted.Render(fmt.Sprintf("%s · %d components", hs, len(p.Components))) + tags
 		lines = append(lines, markRow("preset:"+strconv.Itoa(i), truncateANSI(row, w), w))
 		if i == s.sel {
-			var names []string
-			for _, id := range p.Components {
-				for _, c := range catalog.Components {
-					if c.ID == id {
-						names = append(names, c.Name)
-					}
-				}
-			}
-			body := p.Description
-			if body != "" {
-				body += " "
-			}
-			body += strings.Join(names, ", ") + "."
+			id := "preset:" + strconv.Itoa(i)
 			if tight {
-				lines = append(lines, markRow("preset:"+strconv.Itoa(i), "    "+sSub.Render(truncate(body, tw-4)), w))
+				lines = append(lines, markRow(id, "    "+sSub.Render(truncate(presetSummary(p.Preset), tw-4)), w))
 				continue
 			}
-			lines = append(lines, markLines("preset:"+strconv.Itoa(i), lipgloss.NewStyle().PaddingLeft(4).Width(tw).Render(sSub.Render(body))))
+			lines = append(lines, markLines(id, indent(presetCard(p.Preset, tw-2), "  ")))
 		}
 	}
 	return strings.Join(lines, "\n")
+}
+
+// categoryLabels are the short headings a preset's components are
+// grouped under.
+var categoryLabels = map[string]string{
+	"Core services": "Core", "Clients": "Apps", "Authentication": "Login", "Administration": "Admin",
+	"Bots": "Bots", "Bridges": "Bridges", "Calls & extras": "Calls", "File storage": "Files",
+}
+
+// presetGroups sorts a preset's components into the catalog's categories.
+func presetGroups(p catalog.Preset) []bulletGroup {
+	var groups []bulletGroup
+	for _, cat := range catalog.Categories {
+		g := bulletGroup{label: categoryLabels[cat]}
+		if g.label == "" {
+			g.label = cat
+		}
+		for _, id := range p.Components {
+			for _, c := range catalog.Components {
+				if c.ID == id && c.Category == cat {
+					g.items = append(g.items, c.Name)
+				}
+			}
+		}
+		if len(g.items) > 0 {
+			groups = append(groups, g)
+		}
+	}
+	return groups
+}
+
+// presetSummary is a preset on one line, for short screens.
+func presetSummary(p catalog.Preset) string {
+	var names []string
+	for _, g := range presetGroups(p) {
+		names = append(names, g.items...)
+	}
+	if p.Description == "" {
+		return strings.Join(names, " · ")
+	}
+	return p.Description + " " + strings.Join(names, " · ")
+}
+
+// presetCard is what's in the preset under the cursor: its pitch, and the
+// components grouped under small headings.
+func presetCard(p catalog.Preset, w int) string {
+	inner := w - 4
+	var lines []string
+	if p.Description != "" {
+		lines = append(lines, strings.Split(sSub.Width(inner).Render(p.Description), "\n")...)
+		lines = append(lines, "")
+	}
+	lines = append(lines, strings.Split(bullets(presetGroups(p), inner), "\n")...)
+	return picked(lines, w)
+}
+
+// indent puts pad before every line of s.
+func indent(s, pad string) string {
+	return pad + strings.ReplaceAll(s, "\n", "\n"+pad)
 }
 
 func (s *homeserverScreen) cards(w int, compact bool) string {
@@ -361,8 +408,12 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 		if on {
 			style, name = card.BorderForeground(cPurple), sAccent.Render("◉  ")+gradient(hs.Name)
 		}
+		head := name + tag
+		if lipgloss.Width(head) > cardW-6 { // the tagline gets its own line
+			head = name + "\n   " + sMuted.Render(hs.Tagline)
+		}
 		desc := sSub.Width(cardW - 9).Render(hs.Description)
-		cards = append(cards, markLines("hs:"+strconv.Itoa(i), style.Render(name+tag+"\n   "+strings.ReplaceAll(desc, "\n", "\n   "))))
+		cards = append(cards, markLines("hs:"+strconv.Itoa(i), style.Render(head+"\n\n   "+strings.ReplaceAll(desc, "\n", "\n   "))))
 	}
 	sep := "\n\n"
 	if compact {

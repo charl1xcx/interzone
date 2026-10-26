@@ -12,8 +12,9 @@
  components yourself                          
                                               
  ╭──────────────────────────────────────────╮ 
- │  ◉  Synapse   the reference server ·     │ 
- │  recommended                             │ 
+ │  ◉  Synapse                              │ 
+ │     the reference server · recommended   │ 
+ │                                          │ 
  │     Most complete and best supported     │ 
  │     implementation. Every component in   │ 
  │     this tool works with it.             │ 
@@ -22,7 +23,6 @@
     ○  Tuwunel   lightweight Rust server      
     ○  Conduit   minimal Rust server          
     ○  Dendrite   second-gen Go server        
-                                              
                                               
                                               
                                               

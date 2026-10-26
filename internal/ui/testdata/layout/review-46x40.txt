@@ -1,18 +1,21 @@
  ◢◤ 4/5 Review                                
  Everything look right?                       
                                               
- Domain          example.org                  
- Homeserver      Synapse                      
- Install on      this machine                 
- Components      5                            
- Certificates    Let's Encrypt                
- Images from     mechatok.g0th.ir/            
+ ╭──────────────────────────────────────────╮ 
+ │ ◎  Domain        example.org             │ 
+ │ ◆  Homeserver    Synapse                 │ 
+ │ ⌂  Install on    this machine            │ 
+ │ ▦  Components    5                       │ 
+ │ ◈  Certificates  Let's Encrypt           │ 
+ │ ⇩  Images from   mechatok.g0th.ir/       │ 
+ ╰──────────────────────────────────────────╯ 
                                               
+ ╭──────────────────────────────────────────╮ 
+ │ ✓ Ready to deploy.                       │ 
+ ╰──────────────────────────────────────────╯ 
                                               
- ✓ Ready to deploy.                           
-                                              
-                                              
- Pre-deploy checks  ⠋ checking the server and 
+ Pre-deploy checks                            
+ ⠋ checking the server and DNS…               
                                               
    ○  Synapse                                 
       matrix.example.org                      
@@ -32,9 +35,6 @@
  │ matrix_playbook_migration_validated_vers │ 
  │ matrix_domain: 'example.org'             │ 
  │ matrix_homeserver_implementation: synaps │ 
- │ matrix_homeserver_generic_secret_key: •• │ 
- │ matrix_playbook_reverse_proxy_type: play │ 
- │ devture_systemd_docker_base_ipv6_enabled │ 
  ╰──────────────────────────────────────────╯ 
                                               
     ‹ back       ≡ menu      deploy ›     ⋯  

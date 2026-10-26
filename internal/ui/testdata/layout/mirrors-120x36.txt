@@ -5,7 +5,7 @@
 │ ▸ Manage example.org   ││                                                                                            │
 │                        ││   ╭──────────────────────────╮ ╭──────────────────────────╮ ╭──────────────────────────╮   │
 │ ▾ Mirrors              ││   │ 1  Repositories          │ │ 2  Mirrors               │ │ 3  Images                │   │
-│ ▌ ◆ Repositories       ││   │ 2/3  1 missing           │ │ 2/2  all there           │ │ –  not checked           │   │
+│ ▌ ✗ Repositories       ││   │ 2/3  1 missing           │ │ 2/2  all there           │ │ –  not checked           │   │
 │   ✓ Mirrors            ││   │ ████████████████░░░░░░░░ │ │ ████████████████████████ │ │ ░░░░░░░░░░░░░░░░░░░░░░░░ │   │
 │   · Images             ││   ╰──────────────────────────╯ ╰──────────────────────────╯ ╰──────────────────────────╯   │
 │                        ││   checked just now · r checks again                                                        │

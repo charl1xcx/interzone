@@ -10,11 +10,11 @@
  Or only the homeserver, and pick the           
  components yourself                            
  ╭────────────────────────────────────────────╮ 
- │  ◉  Synapse   the reference server ·       │ 
- │  recommended                               │ 
+ │  ◉  Synapse                                │ 
+ │     the reference server · recommended     │ 
+ │                                            │ 
  │     Most complete and best supported       │ 
  │     implementation. Every component in     │ 
  │     this tool works with it.               │ 
- ╰────────────────────────────────────────────╯ 
    ▼ more below                                 
     ‹ back       ≡ menu       choose ›      ⋯  

@@ -18,11 +18,11 @@
     Synapse, Continuwuity, Tuwunel, Conduit   
     or Dendrite.                              
                                               
- ◆  Opt into anything                         
+ ⊕  Opt into anything                         
     82 bridges, bots, clients and services    
     from the playbook.                        
                                               
- ◆  Works during a blackout                   
+ ⇅  Works in a blackout                       
     Git, container, Docker, OS package and    
     PyPI mirrors inside the country.          
                                               

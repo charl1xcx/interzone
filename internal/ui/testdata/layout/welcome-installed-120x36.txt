@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││                                                                                            │
+│ ▸ Manage example.org   ││                                                                                            │
+│                        ││                   ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀                                    │
+│ ▸ Mirrors              ││                    █  █ ▀█  █  ██▄ █▀▄ ▄▀  █▄█ █ ▀█ ██▄                                    │
+│                        ││                                                                                            │
+│ ▾ Servers              ││    Your own Matrix server, set up with matrix-docker-ansible-deploy,                       │
+│   ● example.org        ││                   without editing a single YAML file.                                      │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││    ╭─────────────────────────╮ ╭─────────────────────────╮ ╭──────────────────────────╮    │
+│                        ││    │ ◆  Pick any homeserver  │ │ ⊕  Opt into anything    │ │ ⇅  Works in a blackout   │    │
+│                        ││    │                         │ │                         │ │                          │    │
+│                        ││    │ Synapse, Continuwuity,  │ │ 82 bridges, bots,       │ │ Git, container, Docker,  │    │
+│                        ││    │ Tuwunel, Conduit or     │ │ clients and services    │ │ OS package and PyPI      │    │
+│                        ││    │ Dendrite.               │ │ from the playbook.      │ │ mirrors inside the       │    │
+│                        ││    │                         │ │                         │ │ country.                 │    │
+│                        ││    ╰─────────────────────────╯ ╰─────────────────────────╯ ╰──────────────────────────╯    │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││    ✓ This computer already set up example.org                                              │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││    ╭──────────────────────────────────────────────────────────────────────────────────╮    │
+│                        ││    │ ◉  Manage the server                                                             │    │
+│                        ││    │    Update, check, users, backups, dashboard, rollback, logs…                     │    │
+│                        ││    ╰──────────────────────────────────────────────────────────────────────────────────╯    │
+│                        ││                                                                                            │
+│                        ││      ○  Change the setup                                                                   │
+│ ◫ auto (wide)  ctrl+l  ││         Walk through the wizard again with your saved answers.                             │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold  ctrl+b         ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ choose   ·   enter continue   ·   s servers   ·   m mirrors   ·   ctrl+c quit                                       

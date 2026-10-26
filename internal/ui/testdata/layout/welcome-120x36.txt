@@ -13,14 +13,14 @@
 │                        ││                   without editing a single YAML file.                                      │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
-│                        ││    ◆  Pick any homeserver                                                                  │
-│                        ││       Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.                                 │
-│                        ││                                                                                            │
-│                        ││    ◆  Opt into anything                                                                    │
-│                        ││       82 bridges, bots, clients and services from the playbook.                            │
-│                        ││                                                                                            │
-│                        ││    ◆  Works during a blackout                                                              │
-│                        ││       Git, container, Docker, OS package and PyPI mirrors inside the country.              │
+│                        ││    ╭─────────────────────────╮ ╭─────────────────────────╮ ╭──────────────────────────╮    │
+│                        ││    │ ◆  Pick any homeserver  │ │ ⊕  Opt into anything    │ │ ⇅  Works in a blackout   │    │
+│                        ││    │                         │ │                         │ │                          │    │
+│                        ││    │ Synapse, Continuwuity,  │ │ 82 bridges, bots,       │ │ Git, container, Docker,  │    │
+│                        ││    │ Tuwunel, Conduit or     │ │ clients and services    │ │ OS package and PyPI      │    │
+│                        ││    │ Dendrite.               │ │ from the playbook.      │ │ mirrors inside the       │    │
+│                        ││    │                         │ │                         │ │ country.                 │    │
+│                        ││    ╰─────────────────────────╯ ╰─────────────────────────╯ ╰──────────────────────────╯    │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││    ✓ Picked up your previous answers.                                                      │

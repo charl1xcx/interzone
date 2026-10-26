@@ -61,6 +61,10 @@ func TestLayout(t *testing.T) {
 		open func(a *App)
 	}{
 		{"welcome", func(a *App) {}},
+		{"welcome-installed", func(a *App) {
+			ws := a.screens[0].(*welcomeScreen)
+			ws.installed, ws.domain = true, "example.org"
+		}},
 		{"server", func(a *App) { a.jump(a.index("Server")) }},
 		{"homeserver", func(a *App) { a.jump(a.index("Homeserver")) }},
 		{"presets", func(a *App) {

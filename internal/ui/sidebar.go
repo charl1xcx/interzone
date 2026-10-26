@@ -85,17 +85,17 @@ func (a *App) toggleSection(sec sideSection) {
 }
 
 // manageMenu is the Manage section in the order Manage lists its tools.
-var manageMenu = []struct{ screen, label string }{
-	{"Manage", "Overview"},
-	{"Users", "Users"},
-	{"Dashboard", "Dashboard"},
-	{"Updates", "Updates"},
-	{"Backups", "Scheduled backups"},
-	{"Restore", "Restore"},
-	{"Rollback", "Rollback"},
-	{"Tuning", "Fine-tune"},
-	{"Move", "Move server"},
-	{"Servers", "Servers"},
+var manageMenu = []struct{ screen, label, icon string }{
+	{"Manage", "Overview", "⌂"},
+	{"Users", "Users", "@"},
+	{"Dashboard", "Dashboard", "▦"},
+	{"Updates", "Updates", "↻"},
+	{"Backups", "Backups", "◷"},
+	{"Restore", "Restore", "↺"},
+	{"Rollback", "Rollback", "↶"},
+	{"Tuning", "Fine-tune", "✎"},
+	{"Move", "Move server", "⇢"},
+	{"Servers", "Servers", "▤"},
 }
 
 func sidebarStateFile() string { return filepath.Join(config.Dir(), "sidebar-collapsed") }
@@ -157,8 +157,8 @@ func (a *App) manageCurrent() string {
 }
 
 func (a *App) sidebar(h int) string {
-	sec := a.section()
 	if a.sidebarRail() {
+		sec := a.section()
 		icon := func(s sideSection, glyph string) string {
 			if s == sec {
 				return sAccent.Render("▌" + glyph)
@@ -185,54 +185,44 @@ func (a *App) sidebar(h int) string {
 	return sPanel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
 }
 
-// menuLines are the menu's entries, inner columns wide: the sidebar's, and
-// the menu screen's in the compact layout.
-func (a *App) menuLines(inner int) []string {
-	sec := a.section()
-	item := func(on bool, dot, label string) string {
-		label = truncate(label, inner-4)
-		if on {
-			return sAccent.Render("▌") + " " + dot + " " + sTitle.Render(label)
-		}
-		return "  " + dot + " " + sMuted.Render(label)
-	}
-	head := func(s sideSection, title string) string {
-		arrow := "▸ "
-		if a.sideOpen[s] {
-			arrow = "▾ "
-		}
-		if s == sec {
-			return sSection.Render(arrow + title)
-		}
-		return sFaint.Render(arrow) + sMuted.Render(title)
-	}
+// menuItem is one entry of the menu: its zone id, an icon already
+// coloured, its label, a note under it, and whether it's where you are.
+type menuItem struct {
+	id, icon, label, sub string
+	on                   bool
+}
 
-	var lines []string
-	// Setup wizard
-	lines = append(lines, mark("side:head:setup", head(sideSetup, "Setup")))
+// menuSection is a heading of the menu and, when it's open, its entries.
+type menuSection struct {
+	sec         sideSection
+	icon, title string
+	items       []menuItem
+}
+
+// menu is what the menu shows, for the sidebar's list and the compact
+// layout's tiles alike.
+func (a *App) menu() []menuSection {
+	sec := a.section()
+	setup := menuSection{sec: sideSetup, icon: "◇", title: "Setup"}
 	if a.sideOpen[sideSetup] {
 		for i, s := range a.wizard() {
 			idx := i + 1
-			var line string
+			it := menuItem{id: "side:step:" + strconv.Itoa(idx), icon: sFaint.Render("○"), label: s.name()}
 			switch {
 			case idx == a.step && sec == sideSetup:
-				line = item(true, sAccent.Render("◉"), s.name())
+				it.icon, it.on = sAccent.Render("◉"), true
 			case idx < a.step && sec == sideSetup, sec != sideSetup && a.cfg.Installed():
-				line = item(false, sGood.Render("●"), s.name())
-			default:
-				line = item(false, sFaint.Render("○"), s.name())
+				it.icon = sGood.Render("●")
 			}
-			lines = append(lines, markRow("side:step:"+strconv.Itoa(idx), line, inner))
+			setup.items = append(setup.items, it)
 		}
 	}
-	lines = append(lines, "")
 
-	// Manage
 	title := "Manage"
 	if a.cfg.Domain != "" {
 		title = "Manage " + a.cfg.Domain
 	}
-	lines = append(lines, mark("side:head:manage", head(sideManage, truncate(title, inner-2))))
+	manage := menuSection{sec: sideManage, icon: "◆", title: title}
 	if a.sideOpen[sideManage] {
 		cur := ""
 		if sec == sideManage {
@@ -242,60 +232,120 @@ func (a *App) menuLines(inner int) []string {
 			if m.screen == "Users" && a.cfg.Homeserver != "synapse" {
 				continue
 			}
-			dot := sFaint.Render("·")
-			if m.screen == cur {
-				dot = sAccent.Render("◆")
+			it := menuItem{id: "side:manage:" + m.screen, icon: sMuted.Render(m.icon), label: m.label, on: m.screen == cur}
+			if it.on {
+				it.icon = sAccent.Render(m.icon)
+				if a.cur().name() == "Deploy" {
+					it.sub = a.deployLabel()
+				}
 			}
-			lines = append(lines, markRow("side:manage:"+m.screen, item(m.screen == cur, dot, m.label), inner))
-			if m.screen == cur && a.cur().name() == "Deploy" {
-				lines = append(lines, "    "+sPink.Render("↳ ")+sSub.Render(truncate(a.deployLabel(), inner-6)))
-			}
+			manage.items = append(manage.items, it)
 		}
 	}
-	lines = append(lines, "")
 
-	// Mirrors
-	lines = append(lines, mark("side:head:mirrors", head(sideMirrors, "Mirrors")))
+	mirrors := menuSection{sec: sideMirrors, icon: "⇅", title: "Mirrors"}
 	if a.sideOpen[sideMirrors] {
 		ms := a.screens[a.index("Mirrors")].(*mirrorsScreen)
 		for i, t := range mirrorsTabs {
-			on := sec == sideMirrors && ms.tab == i
-			dot := sFaint.Render("·")
+			it := menuItem{id: "side:mirrors:" + strconv.Itoa(i), icon: sFaint.Render("·"), label: t, on: sec == sideMirrors && ms.tab == i}
 			if ok, n := ms.tally(i); n > 0 {
-				dot = sGood.Render("✓")
+				it.icon = sGood.Render("✓")
 				if ok < n {
-					dot = sBad.Render("✗")
+					it.icon = sBad.Render("✗")
 				}
 			}
-			if on {
-				dot = sAccent.Render("◆")
-			}
-			lines = append(lines, markRow("side:mirrors:"+strconv.Itoa(i), item(on, dot, t), inner))
+			mirrors.items = append(mirrors.items, it)
 		}
 	}
-	lines = append(lines, "")
 
-	// Servers
-	profiles := config.Profiles()
-	if len(profiles) == 0 {
-		profiles = []config.Profile{{Name: config.DefaultProfile, Domain: a.cfg.Domain}}
-	}
-	lines = append(lines, mark("side:head:servers", head(sideServers, "Servers")))
+	servers := menuSection{sec: sideServers, icon: "▤", title: "Servers"}
 	if a.sideOpen[sideServers] {
+		profiles := config.Profiles()
+		if len(profiles) == 0 {
+			profiles = []config.Profile{{Name: config.DefaultProfile, Domain: a.cfg.Domain}}
+		}
 		for _, p := range profiles {
 			active := p.Name == config.Active()
-			dot := sFaint.Render("○")
+			it := menuItem{id: "side:server:" + p.Name, icon: sFaint.Render("○"), label: p.Name, on: active && sec == sideServers}
 			if active {
-				dot = sGood.Render("●")
+				it.icon = sGood.Render("●")
 			}
-			label := p.Name
 			if p.Domain != "" && p.Name == config.DefaultProfile {
-				label = p.Domain
+				it.label = p.Domain
 			}
-			lines = append(lines, markRow("side:server:"+p.Name, item(active && sec == sideServers, dot, label), inner))
+			servers.items = append(servers.items, it)
+		}
+	}
+	return []menuSection{setup, manage, mirrors, servers}
+}
+
+// menuHead is a section's heading: an arrow showing whether it's open.
+func (a *App) menuHead(m menuSection, w int) string {
+	arrow := "▸ "
+	if a.sideOpen[m.sec] {
+		arrow = "▾ "
+	}
+	title := truncate(m.title, w-2)
+	if m.sec == a.section() {
+		return sSection.Render(arrow + title)
+	}
+	return sFaint.Render(arrow) + sMuted.Render(title)
+}
+
+// menuLines are the sidebar's entries, inner columns wide.
+func (a *App) menuLines(inner int) []string {
+	var lines []string
+	for i, m := range a.menu() {
+		if i > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, mark("side:head:"+sectionNames[m.sec], a.menuHead(m, inner)))
+		for _, it := range m.items {
+			label := truncate(it.label, inner-4)
+			line := "  " + it.icon + " " + sMuted.Render(label)
+			if it.on {
+				line = sAccent.Render("▌") + " " + it.icon + " " + sTitle.Render(label)
+			}
+			lines = append(lines, markRow(it.id, line, inner))
+			if it.sub != "" {
+				lines = append(lines, "    "+sPink.Render("↳ ")+sSub.Render(truncate(it.sub, inner-6)))
+			}
 		}
 	}
 	return lines
+}
+
+// menuTiles is the compact layout's menu: each heading a full-width row
+// to tap, and an open section's entries as tiles, two across when they
+// fit.
+func (a *App) menuTiles(inner int) string {
+	cols := 1
+	if inner >= 32 {
+		cols = 2
+	}
+	var parts []string
+	for _, m := range a.menu() {
+		arrow := sFaint.Render("▸")
+		if a.sideOpen[m.sec] {
+			arrow = sFaint.Render("▾")
+		}
+		icon, title := sMuted.Render(m.icon), sMuted.Render(truncate(m.title, inner-6))
+		if m.sec == a.section() {
+			icon, title = sAccent.Render(m.icon), sSection.Render(truncate(m.title, inner-6))
+		}
+		head := icon + "  " + title
+		head += strings.Repeat(" ", max(1, inner-lipgloss.Width(head)-1)) + arrow
+		parts = append(parts, markRow("side:head:"+sectionNames[m.sec], head, inner))
+		if len(m.items) == 0 {
+			continue
+		}
+		var tiles []func(w, h int) string
+		for _, it := range m.items {
+			tiles = append(tiles, menuTile(it.id, it.icon, it.label, it.sub, it.on))
+		}
+		parts = append(parts, tileGrid(tiles, inner, cols), "")
+	}
+	return strings.Join(parts, "\n")
 }
 
 // deployLabel names what the Deploy screen is running, for the sidebar.

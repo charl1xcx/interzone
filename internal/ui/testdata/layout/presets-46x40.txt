@@ -4,12 +4,19 @@
  Start from a preset                          
    Minimal chat      Synapse · 4 components   
  › Friends & family  Synapse · 7 components   
-     Chat plus voice and video calls, an      
-     admin panel and nightly database dumps.  
-     Coturn TURN server, Exim email relay,    
-     Element Web, Element Call, Matrix        
-     Authentication Service, Ketesa admin     
-     panel, Postgres backup.                  
+   ╭────────────────────────────────────────╮ 
+   │ Chat plus voice and video calls, an    │ 
+   │ admin panel and nightly database       │ 
+   │ dumps.                                 │ 
+   │                                        │ 
+   │ Core   • Coturn TURN server            │ 
+   │        • Exim email relay              │ 
+   │ Apps   • Element Web                   │ 
+   │ Login  • Matrix Authentication Service │ 
+   │        • Ketesa admin panel            │ 
+   │ Admin  • Postgres backup               │ 
+   │ Calls  • Element Call                  │ 
+   ╰────────────────────────────────────────╯ 
    Bridge hub        Synapse · 11 components  
    Public community  Synapse · 9 components   
    Lightweight       Tuwunel · 2 components   
@@ -18,8 +25,9 @@
  components yourself                          
                                               
  ╭──────────────────────────────────────────╮ 
- │  ◉  Synapse   the reference server ·     │ 
- │  recommended                             │ 
+ │  ◉  Synapse                              │ 
+ │     the reference server · recommended   │ 
+ │                                          │ 
  │     Most complete and best supported     │ 
  │     implementation. Every component in   │ 
  │     this tool works with it.             │ 
@@ -28,13 +36,5 @@
     ○  Tuwunel   lightweight Rust server      
     ○  Conduit   minimal Rust server          
     ○  Dendrite   second-gen Go server        
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
                                               
     ‹ back       ≡ menu      choose ›     ⋯  

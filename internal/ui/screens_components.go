@@ -351,63 +351,63 @@ func tabStrip(tabs []string, cur, w int) string {
 }
 
 // row renders one component: a name line with tags and a description.
-// The current one gets a full description plus its DNS name and docs.
+// The current one is a card with its full description, DNS name and docs.
 func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) string {
 	box := sFaint.Render("○")
 	if s.selected[c.ID] {
 		box = sGood.Render("●")
 	}
 	style := lipgloss.NewStyle().Foreground(cText)
-	if cur {
-		style = sTitle
-	}
 	var tags []string
 	if !s.available(c) {
 		box = sFaint.Render("⊘")
 		style = sFaint
-		tags = append(tags, sFaint.Render("Synapse only"))
+		tags = append(tags, tagChip("Synapse only", cMuted))
 	}
 	if c.Status != "" {
-		tags = append(tags, sWarn.Render(c.Status))
+		tags = append(tags, tagChip(c.Status, cAmber))
 	}
 	if len(c.Fields) > 0 && s.available(c) {
-		tags = append(tags, sFaint.Render("needs settings"))
+		tags = append(tags, tagChip("needs settings", cPink))
 	}
 	if s.filter.Value() != "" {
-		tags = append(tags, sFaint.Render(c.Category))
+		tags = append(tags, tagChip(c.Category, cMuted))
 	}
-	bar := "   "
-	if cur {
-		bar = sAccent.Render("▌") + "  "
-	}
-	line := bar + mark("compbox:"+strconv.Itoa(i), box) + "  " + style.Render(c.Name)
-	tagLine := strings.Join(tags, sFaint.Render("  ·  "))
-	if len(tags) > 0 && lipgloss.Width(line+"    "+tagLine) <= w {
-		line += "    " + tagLine
-		tagLine = ""
-	}
-	lines := []string{truncateANSI(line, w)}
+	tagLine := strings.Join(tags, " ")
+	boxMark := mark("compbox:"+strconv.Itoa(i), box)
 
-	pad := bar + "   "
-	textW := max(20, w-lipgloss.Width(pad)-1)
 	if !cur {
-		desc := pad
-		if tagLine != "" { // too narrow to follow the name: they lead the next line
-			desc += tagLine + sFaint.Render("  ·  ")
+		line := "  " + boxMark + "  " + style.Render(c.Name) // in line with the card's
+		if len(tags) > 0 && lipgloss.Width(line+"   "+tagLine) <= w {
+			line += "   " + tagLine
+			tagLine = ""
 		}
-		lines = append(lines, desc+sFaint.Render(truncate(c.Description, w-lipgloss.Width(desc))))
-		return strings.Join(lines, "\n")
+		desc := "     "
+		if tagLine != "" { // too narrow to follow the name: they lead the next line
+			desc += tagLine + " "
+		}
+		return truncateANSI(line, w) + "\n" + desc + sFaint.Render(truncate(c.Description, w-lipgloss.Width(desc)))
 	}
-	if tagLine != "" {
-		lines = append(lines, truncateANSI(pad+tagLine, w))
+
+	// The current one: a card with everything about it.
+	cw := min(w, maxFormWidth)
+	inner := cw - 4
+	head := boxMark + "  " + gradient(truncate(c.Name, inner-3))
+	if !s.available(c) {
+		head = boxMark + "  " + sFaint.Render(truncate(c.Name, inner-3))
+	}
+	lines := []string{head}
+	if len(tags) > 0 && lipgloss.Width(head+"   "+tagLine) <= inner {
+		lines[0] += "   " + tagLine
+	} else if len(tags) > 0 {
+		lines = append(lines, truncateANSI("   "+tagLine, inner))
 	}
 	if tight { // keyboard up: one line, no DNS or docs
-		lines = append(lines, pad+sSub.Render(truncate(c.Description, textW)))
-		return strings.Join(lines, "\n")
+		lines = append(lines, "   "+sSub.Render(truncate(c.Description, inner-3)))
+		return picked(lines, cw)
 	}
-	desc := sSub.Width(textW).Render(c.Description)
-	for _, l := range strings.Split(desc, "\n") {
-		lines = append(lines, pad+l)
+	for _, l := range strings.Split(sSub.Width(inner-3).Render(c.Description), "\n") {
+		lines = append(lines, "   "+l)
 	}
 	var meta []string
 	if c.Subdomain != "" {
@@ -417,9 +417,9 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 		meta = append(meta, sFaint.Render("docs/"+c.Doc))
 	}
 	if len(meta) > 0 {
-		lines = append(lines, truncateANSI(pad+strings.Join(meta, sFaint.Render("   ·   ")), w))
+		lines = append(lines, "", "   "+strings.Join(meta, sFaint.Render("   ·   ")))
 	}
-	return strings.Join(lines, "\n")
+	return picked(lines, cw)
 }
 
 // ── Settings ───────────────────────────────────────────────────────

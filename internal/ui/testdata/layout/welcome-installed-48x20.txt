@@ -1,0 +1,20 @@
+ ◢◤ interzone                                   
+                                                
+      ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀     
+       █  █ ▀█  █  ██▄ █▀▄ ▄▀  █▄█ █ ▀█ ██▄     
+                                                
+  Your own Matrix server, set up with matrix-   
+    docker-ansible-deploy, without editing a    
+               single YAML file.                
+                                                
+                                                
+ ✓ This computer already set up example.org     
+                                                
+                                                
+ ╭────────────────────────────────────────────╮ 
+ │ ◉  Manage the server                       │ 
+ │    Update, check, users, backups,          │ 
+ │    dashboard, rollback, logs…              │ 
+ ╰────────────────────────────────────────────╯ 
+                                                
+       ≡ menu             continue ›        ⋯  

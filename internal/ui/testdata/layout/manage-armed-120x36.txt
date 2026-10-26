@@ -3,34 +3,34 @@
 │ ▸ Setup                ││                                                                                            │
 │                        ││   Manage example.org                                                                       │
 │ ▾ Manage example.org   ││                                                                                            │
-│ ▌ ◆ Overview           ││      ◆  Update the server  u                                                               │
-│   · Users              ││         Pull the latest playbook and roles, then re-run the install with your saved ans…   │
-│   · Dashboard          ││      ◆  Check services  c                                                                  │
-│   · Updates            ││         Run the playbook's self-check: makes sure the homeserver, federation and client…   │
-│   · Scheduled backups  ││   ▌  ◆  Restart all services  r                                                            │
-│   · Restore            ││   ▌     press r again to run                                                               │
-│   · Rollback           ││      ◆  Add a user  a                                                                      │
-│   · Fine-tune          ││         Register a new account, optionally as a server administrator.                      │
-│   · Move server        ││      ◆  Manage users  m                                                                    │
-│   · Servers            ││         List every account; reset passwords, grant or remove admin rights, deactivate o…   │
-│                        ││      ◆  Server dashboard  d                                                                │
-│ ▸ Mirrors              ││         Load, memory, disk space, certificate expiry and the state of every container.     │
-│                        ││      ◆  See what an update brings  n                                                       │
-│ ▾ Servers              ││         Fetch the playbook without installing and list the new commits and component ve…   │
-│   ● example.org        ││      ◆  Check container images  i                                                          │
-│                        ││         Make sure every image the install needs can be pulled from your registry mirror…   │
-│                        ││      ◆  Back up the database  b                                                            │
-│                        ││         Dump the bundled Postgres database and copy it to /home/demo/.local/share/inter…   │
-│                        ││      ◆  Scheduled backups  s                                                               │
-│                        ││         Have the server dump its database on a timer by itself, keeping the newest few.    │
-│                        ││      ◆  Restore a backup  e                                                                │
-│                        ││         Replace the database with one of the dumps in /home/demo/.local/share/interzone…   │
-│                        ││      ◆  Roll back  z                                                                       │
-│                        ││         Go back to the playbook commit and answers of an earlier successful deploy.        │
-│                        ││      ◆  View logs  l                                                                       │
-│                        ││         Follow the log of any Matrix service as it's written.                              │
-│ ◫ auto (wide)  ctrl+l  ││      ◆  Fine-tune the roles  f                                                             │
-│ ◐ interzone  ctrl+y    ││         Browse and change the default variables of every playbook role: Synapse, bridge…   │
+│ ▌ ⌂ Overview           ││   Keep it running ──────────────────────────────────────────────────────────────────────   │
+│   @ Users              ││     ↻  Update the server                                                            u      │
+│   ▦ Dashboard          ││     ✓  Check services                                                               c      │
+│   ↻ Updates            ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
+│   ◷ Backups            ││   │ ↯  Restart all services                                                         r  │   │
+│   ↺ Restore            ││   │    press r again to run                                                            │   │
+│   ↶ Rollback           ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
+│   ✎ Fine-tune          ││     ±  See what an update brings                                                    n      │
+│   ⇢ Move server        ││     ▣  Check container images                                                       i      │
+│   ▤ Servers            ││     ⇪  Update interzone                                                                    │
+│                        ││                                                                                            │
+│ ▸ Mirrors              ││   People ───────────────────────────────────────────────────────────────────────────────   │
+│                        ││     +  Add a user                                                                   a      │
+│ ▾ Servers              ││     @  Manage users                                                                 m      │
+│   ● example.org        ││                                                                                            │
+│                        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
+│                        ││     ⇩  Back up the database                                                         b      │
+│                        ││     ◷  Scheduled backups                                                            s      │
+│                        ││     ↺  Restore a backup                                                             e      │
+│                        ││     ↶  Roll back                                                                    z      │
+│                        ││                                                                                            │
+│                        ││   Look closer ──────────────────────────────────────────────────────────────────────────   │
+│                        ││     ▦  Server dashboard                                                             d      │
+│                        ││     ≡  View logs                                                                    l      │
+│                        ││     ✎  Fine-tune the roles                                                          f      │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││   Change things ────────────────────────────────────────────────────────────────────────   │
+│ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold  ctrl+b         ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         

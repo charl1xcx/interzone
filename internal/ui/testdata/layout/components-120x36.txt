@@ -5,27 +5,27 @@
 │   ● Homeserver         ││                                                                                            │
 │ ▌ ◉ Components         ││       Core services  2/6    Clients  2/7    Authentication  1/9   ›          5 selected    │
 │   ○ Review             ││                                                                                            │
-│   ○ Deploy             ││   ▌  ●  Coturn TURN server    needs settings                                               │
-│                        ││   ▌     Relays voice/video calls for users behind NAT. Strongly recommended.               │
-│ ▸ Manage example.org   ││   ▌     docs/configuring-playbook-turn.md                                                  │
-│                        ││                                                                                            │
-│ ▸ Mirrors              ││      ●  Exim email relay    needs settings                                                 │
-│                        ││         Lets services send email (password resets, notifications).                         │
+│   ○ Deploy             ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
+│                        ││   │ ●  Coturn TURN server    needs settings                                            │   │
+│ ▸ Manage example.org   ││   │    Relays voice/video calls for users behind NAT. Strongly recommended.            │   │
+│                        ││   │                                                                                    │   │
+│ ▸ Mirrors              ││   │    docs/configuring-playbook-turn.md                                               │   │
+│                        ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││      ○  Serve the base domain                                                              │
-│                        ││         Host a simple page and .well-known files on <domain> itself (only if nothing el…   │
+│   ● example.org        ││     ●  Exim email relay    needs settings                                                  │
+│                        ││        Lets services send email (password resets, notifications).                          │
 │                        ││                                                                                            │
-│                        ││      ○  Dynamic DNS (ddclient)    needs settings                                           │
-│                        ││         Keep DNS records updated when your server has a changing IP.                       │
+│                        ││     ○  Serve the base domain                                                               │
+│                        ││        Host a simple page and .well-known files on <domain> itself (only if nothing els…   │
 │                        ││                                                                                            │
-│                        ││      ○  Use external PostgreSQL    needs settings                                          │
-│                        ││         Use your own Postgres server instead of the bundled one.                           │
+│                        ││     ○  Dynamic DNS (ddclient)    needs settings                                            │
+│                        ││        Keep DNS records updated when your server has a changing IP.                        │
 │                        ││                                                                                            │
-│                        ││      ○  Report anonymous usage stats                                                       │
-│                        ││         Send anonymous statistics to matrix.org (needs internet).                          │
+│                        ││     ○  Use external PostgreSQL    needs settings                                           │
+│                        ││        Use your own Postgres server instead of the bundled one.                            │
 │                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
+│                        ││     ○  Report anonymous usage stats                                                        │
+│                        ││        Send anonymous statistics to matrix.org (needs internet).                           │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

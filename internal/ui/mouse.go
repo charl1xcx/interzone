@@ -168,6 +168,14 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 	case m.Action != tea.MouseActionPress:
 		return a, nil
 	case m.Button == tea.MouseButtonWheelUp || m.Button == tea.MouseButtonWheelDown:
+		if a.menuOpen && a.compact() {
+			if m.Button == tea.MouseButtonWheelUp {
+				a.menuTop = max(0, a.menuTop-3)
+			} else {
+				a.menuTop += 3
+			}
+			return a, nil
+		}
 		if onSide || a.menuOpen || a.sheetOpen || a.cur().typing() && !a.wheelOK() {
 			return a, nil
 		}
@@ -187,7 +195,7 @@ func (a *App) tap(ids []string) (tea.Model, tea.Cmd) {
 	for _, id := range ids {
 		switch id {
 		case "app:menu":
-			a.menuOpen, a.sheetOpen = !a.menuOpen, false
+			a.menuOpen, a.sheetOpen, a.menuTop = !a.menuOpen, false, 0
 			return a, nil
 		case "app:sheet":
 			a.sheetOpen, a.menuOpen = !a.sheetOpen, false

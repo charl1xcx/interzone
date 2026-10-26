@@ -1,29 +1,29 @@
  ◢◤ Menu                                      
- ▸ Setup                                      
+ ◇  Setup                                   ▸ 
+ ◆  Manage example.org                      ▾ 
+ ╭───────────────────╮ ╭────────────────────╮ 
+ │ ⌂  Overview       │ │ @  Users           │ 
+ ╰───────────────────╯ ╰────────────────────╯ 
+ ╭───────────────────╮ ╭────────────────────╮ 
+ │ ▦  Dashboard      │ │ ↻  Updates         │ 
+ ╰───────────────────╯ ╰────────────────────╯ 
+ ╭───────────────────╮ ╭────────────────────╮ 
+ │ ◷  Backups        │ │ ↺  Restore         │ 
+ ╰───────────────────╯ ╰────────────────────╯ 
+ ╭───────────────────╮ ╭────────────────────╮ 
+ │ ↶  Rollback       │ │ ✎  Fine-tune       │ 
+ ╰───────────────────╯ ╰────────────────────╯ 
+ ╭───────────────────╮ ╭────────────────────╮ 
+ │ ⇢  Move server    │ │ ▤  Servers         │ 
+ ╰───────────────────╯ ╰────────────────────╯ 
                                               
- ▾ Manage example.org                         
- ▌ ◆ Overview                                 
-   · Users                                    
-   · Dashboard                                
-   · Updates                                  
-   · Scheduled backups                        
-   · Restore                                  
-   · Rollback                                 
-   · Fine-tune                                
-   · Move server                              
-   · Servers                                  
+ ⇅  Mirrors                                 ▸ 
+ ▤  Servers                                 ▾ 
+ ╭───────────────────╮                        
+ │ ●  example.org    │                        
+ ╰───────────────────╯                        
                                               
- ▸ Mirrors                                    
-                                              
- ▾ Servers                                    
-   ● example.org                              
-                                              
- ◫ auto (compact)  ctrl+l                     
- ◐ interzone  ctrl+y                          
-                                              
-                                              
-                                              
-                                              
+ ◫ auto (compact)     ◐ interzone             
                                               
                                               
                                               

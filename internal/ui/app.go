@@ -55,6 +55,7 @@ type App struct {
 	layout        string               // auto, compact or wide (layout.go)
 	menuOpen      bool                 // the compact layout shows the menu
 	sheetOpen     bool                 // the compact layout lists every key (⋯)
+	menuTop       int                  // how far the compact menu is scrolled
 
 	health    *deploy.Health // the header's dot (health.go)
 	healthGen int
@@ -187,6 +188,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, nil
 			case "ctrl+c":
 				a.menuOpen = false
+			case "up", "k":
+				a.menuTop = max(0, a.menuTop-3)
+				return a, nil
+			case "down", "j":
+				a.menuTop += 3 // menuScrolled stops it at the end
+				return a, nil
 			default:
 				return a, nil
 			}
@@ -230,7 +237,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "ctrl+b":
 			if a.compact() {
-				a.menuOpen = true
+				a.menuOpen, a.menuTop = true, 0
 			} else {
 				a.toggleSidebar()
 			}

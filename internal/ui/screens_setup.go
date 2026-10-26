@@ -80,14 +80,26 @@ func (s *welcomeScreen) view(w, h int) string {
 		"",
 		sSub.Width(min(tw, 66)).Align(lipgloss.Center).Render("Your own Matrix server, set up with matrix-docker-ansible-deploy, without editing a single YAML file."),
 	)
-	features := []string{
-		feature("◆", "Pick any homeserver", "Synapse, Continuwuity, Tuwunel, Conduit or Dendrite."),
-		"",
-		feature("◆", "Opt into anything", fmt.Sprintf("%d bridges, bots, clients and services from the playbook.", len(catalog.Components))),
-		"",
-		feature("◆", "Works during a blackout", "Git, container, Docker, OS package and PyPI mirrors inside the country."),
-		"",
-		"",
+	feats := [][3]string{
+		{"◆", "Pick any homeserver", "Synapse, Continuwuity, Tuwunel, Conduit or Dendrite."},
+		{"⊕", "Opt into anything", fmt.Sprintf("%d bridges, bots, clients and services from the playbook.", len(catalog.Components))},
+		{"⇅", "Works in a blackout", "Git, container, Docker, OS package and PyPI mirrors inside the country."},
+	}
+	var features []string
+	if tw >= 72 { // side by side as tiles
+		var tiles []func(w, h int) string
+		for _, f := range feats {
+			tiles = append(tiles, func(w, h int) string {
+				text := strings.Split(sMuted.Width(w-4).Render(f[2]), "\n")
+				return card("", append([]string{sPink.Render(f[0]) + "  " + sTitle.Render(f[1]), ""}, text...), w, h, cFaint)
+			})
+		}
+		features = []string{columns(tw, tiles...), "", ""}
+	} else {
+		for _, f := range feats {
+			features = append(features, feature(f[0], f[1], f[2]), "")
+		}
+		features = append(features, "")
 	}
 	var tail []string
 	switch {
@@ -95,8 +107,11 @@ func (s *welcomeScreen) view(w, h int) string {
 		opt := func(i int, title, desc string) string {
 			id := "welcome:" + strconv.Itoa(i)
 			if i == s.choice {
-				bar := sAccent.Render("▌") + "    "
-				return markRow(id, sAccent.Render("▌ ◉  ")+sTitle.Render(title)+"\n"+bar+wrap(sMuted, bar, desc), tw)
+				text := strings.Split(sMuted.Width(tw-9).Render(desc), "\n")
+				for j := range text {
+					text[j] = "   " + text[j]
+				}
+				return markLines(id, picked(append([]string{sAccent.Render("◉  ") + gradient(title)}, text...), tw))
 			}
 			return markRow(id, "  "+sFaint.Render("○  ")+sMuted.Render(title)+"\n"+"     "+wrap(sFaint, "     ", desc), tw)
 		}

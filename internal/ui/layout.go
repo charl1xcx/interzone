@@ -122,9 +122,7 @@ func (a *App) compactView() string {
 	var content string
 	switch {
 	case a.menuOpen:
-		lines := a.menuLines(inner)
-		lines = append(lines, "", a.layoutLink(), themeLink())
-		content = strings.Join(lines, "\n")
+		content = a.menuScrolled(a.menuTiles(inner)+"\n"+mark("app:layout", sFaint.Render("◫ ")+sMuted.Render(a.layoutName()))+"     "+mark("app:theme", sFaint.Render("◐ ")+sMuted.Render(themeName)), bodyH)
 	case a.sheetOpen:
 		content = a.sheetView(inner)
 	default:
@@ -154,6 +152,25 @@ func (a *App) compactView() string {
 		parts = append(parts, status)
 	}
 	return zone.Scan(strings.Join(append(parts, bar), "\n"))
+}
+
+// menuScrolled cuts the menu to h lines from a.menuTop, which the wheel
+// and ↑↓ move.
+func (a *App) menuScrolled(menu string, h int) string {
+	lines := strings.Split(menu, "\n")
+	if len(lines) <= h {
+		a.menuTop = 0
+		return menu
+	}
+	a.menuTop = max(0, min(a.menuTop, len(lines)-h))
+	view := append([]string(nil), lines[a.menuTop:a.menuTop+h]...)
+	if a.menuTop > 0 {
+		view[0] = sFaint.Render("▲ more above")
+	}
+	if a.menuTop+h < len(lines) {
+		view[h-1] = sFaint.Render("▼ more below")
+	}
+	return strings.Join(view, "\n")
 }
 
 // compactHeader is one line: the brand, where you are, and the health.

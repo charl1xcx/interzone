@@ -3,28 +3,28 @@
                                               
      Core services  2/6   ›       5 selected  
                                               
- ▌  ●  Coturn TURN server    needs settings   
- ▌     Relays voice/video calls for users     
- ▌     behind NAT. Strongly recommended.      
- ▌     docs/configuring-playbook-turn.md      
+ ╭──────────────────────────────────────────╮ 
+ │ ●  Coturn TURN server    needs settings  │ 
+ │    Relays voice/video calls for users    │ 
+ │    behind NAT. Strongly recommended.     │ 
+ │                                          │ 
+ │    docs/configuring-playbook-turn.md     │ 
+ ╰──────────────────────────────────────────╯ 
                                               
-    ●  Exim email relay    needs settings     
-       Lets services send email (password re… 
+   ●  Exim email relay    needs settings      
+      Lets services send email (password res… 
                                               
-    ○  Serve the base domain                  
-       Host a simple page and .well-known fi… 
+   ○  Serve the base domain                   
+      Host a simple page and .well-known fil… 
                                               
-    ○  Dynamic DNS (ddclient)                 
-       needs settings  ·  Keep DNS records u… 
+   ○  Dynamic DNS (ddclient)                  
+       needs settings  Keep DNS records upda… 
                                               
-    ○  Use external PostgreSQL                
-       needs settings  ·  Use your own Postg… 
+   ○  Use external PostgreSQL                 
+       needs settings  Use your own Postgres… 
                                               
-    ○  Report anonymous usage stats           
-       Send anonymous statistics to matrix.o… 
-                                              
-                                              
-                                              
+   ○  Report anonymous usage stats            
+      Send anonymous statistics to matrix.or… 
                                               
                                               
                                               

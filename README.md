@@ -273,7 +273,8 @@ always get the rail.
 On a phone (Termux, or any narrow or portrait terminal) interzone switches
 to a compact layout: a one-line header saying where you are, no sidebar or
 borders, and lists without their side columns. Instead of key hints there's
-a bar of buttons at the bottom: `‹ back`, `≡ menu` (or `ctrl+b`), the
+a bar of buttons at the bottom: `‹ back`, `≡ menu` (or `ctrl+b`, a grid of
+tiles to tap that scrolls with a swipe), the
 screen's main action (`next ›`, `run ›`…) and `⋯`, which lists every
 other key of the screen and the global ones (save, layout, theme, quit) as
 rows to tap. When the screen gets short, as when the on-screen keyboard is

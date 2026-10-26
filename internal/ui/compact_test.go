@@ -4,7 +4,10 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
+
+	"interzone/internal/catalog"
 )
 
 // The bottom bar's buttons are the keys they stand for.
@@ -70,5 +73,45 @@ func TestTightForm(t *testing.T) {
 	}
 	if n := len(strings.Split(view, "\n")); n > 20 {
 		t.Errorf("%d lines on a 20-line screen", n)
+	}
+}
+
+// The compact menu's tiles go where the sidebar's entries do, and the
+// menu scrolls when it's taller than the screen.
+func TestMenuTiles(t *testing.T) {
+	a := demoApp(t, 48, 20)
+	a.jump(a.index("Manage"))
+	a.tap([]string{"app:menu"})
+	view := ansi.Strip(a.View())
+	if !strings.Contains(view, "▦  Dashboard") || !strings.Contains(view, "▼ more below") {
+		t.Fatalf("expected Manage's tiles and a scroll hint:\n%s", view)
+	}
+	a.Update(tea.KeyMsg{Type: tea.KeyDown})
+	if a.View(); a.menuTop == 0 {
+		t.Error("↓ didn't scroll the menu")
+	}
+	a.tap([]string{"side:mirrors:1"})
+	if a.menuOpen || a.cur().name() != "Mirrors" {
+		t.Errorf("the Mirrors tile led to %s (menu open: %v)", a.cur().name(), a.menuOpen)
+	}
+}
+
+// A preset's components are grouped by category, in the catalog's order.
+func TestPresetGroups(t *testing.T) {
+	var p catalog.Preset
+	for _, x := range catalog.Presets {
+		if x.ID == "family" {
+			p = x
+		}
+	}
+	n := 0
+	for _, g := range presetGroups(p) {
+		n += len(g.items)
+		if g.label == "" {
+			t.Errorf("a group without a label: %v", g.items)
+		}
+	}
+	if n != len(p.Components) {
+		t.Errorf("%d of %d components grouped", n, len(p.Components))
 	}
 }

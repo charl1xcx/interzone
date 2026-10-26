@@ -234,16 +234,16 @@ func (s *reviewScreen) view(w, h int) string {
 	if c.Target.Mode == "ssh" {
 		where = c.Target.User + "@" + c.Target.Host
 	}
-	kv := func(k, v string) string {
-		return lipgloss.NewStyle().Width(16).Render(sMuted.Render(k)) + sTitle.Render(v)
+	kv := func(icon, k, v string) string {
+		return sPink.Render(icon) + "  " + lipgloss.NewStyle().Width(14).Render(sMuted.Render(k)) + sTitle.Render(v)
 	}
 	summary := []string{
-		kv("Domain", c.Domain),
-		kv("Homeserver", hs),
-		kv("Install on", where),
-		kv("Components", fmt.Sprint(n)),
-		kv("Certificates", sslLabels[indexOf(sslModes, c.SSL.Mode)]),
-		kv("Images from", map[bool]string{true: c.Sources.RegistryPrefix, false: "upstream registries"}[c.Sources.UseRegistry]),
+		kv("◎", "Domain", c.Domain),
+		kv("◆", "Homeserver", hs),
+		kv("⌂", "Install on", where),
+		kv("▦", "Components", fmt.Sprint(n)),
+		kv("◈", "Certificates", sslLabels[indexOf(sslModes, c.SSL.Mode)]),
+		kv("⇩", "Images from", map[bool]string{true: c.Sources.RegistryPrefix, false: "upstream registries"}[c.Sources.UseRegistry]),
 	}
 
 	wide := w >= 110
@@ -252,12 +252,12 @@ func (s *reviewScreen) view(w, h int) string {
 		lw = w * 3 / 5
 	}
 
-	gap := []string{"", ""}
-	if h < 34 {
-		gap = []string{""} // short terminal: keep the vars.yml preview usable
-	}
+	gap := []string{""}
+	cw := min(lw, 72) // the cards' width
 	var status []string
+	tone := lipgloss.TerminalColor(cMint)
 	if len(s.missing) > 0 {
+		tone = cRed
 		status = append(status, sBad.Render(fmt.Sprintf("✗ %d required setting(s) missing. Go back with esc:", len(s.missing))))
 		for i, m := range s.missing {
 			if i == 5 {
@@ -267,14 +267,21 @@ func (s *reviewScreen) view(w, h int) string {
 			status = append(status, sBad.Render("  • ")+m)
 		}
 	} else if s.confirm {
+		tone = cAmber
 		status = append(status, sWarn.Render("⚠ Some checks failed. Press enter again to deploy anyway."))
 	} else if deploy.Worst(s.checks) == deploy.Fail {
+		tone = cAmber
 		status = append(status, sWarn.Render("! Settings are complete, but some checks below failed."))
 	} else {
 		status = append(status, sGood.Render("✓ Ready to deploy."))
 	}
+	for i, l := range status { // wrapped, as the card cuts long lines
+		status[i] = lipgloss.NewStyle().Width(cw - 4).Render(l)
+	}
+	status = []string{card("", strings.Split(strings.Join(status, "\n"), "\n"), cw, 0, tone)}
 	status = append(status, gap...)
 	status = append(status, s.checksView(lw-2)...)
+	summary = []string{card("", summary, cw, 0, cFaint)}
 
 	left := lipgloss.JoinVertical(lipgloss.Left, append(summary, append(gap, status...)...)...)
 	if wide {
@@ -294,9 +301,13 @@ func (s *reviewScreen) view(w, h int) string {
 // checksView lists the pre-deploy checks. Passed server checks collapse
 // into one line unless details are on; problems are always spelled out.
 func (s *reviewScreen) checksView(w int) []string {
-	head := sTitle.Render("Pre-deploy checks")
+	head := rule("Pre-deploy checks", min(w, 72))
 	if s.checking {
-		head += "  " + s.spin.View() + sMuted.Render(" checking the server and DNS…")
+		sep := "  "
+		if w < 60 {
+			sep = "\n"
+		}
+		head = sSection.Render("Pre-deploy checks") + sep + s.spin.View() + sMuted.Render(" checking the server and DNS…")
 	}
 	lines := []string{head, ""}
 	on := s.cfg.HostServices()
