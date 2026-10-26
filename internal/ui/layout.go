@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -94,48 +95,50 @@ func themeLink() string {
 	return mark("app:theme", sFaint.Render("◐ ")+sMuted.Render(themeName)+sFaint.Render("  ctrl+y"))
 }
 
+// tight is set while a compact screen is drawn on a short terminal, such
+// as a phone with its keyboard up: screens drop blank lines and show
+// only the selected entry in full.
+var tight bool
+
+// compactTightH is the height below which the compact layout is tight.
+const compactTightH = 26
+
 func (a *App) compactView() string {
 	w := a.w
-	menu := mark("app:menu", sAccent.Render("≡ menu"))
-	if a.menuOpen {
-		menu = mark("app:menu", sAccent.Render("✕ close"))
+	tight = a.h < compactTightH
+	defer func() { tight = false }()
+	header := a.compactHeader(w)
+	bar := a.compactBar(w)
+	status := ""
+	if a.status != "" {
+		status = truncateANSI(" "+a.status, w)
 	}
-	mode := badge("ONLINE", cMint)
-	if a.cfg.Sources.Blackout {
-		mode = badge("BLACKOUT", cAmber)
-	}
-	if hb := a.healthBadge(true); hb != "" {
-		mode = hb + " " + mode
-	}
-	brand := gradient("◢◤ interzone")
-	gap := w - lipgloss.Width(brand) - lipgloss.Width(mode) - lipgloss.Width(menu) - 4
-	header := " " + brand + strings.Repeat(" ", max(1, gap)) + mode + "  " + menu
-	header = truncateANSI(header, w)
 
-	sub := ""
-	if a.step > 0 {
-		sub = truncateANSI(a.stepper(w), w)
+	bodyH := a.h - 1 - lipgloss.Height(bar)
+	if status != "" {
+		bodyH--
 	}
-	if a.menuOpen {
-		sub = " " + sAccent.Render("◆ Menu")
-	}
-	rule := sFaint.Render(strings.Repeat("─", w))
-	footer := a.compactFooter(w)
-
-	bodyH := a.h - 2 - 2 - lipgloss.Height(footer) // header, stepper, two rules
 	inner := w - 2
 	var content string
-	if a.menuOpen {
+	switch {
+	case a.menuOpen:
 		lines := a.menuLines(inner)
 		lines = append(lines, "", a.layoutLink(), themeLink())
 		content = strings.Join(lines, "\n")
-	} else {
-		contentH := max(3, bodyH-2)
+	case a.sheetOpen:
+		content = a.sheetView(inner)
+	default:
+		gap := "\n\n"
+		if tight {
+			gap = "\n"
+		}
+		title := sTitle.Render(truncate(a.cur().title(), inner))
+		contentH := max(3, bodyH-lipgloss.Height(title)-len(gap)+1)
 		content = a.screenView(inner, contentH)
 		if lines := strings.Split(content, "\n"); len(lines) > contentH {
 			content = strings.Join(lines[:contentH], "\n")
 		}
-		content = sTitle.Render(a.cur().title()) + "\n\n" + content
+		content = title + gap + content
 	}
 	lines := strings.Split(content, "\n")
 	if len(lines) > bodyH {
@@ -146,46 +149,159 @@ func (a *App) compactView() string {
 	}
 	content = strings.Join(lines, "\n")
 	body := lipgloss.NewStyle().Padding(0, 1).Width(w).Height(max(1, bodyH)).Render(content)
-	return zone.Scan(strings.Join([]string{header, sub, rule, body, rule, footer}, "\n"))
+	parts := []string{header, body}
+	if status != "" {
+		parts = append(parts, status)
+	}
+	return zone.Scan(strings.Join(append(parts, bar), "\n"))
 }
 
-// compactFooter wraps the key hints over up to three lines.
-func (a *App) compactFooter(w int) string {
-	if a.status != "" {
-		return lipgloss.NewStyle().Width(w).Render(" " + a.status)
+// compactHeader is one line: the brand, where you are, and the health.
+func (a *App) compactHeader(w int) string {
+	brand := gradient("◢◤")
+	right := ""
+	if a.cfg.Sources.Blackout {
+		right = badge("BLACKOUT", cAmber)
 	}
-	var parts []string
-	if a.menuOpen {
-		parts = []string{hint("esc", "close"), hint("ctrl+c", "quit")}
-	} else {
+	if hb := a.healthBadge(true); hb != "" {
+		right = strings.TrimSpace(hb + " " + right)
+	}
+	where := ""
+	switch {
+	case a.menuOpen:
+		where = sAccent.Render("Menu")
+	case a.sheetOpen:
+		where = sAccent.Render("Keys")
+	case a.step == 0:
+		where = gradient("interzone")
+	default:
+		where = a.compactWhere()
+	}
+	room := w - 4 - lipgloss.Width(right)
+	where = truncateANSI(where, max(4, room))
+	gap := w - 3 - lipgloss.Width(where) - lipgloss.Width(right) - 1
+	return truncateANSI(" "+brand+" "+where+strings.Repeat(" ", max(1, gap))+right, w)
+}
+
+// compactWhere names the screen: "2/4 Homeserver", "Manage › Users".
+func (a *App) compactWhere() string {
+	name := a.cur().name()
+	switch a.section() {
+	case sideManage:
+		if name == "Manage" {
+			return sAccent.Render("◆ Manage")
+		}
+		if name == "Deploy" {
+			name = a.screens[a.deployBack].name()
+		}
+		return sAccent.Render("◆ ") + sMuted.Render("Manage › ") + sTitle.Render(name)
+	case sideMirrors:
+		return sAccent.Render("⇅ Mirrors")
+	case sideServers:
+		return sAccent.Render("▤ Servers")
+	}
+	steps := a.wizard()
+	return sAccent.Render(fmt.Sprintf("%d/%d ", a.step, len(steps))) + sTitle.Render(name)
+}
+
+// button is one of the bottom bar's tap targets, w columns wide.
+func button(id, label string, w int, primary bool) string {
+	st := lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Foreground(cText).Background(cFaint)
+	if primary {
+		st = st.Foreground(cOnAccent).Background(cPurple).Bold(true)
+	}
+	return mark(id, st.Render(truncate(label, w)))
+}
+
+// barButton is a button: its zone id and label.
+type barButton struct {
+	id, label string
+	primary   bool
+}
+
+// compactBar is the row of buttons at the bottom, in reach of a thumb:
+// back, the menu, the screen's main action, and ⋯ for every other key.
+func (a *App) compactBar(w int) string {
+	var bs []barButton
+	switch {
+	case a.menuOpen || a.sheetOpen:
+		bs = append(bs, barButton{"key:esc", "✕ close", false})
+	default:
+		if a.step > 0 {
+			label := "back"
+			for _, k := range a.cur().keys() {
+				if k[0] == "esc" {
+					label = k[1]
+				}
+			}
+			bs = append(bs, barButton{"key:esc", "‹ " + label, false})
+		}
+		bs = append(bs, barButton{"app:menu", "≡ menu", false})
 		for _, k := range a.cur().keys() {
-			parts = append(parts, hint(k[0], k[1]))
+			if k[0] == "enter" {
+				bs = append(bs, barButton{"key:enter", k[1] + " ›", true})
+			}
 		}
-		if a.step > 0 && !a.escListed() {
-			parts = append(parts, hint("esc", "back"))
-		}
-		parts = append(parts, hint("ctrl+c", "quit"))
+		bs = append(bs, barButton{"app:sheet", "⋯", false})
 	}
-	sep := sFaint.Render(" · ")
-	var lines []string
-	line := ""
-	for _, p := range parts {
+	// ⋯ is narrow; the others share the rest.
+	n := len(bs)
+	gaps := n - 1
+	moreW := 0
+	if bs[n-1].id == "app:sheet" {
+		moreW = 5
+	}
+	each := (w - 2 - gaps - moreW) / max(1, n-boolInt(moreW > 0))
+	var out []string
+	used := 0
+	for i, b := range bs {
+		bw := each
 		switch {
-		case line == "":
-			line = " " + p
-		case lipgloss.Width(line+sep+p) <= w:
-			line += sep + p
-		default:
-			lines = append(lines, line)
-			line = " " + p
+		case b.id == "app:sheet":
+			bw = moreW
+		case i == n-1 || (i == n-2 && moreW > 0):
+			bw = w - 2 - gaps - moreW - used // the last wide one takes what's left
+		}
+		used += bw
+		out = append(out, button(b.id, b.label, bw, b.primary))
+	}
+	return " " + strings.Join(out, " ")
+}
+
+func boolInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// sheetView lists every key the screen takes, each a row to tap, plus the
+// ones that work everywhere.
+func (a *App) sheetView(inner int) string {
+	row := func(key, desc string) []string {
+		label := sKey.Render(fmt.Sprintf("%-8s", key)) + " " + sTitle.Render(desc)
+		if _, ok := keyMsg(key); !ok {
+			return []string{"  " + sFaint.Render(fmt.Sprintf("%-8s", key)) + " " + sMuted.Render(desc)}
+		}
+		return []string{markRow("key:"+key, "  "+label, inner)}
+	}
+	var lines []string
+	lines = append(lines, sSection.Render("On this screen"))
+	for _, k := range a.cur().keys() {
+		if k[0] == "enter" || k[0] == "esc" {
+			continue // on the bar
+		}
+		lines = append(lines, row(k[0], k[1])...)
+		if !tight {
+			lines = append(lines, "")
 		}
 	}
-	lines = append(lines, line)
-	if len(lines) > 3 {
-		lines = lines[:3]
-	}
-	for i, l := range lines {
-		lines[i] = truncateANSI(l, w)
+	lines = append(lines, "", sSection.Render("Anywhere"))
+	for _, k := range [][2]string{{"ctrl+s", "save answers"}, {"ctrl+l", "layout: " + a.layoutName()}, {"ctrl+y", "theme: " + themeName}, {"ctrl+c", "quit"}} {
+		lines = append(lines, row(k[0], k[1])...)
+		if !tight {
+			lines = append(lines, "")
+		}
 	}
 	return strings.Join(lines, "\n")
 }

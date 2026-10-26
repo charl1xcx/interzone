@@ -1,6 +1,6 @@
- ◢◤ interzone                 ONLINE   ≡ menu
-
-──────────────────────────────────────────────
+ ◢◤ interzone                                 
+                                              
+                                              
                                               
                                               
                                               
@@ -35,6 +35,6 @@
                                               
                                               
                                               
-──────────────────────────────────────────────
- enter begin · i import a setup · s servers
- m mirrors · ctrl+c quit
+                                              
+                                              
+       ≡ menu             begin ›         ⋯  

@@ -1,6 +1,4 @@
- ◢◤ interzone                 ONLINE   ≡ menu
- ●  ◉  ○  ○  ○  Homeserver
-──────────────────────────────────────────────
+ ◢◤ 2/5 Homeserver                            
  Choose your homeserver                       
                                               
  Start from a preset                          
@@ -35,6 +33,8 @@
                                               
                                               
                                               
-──────────────────────────────────────────────
- ↑↓ select · enter choose · s save as preset
- esc back · ctrl+c quit
+                                              
+                                              
+                                              
+                                              
+    ‹ back       ≡ menu      choose ›     ⋯  

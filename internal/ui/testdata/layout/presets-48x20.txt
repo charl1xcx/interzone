@@ -1,0 +1,20 @@
+ ◢◤ 2/5 Homeserver                              
+ Choose your homeserver                         
+ Start from a preset                            
+   Minimal chat      Synapse · 4 components     
+ › Friends & family  Synapse · 7 components  ●  
+     Chat plus voice and video calls, an admin… 
+   Bridge hub        Synapse · 11 components    
+   Public community  Synapse · 9 components     
+   Lightweight       Tuwunel · 2 components     
+ Or only the homeserver, and pick the           
+ components yourself                            
+ ╭────────────────────────────────────────────╮ 
+ │  ◉  Synapse   the reference server ·       │ 
+ │  recommended                               │ 
+ │     Most complete and best supported       │ 
+ │     implementation. Every component in     │ 
+ │     this tool works with it.               │ 
+ ╰────────────────────────────────────────────╯ 
+   ▼ more below                                 
+    ‹ back       ≡ menu       choose ›      ⋯  

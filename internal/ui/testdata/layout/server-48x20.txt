@@ -1,0 +1,20 @@
+ ◢◤ 1/5 Server                                  
+ Tell me about your server                      
+ ▌  Base domain *                               
+ ▌  › example.org                               
+ ▌  User IDs look like @alice:<domain>. Point   
+ ▌  matrix.<domain> at your server.             
+    Install where?  This machine                
+    sudo password  empty                        
+                                                
+ ◆ Downloads ────────────────────────────────── 
+    Network situation  Normal internet          
+    Playbook git reposito… https://itsjustadrea 
+    Git mirror for Ansibl… https://itsjustadrea 
+    Pull container images… on                   
+    Container registry mi… mechatok.g0th.ir/    
+   ▼ more below                                 
+                                                
+ ctrl+t tests the download sources              
+                                                
+    ‹ back       ≡ menu        next ›       ⋯  

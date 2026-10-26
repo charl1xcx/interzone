@@ -54,6 +54,7 @@ type App struct {
 	sideOpen      map[sideSection]bool // which of its sections are unfolded
 	layout        string               // auto, compact or wide (layout.go)
 	menuOpen      bool                 // the compact layout shows the menu
+	sheetOpen     bool                 // the compact layout lists every key (⋯)
 
 	health    *deploy.Health // the header's dot (health.go)
 	healthGen int
@@ -173,6 +174,12 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, tea.Batch(cmd, func() tea.Msg { return startDeployMsg{m.opts} })
 	case tea.KeyMsg:
 		a.status = ""
+		if a.sheetOpen {
+			a.sheetOpen = false
+			if m.String() == "esc" || m.String() == "q" {
+				return a, nil
+			}
+		}
 		if a.menuOpen {
 			switch m.String() {
 			case "esc", "ctrl+b", "q":
@@ -284,7 +291,7 @@ func (a *App) View() string {
 	if a.compact() {
 		return a.compactView()
 	}
-	a.menuOpen = false
+	a.menuOpen, a.sheetOpen = false, false
 	header := a.header(a.w)
 	footer := a.footer(a.w)
 	// With the menu open, it shows the steps; the stepper line is only

@@ -276,6 +276,10 @@ func (s *componentsScreen) view(w, h int) string {
 
 	// Items are separated by a blank line and differ in height (the current
 	// one shows its full description), so scroll by whole items.
+	gap := 1 // the blank line between items
+	if tight {
+		gap = 0
+	}
 	blocks := make([]string, len(items))
 	for i, it := range items {
 		blocks[i] = markRow("comp:"+strconv.Itoa(i), s.row(it, i, i == s.cursor, w), w)
@@ -283,9 +287,9 @@ func (s *componentsScreen) view(w, h int) string {
 	used := func(from, to int) int {
 		n := 0
 		for i := from; i <= to; i++ {
-			n += lipgloss.Height(blocks[i]) + 1
+			n += lipgloss.Height(blocks[i]) + gap
 		}
-		return n - 1
+		return n - gap
 	}
 	s.offset = min(s.offset, s.cursor)
 	for s.offset < s.cursor && used(s.offset, s.cursor) > listH {
@@ -295,10 +299,10 @@ func (s *componentsScreen) view(w, h int) string {
 	n := 0
 	for i := s.offset; i < len(items); i++ {
 		bh := lipgloss.Height(blocks[i])
-		if n > 0 && n+bh+1 > listH {
+		if n > 0 && n+bh+gap > listH {
 			break
 		}
-		if n > 0 {
+		if n > 0 && gap > 0 {
 			rows = append(rows, "")
 			n++
 		}
@@ -308,6 +312,9 @@ func (s *componentsScreen) view(w, h int) string {
 	list := strings.Join(rows, "\n")
 	if s.offset > 0 {
 		list = sFaint.Render("   ▲ more") + "\n" + list
+	}
+	if tight {
+		return top + "\n" + list
 	}
 	return top + "\n\n" + list
 }
@@ -393,6 +400,10 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 	}
 	if tagLine != "" {
 		lines = append(lines, truncateANSI(pad+tagLine, w))
+	}
+	if tight { // keyboard up: one line, no DNS or docs
+		lines = append(lines, pad+sSub.Render(truncate(c.Description, textW)))
+		return strings.Join(lines, "\n")
 	}
 	desc := sSub.Width(textW).Render(c.Description)
 	for _, l := range strings.Split(desc, "\n") {

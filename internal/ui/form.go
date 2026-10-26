@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -290,17 +291,29 @@ func (f *form) View(width, height int) string {
 		}
 		start := len(lines)
 		switch {
+		case fl.section != "" && tight:
+			if !first {
+				lines = append(lines, "")
+				start = len(lines)
+			}
+			lines = append(lines, sectionHeading(fl.section, width))
 		case fl.section != "":
 			if !first {
 				lines = append(lines, "", "")
 				start = len(lines)
 			}
 			lines = append(lines, sectionHeading(fl.section, width), "")
-		case !first:
+		case !first && !tight:
 			lines = append(lines, "")
 		}
 		first = false
-		lines = append(lines, strings.Split(markLines(f.id+"f"+strconv.Itoa(i), f.renderField(fl, i, i == f.focus, width)), "\n")...)
+		rendered := ""
+		if tight && i != f.focus {
+			rendered = f.summaryLine(fl, i, width)
+		} else {
+			rendered = f.renderField(fl, i, i == f.focus, width)
+		}
+		lines = append(lines, strings.Split(markLines(f.id+"f"+strconv.Itoa(i), rendered), "\n")...)
 		if i == f.focus {
 			focusStart, focusEnd = start, len(lines)
 		}
@@ -324,6 +337,49 @@ func (f *form) View(width, height int) string {
 		view[len(view)-1] = mark(f.id+"down", sFaint.Render("  ▼ more below"))
 	}
 	return strings.Join(view, "\n")
+}
+
+// summaryLine is a field on one line, for short screens: its label and
+// value. Tapping it moves there.
+func (f *form) summaryLine(fl *field, idx int, width int) string {
+	label := fl.label
+	if fl.required {
+		label += "*"
+	}
+	var v string
+	switch fl.kind {
+	case fToggle:
+		v = sFaint.Render("off")
+		if fl.on {
+			v = sGood.Render("on")
+		}
+	case fChoice:
+		v = fl.choices[fl.choice]
+		if fl.labels != nil {
+			v = fl.labels[fl.choice]
+		}
+		v = sTitle.Render(v)
+	case fSecret:
+		v = sFaint.Render("••••••")
+		if fl.input.Value() == "" {
+			v = sFaint.Render("empty")
+		}
+	case fArea:
+		v = sFaint.Render(fmt.Sprintf("%d lines", len(strings.Split(strings.TrimRight(fl.area.Value(), "\n"), "\n"))))
+		if fl.area.Value() == "" {
+			v = sFaint.Render("empty")
+		}
+	default:
+		v = sTitle.Render(fl.input.Value())
+		switch {
+		case fl.input.Value() == "" && fl.required:
+			v = sBad.Render("required")
+		case fl.input.Value() == "":
+			v = sFaint.Render("–")
+		}
+	}
+	lw := min(lipgloss.Width(label)+2, max(8, width/2))
+	return truncateANSI("   "+lipgloss.NewStyle().Width(lw).Render(sMuted.Render(truncate(label, lw-1)))+v, width)
 }
 
 // sectionHeading renders "◆ Title ───────" across the form.

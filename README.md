@@ -45,7 +45,7 @@ every download can come from mirrors inside the country.
 
 ![The compact layout on a phone-sized terminal](docs/screenshots/phone.png)
 
-**On a phone** (Termux or any narrow terminal) the compact layout drops the sidebar; the menu opens from the top right.
+**On a phone** (Termux or any narrow terminal) the compact layout drops the sidebar and puts thumb-sized buttons along the bottom, so nothing needs ctrl or esc.
 
 ## Community
 
@@ -271,9 +271,14 @@ whole menu to a rail of icons, and terminals narrower than 100 columns
 always get the rail.
 
 On a phone (Termux, or any narrow or portrait terminal) interzone switches
-to a compact layout: no sidebar or borders, the menu opens from `≡ menu` in
-the top right (or `ctrl+b`), lists drop their side columns, and the key
-hints wrap onto a second line instead of being cut off. `ctrl+l`, or `◫`
+to a compact layout: a one-line header saying where you are, no sidebar or
+borders, and lists without their side columns. Instead of key hints there's
+a bar of buttons at the bottom: `‹ back`, `≡ menu` (or `ctrl+b`), the
+screen's main action (`next ›`, `run ›`…) and `⋯`, which lists every
+other key of the screen and the global ones (save, layout, theme, quit) as
+rows to tap. When the screen gets short, as when the on-screen keyboard is
+up, descriptions shrink to one line and forms show only the field you're
+typing in, with a one-line summary of each of the others. `ctrl+l`, or `◫`
 at the bottom of the menu, cycles auto, compact and wide and remembers the
 choice; `-layout` picks one for a single run.
 
@@ -288,7 +293,7 @@ and a dark variant that follows the terminal's background.
 | `ctrl+n` / `ctrl+p` | next / previous step |
 | `ctrl+r` | reveal secrets |
 | `ctrl+s` | save answers |
-| `ctrl+b` | fold or unfold the menu on the left (compact layout: open the menu) |
+| `ctrl+b` | fold or unfold the menu on the left (compact layout: open the menu, like `≡ menu`) |
 | `ctrl+l` | next layout: auto, compact, wide |
 | `ctrl+y` | next theme |
 | `esc` | back |

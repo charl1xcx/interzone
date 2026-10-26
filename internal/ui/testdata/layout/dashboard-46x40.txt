@@ -1,6 +1,4 @@
- ◢◤ interzone                 ONLINE   ≡ menu
- ◆ Manage  example.org  ›  Dashboard
-──────────────────────────────────────────────
+ ◢◤ ◆ Manage › Dashboard                      
  How example.org is doing                     
                                               
  ● example.org (vps1)                         
@@ -34,7 +32,9 @@
  │ traefik       █░░░░░░░░░    0.7%   0.20% │ 
  ╰──────────────────────────────────────────╯ 
  ╭──────────────────────────────────────────╮ 
-   ↓ 22 more lines · ↑↓ scroll                
-──────────────────────────────────────────────
- r refresh · ↑↓ scroll · esc back
- ctrl+c quit
+ │ Certificates                             │ 
+ │ ✓ matrix.example.org                     │ 
+ │   Synapse  60 days                       │ 
+ │ ! element.example.org                    │ 
+   ↓ 18 more lines · ↑↓ scroll                
+       ‹ back             ≡ menu          ⋯  

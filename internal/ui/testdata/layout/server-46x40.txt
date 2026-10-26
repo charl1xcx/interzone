@@ -1,6 +1,4 @@
- ◢◤ interzone                 ONLINE   ≡ menu
- ◉  ○  ○  ○  ○  Server
-──────────────────────────────────────────────
+ ◢◤ 1/5 Server                                
  Tell me about your server                    
                                               
  ▌  Base domain *                             
@@ -30,11 +28,13 @@
                                               
     ●  Pull container images from a mirror    
        on                                     
+                                              
+    Container registry mirror                 
+    › mechatok.g0th.ir/                       
+                                              
+                                              
    ▼ more below                               
                                               
  ctrl+t tests the download sources            
                                               
-──────────────────────────────────────────────
- ↑↓ move · ←→ choose · space toggle
- ctrl+t test sources · ctrl+r reveal
- enter next · esc back · ctrl+c quit
+    ‹ back       ≡ menu       next ›      ⋯  

@@ -1,6 +1,4 @@
- ◢◤ interzone                 ONLINE   ≡ menu
- ⇅ Mirrors  what deploys download
-──────────────────────────────────────────────
+ ◢◤ ⇅ Mirrors                                 
  Is everything there to download?             
                                               
  ▌Repos 2/3  ·  Mirrors 2/2  ·  Images –      
@@ -35,6 +33,8 @@
                                               
                                               
                                               
-──────────────────────────────────────────────
- ←→ repos · mirrors · images · r check again
- ↑↓ scroll · esc back · ctrl+c quit
+                                              
+                                              
+                                              
+                                              
+       ‹ back             ≡ menu          ⋯  

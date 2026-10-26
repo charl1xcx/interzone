@@ -1,0 +1,20 @@
+ ◢◤ 3/5 Components                              
+ Fill in the details                            
+ ◆ Your admin account ───────────────────────── 
+ ▌  Admin username                              
+ ▌  › admin                                     
+ ▌  Created automatically after install.        
+    Admin password  ••••••                      
+                                                
+ ◆ Coturn TURN server ───────────────────────── 
+    Public IP address(es)  –                    
+                                                
+ ◆ Exim email relay ─────────────────────────── 
+    Sender address  –                           
+    Relay through another… off                  
+                                                
+ ◆ Advanced ─────────────────────────────────── 
+    Extra vars.yml lines  empty                 
+                                                
+                                                
+    ‹ back       ≡ menu        next ›       ⋯  

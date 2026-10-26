@@ -1,0 +1,20 @@
+ ◢◤ 3/5 Components                              
+ Pick what you want on your server              
+     Core services  2/6   ›         5 selected  
+ ▌  ●  Coturn TURN server    needs settings     
+ ▌     Relays voice/video calls for users beh…  
+    ●  Exim email relay    needs settings       
+       Lets services send email (password rese… 
+    ○  Serve the base domain                    
+       Host a simple page and .well-known file… 
+    ○  Dynamic DNS (ddclient)    needs settings 
+       Keep DNS records updated when your serv… 
+    ○  Use external PostgreSQL                  
+       needs settings  ·  Use your own Postgre… 
+    ○  Report anonymous usage stats             
+       Send anonymous statistics to matrix.org… 
+                                                
+                                                
+                                                
+                                                
+    ‹ back       ≡ menu        next ›       ⋯  

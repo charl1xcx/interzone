@@ -1,6 +1,4 @@
- ◢◤ interzone                 ONLINE   ≡ menu
- ●  ●  ◉  ○  ○  Components
-──────────────────────────────────────────────
+ ◢◤ 3/5 Components                            
  Pick what you want on your server            
                                               
      Core services  2/6   ›       5 selected  
@@ -34,7 +32,9 @@
                                               
                                               
                                               
-──────────────────────────────────────────────
- ←→ category · ↑↓ move · space toggle
- / search · p save as preset · enter next
- esc back · ctrl+c quit
+                                              
+                                              
+                                              
+                                              
+                                              
+    ‹ back       ≡ menu       next ›      ⋯  

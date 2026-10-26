@@ -168,7 +168,7 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 	case m.Action != tea.MouseActionPress:
 		return a, nil
 	case m.Button == tea.MouseButtonWheelUp || m.Button == tea.MouseButtonWheelDown:
-		if onSide || a.menuOpen || a.cur().typing() && !a.wheelOK() {
+		if onSide || a.menuOpen || a.sheetOpen || a.cur().typing() && !a.wheelOK() {
 			return a, nil
 		}
 		k := tea.KeyMsg{Type: tea.KeyDown}
@@ -179,10 +179,18 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 	case m.Button != tea.MouseButtonLeft:
 		return a, nil
 	}
+	return a.tap(ids)
+}
+
+// tap acts on a click on ids, smallest first.
+func (a *App) tap(ids []string) (tea.Model, tea.Cmd) {
 	for _, id := range ids {
 		switch id {
 		case "app:menu":
-			a.menuOpen = !a.menuOpen
+			a.menuOpen, a.sheetOpen = !a.menuOpen, false
+			return a, nil
+		case "app:sheet":
+			a.sheetOpen, a.menuOpen = !a.sheetOpen, false
 			return a, nil
 		case "app:layout":
 			a.cycleLayout()
@@ -191,7 +199,7 @@ func (a *App) mouse(m tea.MouseMsg) (tea.Model, tea.Cmd) {
 			cycleTheme()
 			return a, nil
 		}
-		if a.menuOpen && !strings.HasPrefix(id, "side:") && !strings.HasPrefix(id, "key:") {
+		if (a.menuOpen || a.sheetOpen) && !strings.HasPrefix(id, "side:") && !strings.HasPrefix(id, "key:") {
 			continue // the screen under the menu isn't shown
 		}
 		if name, ok := strings.CutPrefix(id, "key:"); ok {

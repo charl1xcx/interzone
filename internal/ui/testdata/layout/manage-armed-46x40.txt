@@ -1,6 +1,4 @@
- ◢◤ interzone                 ONLINE   ≡ menu
- ◆ Manage  example.org
-──────────────────────────────────────────────
+ ◢◤ ◆ Manage                                  
  Manage example.org                           
                                               
     ◆  Update the server  u                   
@@ -35,6 +33,8 @@
        Go through the wizard again: componen… 
     ◆  Move to another server  v              
        Copy everything in /matrix to a new m… 
-──────────────────────────────────────────────
- ↑↓ select · enter run · a–z shortcuts
- esc back · ctrl+c quit
+    ◆  Other servers  o                       
+       Switch between the servers interzone … 
+    ◆  Update interzone                       
+       Download the newest interzone release… 
+    ‹ back       ≡ menu       run ›       ⋯  

@@ -1,0 +1,20 @@
+ ◢◤ Menu                                        
+ ▸ Setup                                        
+                                                
+ ▾ Manage example.org                           
+ ▌ ◆ Overview                                   
+   · Users                                      
+   · Dashboard                                  
+   · Updates                                    
+   · Scheduled backups                          
+   · Restore                                    
+   · Rollback                                   
+   · Fine-tune                                  
+   · Move server                                
+   · Servers                                    
+                                                
+ ▸ Mirrors                                      
+                                                
+ ▾ Servers                                      
+   ● example.org                                
+                    ✕ close                    

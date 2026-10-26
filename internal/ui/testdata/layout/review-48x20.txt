@@ -1,0 +1,20 @@
+ ◢◤ 4/5 Review                                  
+ Everything look right?                         
+ Domain          example.org                    
+ Homeserver      Synapse                        
+ Install on      this machine                   
+ Components      5                              
+ Certificates    Let's Encrypt                  
+ Images from     mechatok.g0th.ir/              
+                                                
+ ✓ Ready to deploy.                             
+                                                
+ Pre-deploy checks  ⠋ checking the server and D 
+                                                
+   ○  Synapse                                   
+      matrix.example.org                        
+   ○  Element Web                               
+      element.example.org                       
+   ○  Cinny                                     
+      cinny.example.org                         
+    ‹ back       ≡ menu       deploy ›      ⋯  

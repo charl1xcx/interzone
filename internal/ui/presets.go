@@ -232,18 +232,50 @@ func (s *homeserverScreen) view(w, h int) string {
 	if s.saver != nil {
 		return s.saver.view(w, h)
 	}
-	top := s.presetRows(w)
+	rows := s.presetRows(w)
+	top := rows
 	if s.err != "" {
 		top = sBad.Width(w).Render("✗ "+s.err) + "\n\n" + top
 	}
-	head := "\n\n" + lipgloss.NewStyle().Width(min(w, 84)).Render(sSection.Render("Or only the homeserver")+sMuted.Render(", and pick the components yourself")) + "\n\n"
+	gap := "\n\n"
+	if tight {
+		gap = "\n"
+	}
+	head := gap + lipgloss.NewStyle().Width(min(w, 84)).Render(sSection.Render("Or only the homeserver")+sMuted.Render(", and pick the components yourself")) + gap
 	room := h - lipgloss.Height(top) - lipgloss.Height(head)
 	full := s.cards(w, false)
 	if lipgloss.Height(full) > room {
 		// Short screen: only the chosen homeserver gets a card.
 		full = s.cards(w, true)
 	}
-	return top + head + full
+	out := top + head + full
+	if lipgloss.Height(out) <= h {
+		return out
+	}
+	// Still too tall: scroll to keep the row under the cursor in view.
+	cur := lipgloss.Height(top) - lipgloss.Height(rows) + 1 + s.sel // past the error and the heading
+	if s.sel >= len(s.presets) {
+		cur = lipgloss.Height(top) + lipgloss.Height(head) + s.sel - len(s.presets)
+	}
+	return windowAround(out, cur, h)
+}
+
+// windowAround cuts s to h lines, keeping line cur in view with some
+// context, and says which way there's more.
+func windowAround(s string, cur, h int) string {
+	lines := strings.Split(s, "\n")
+	if len(lines) <= h || h < 3 {
+		return s
+	}
+	start := max(0, min(cur-h/3, len(lines)-h))
+	view := append([]string(nil), lines[start:start+h]...)
+	if start > 0 {
+		view[0] = sFaint.Render("  ▲ more above")
+	}
+	if start+h < len(lines) {
+		view[h-1] = sFaint.Render("  ▼ more below")
+	}
+	return strings.Join(view, "\n")
 }
 
 // presetRows lists the presets, with what's in the one under the cursor.
@@ -301,6 +333,10 @@ func (s *homeserverScreen) presetRows(w int) string {
 				body += " "
 			}
 			body += strings.Join(names, ", ") + "."
+			if tight {
+				lines = append(lines, markRow("preset:"+strconv.Itoa(i), "    "+sSub.Render(truncate(body, tw-4)), w))
+				continue
+			}
 			lines = append(lines, markLines("preset:"+strconv.Itoa(i), lipgloss.NewStyle().PaddingLeft(4).Width(tw).Render(sSub.Render(body))))
 		}
 	}

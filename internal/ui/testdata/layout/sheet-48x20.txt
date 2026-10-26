@@ -1,0 +1,20 @@
+ ◢◤ Keys                                        
+ On this screen                                 
+   ↑↓       select                              
+   a–z      shortcuts                           
+                                                
+ Anywhere                                       
+   ctrl+s   save answers                        
+   ctrl+l   layout: auto (compact)              
+   ctrl+y   theme: interzone                    
+   ctrl+c   quit                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                                                
+                    ✕ close                    

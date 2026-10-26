@@ -381,6 +381,8 @@ func (s *manageScreen) view(w, h int) string {
 			if s.armedKey != "" {
 				d = sWarn.Render("press " + s.armedKey + " again to run")
 			}
+		} else if cur && tight {
+			d = sSub.Render(truncate(desc, textW))
 		} else if cur {
 			d = sSub.Width(textW).Render(desc)
 		} else {
@@ -393,7 +395,7 @@ func (s *manageScreen) view(w, h int) string {
 		blocks = append(blocks, markRow("act:"+strconv.Itoa(i), bar+icon+"  "+style.Render(a.title)+hot+"\n"+pad+strings.ReplaceAll(d, "\n", "\n"+pad), w))
 	}
 	out := strings.Join(blocks, "\n\n")
-	if lipgloss.Height(out) <= h {
+	if lipgloss.Height(out) <= h && !tight {
 		return out
 	}
 	// Too tall: one block per entry, scrolled to keep the cursor in view.

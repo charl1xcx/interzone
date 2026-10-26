@@ -1,0 +1,20 @@
+ ◢◤ 2/5 Homeserver                              
+ Choose your homeserver                         
+   ▲ more above                                 
+   Bridge hub        Synapse · 11 components    
+   Public community  Synapse · 9 components     
+   Lightweight       Tuwunel · 2 components     
+ Or only the homeserver, and pick the           
+ components yourself                            
+ ╭────────────────────────────────────────────╮ 
+ │  ◉  Synapse   the reference server ·       │ 
+ │  recommended                               │ 
+ │     Most complete and best supported       │ 
+ │     implementation. Every component in     │ 
+ │     this tool works with it.               │ 
+ ╰────────────────────────────────────────────╯ 
+    ○  Continuwuity   lightweight Rust server   
+    ○  Tuwunel   lightweight Rust server        
+    ○  Conduit   minimal Rust server            
+    ○  Dendrite   second-gen Go server          
+    ‹ back       ≡ menu       choose ›      ⋯  

@@ -87,10 +87,18 @@ func TestLayout(t *testing.T) {
 				a.menuOpen = true
 			}
 		}},
+		{"sheet", func(a *App) {
+			a.jump(a.index("Manage"))
+			if a.compact() {
+				a.sheetOpen = true
+			}
+		}},
 		{"dashboard", openDashboard},
 		{"mirrors", openMirrors},
 	}
 	shootAll(t, sizes, shots)
+	// A phone with its keyboard up.
+	shootAll(t, []struct{ w, h int }{{48, 20}}, shots)
 }
 
 // The dashboard and the mirror checks also have a layout for big terminals.

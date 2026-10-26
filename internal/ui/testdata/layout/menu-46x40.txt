@@ -1,6 +1,4 @@
- ◢◤ interzone                ONLINE   ✕ close
- ◆ Menu
-──────────────────────────────────────────────
+ ◢◤ Menu                                      
  ▸ Setup                                      
                                               
  ▾ Manage example.org                         
@@ -36,5 +34,7 @@
                                               
                                               
                                               
-──────────────────────────────────────────────
- esc close · ctrl+c quit
+                                              
+                                              
+                                              
+                   ✕ close                   
