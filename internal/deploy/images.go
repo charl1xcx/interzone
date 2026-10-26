@@ -23,8 +23,8 @@ import (
 // deploy would pull) and then asks each registry whether it has them.
 
 // imagesTask lists every *_container_image variable (and the _to_use and
-// _final variants some roles pick the image with) whose service is
-// enabled. A variable belongs to the longest prefix of its name that has
+// _final variants some roles pick the image with), and whether its
+// service is enabled. A variable belongs to the longest prefix of its name that has
 // an _enabled flag, e.g. matrix_synapse_admin_container_image to
 // matrix_synapse_admin_enabled.
 const imagesTask = `
@@ -53,9 +53,7 @@ const imagesTask = `
             {%- set st.on = lookup('ansible.builtin.vars', flag) | bool -%}
           {%- endif -%}
         {%- endfor -%}
-        {%- if st.on -%}
-          {%- set ns.out = ns.out + [{'var': name, 'image': lookup('ansible.builtin.vars', name) | string | trim}] -%}
-        {%- endif -%}
+        {%- set ns.out = ns.out + [{'var': name, 'image': lookup('ansible.builtin.vars', name) | string | trim, 'on': st.on}] -%}
       {%- endfor -%}
       {{ ns.out }}
 `
@@ -87,15 +85,16 @@ func imagesPlay(playbookDir string) (string, error) {
 	return "#root\n" + string(out), err
 }
 
-// Image is a container image a deploy needs.
+// Image is a container image the playbook can deploy.
 type Image struct {
-	Var string `json:"var"`
-	Ref string `json:"image"`
+	Var    string `json:"var"`
+	Ref    string `json:"image"`
+	Needed bool   `json:"on"` // an enabled service uses it
 }
 
-// ListImages returns the images the server's enabled services use and the
-// server's CPU architecture.
-func ListImages(ctx context.Context, c *config.Config) ([]Image, string, error) {
+// ListImages returns the images the server's enabled services use, or with
+// all every image the playbook knows, and the server's CPU architecture.
+func ListImages(ctx context.Context, c *config.Config, all bool) ([]Image, string, error) {
 	play, err := imagesPlay(c.PlaybookDir)
 	if err != nil {
 		return nil, "", err
@@ -123,14 +122,18 @@ func ListImages(ctx context.Context, c *config.Config) ([]Image, string, error) 
 			return nil, "", fmt.Errorf("couldn't read the image list")
 		}
 	}
-	seen := map[string]bool{}
+	seen := map[string]int{}
 	var out []Image
 	for _, im := range imgs {
 		// Locally built images never come from a registry.
-		if im.Ref == "" || strings.HasPrefix(im.Ref, "localhost/") || seen[im.Ref] {
+		if im.Ref == "" || strings.HasPrefix(im.Ref, "localhost/") || !im.Needed && !all {
 			continue
 		}
-		seen[im.Ref] = true
+		if i, ok := seen[im.Ref]; ok { // two services sharing an image
+			out[i].Needed = out[i].Needed || im.Needed
+			continue
+		}
+		seen[im.Ref] = len(out)
 		out = append(out, im)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Ref < out[j].Ref })
@@ -346,7 +349,7 @@ func shortNetErr(err error) string {
 func (r *Runner) images(ctx context.Context) error {
 	r.begin(StepImages)
 	r.note(StepImages, "asking the playbook which images the enabled services use…")
-	imgs, arch, err := ListImages(ctx, r.cfg)
+	imgs, arch, err := ListImages(ctx, r.cfg, false)
 	if err != nil {
 		if ctx.Err() != nil {
 			return ctx.Err()

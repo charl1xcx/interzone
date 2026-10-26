@@ -20,9 +20,10 @@ import (
 //
 // Whether everything a deploy downloads is there: the playbook and each
 // role it pins (at that version, from the roles mirror), the package
-// mirrors and the registry, and every container image the enabled
-// services use. Each part is checked on its own, so the quick ones show
-// while the images are still being worked out.
+// mirrors and the registry, and every container image the playbook can
+// deploy, the ones the enabled services use first. Each part is checked on
+// its own, so the quick ones show while the images are still being worked
+// out.
 
 const (
 	mirrorsRepos = iota
@@ -31,6 +32,10 @@ const (
 )
 
 var mirrorsTabs = []string{"Repositories", "Mirrors", "Images"}
+
+// mirrorsCache is where the last check is kept. Before images were marked
+// needed or not they were kept under "mirrors".
+const mirrorsCache = "mirrors-2"
 
 type mirrorsResult struct {
 	Repos   []deploy.Check
@@ -77,7 +82,7 @@ func (s *mirrorsScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
 	if srv := config.Active(); srv != s.server {
 		s.server, s.res, s.scroll = srv, mirrorsResult{}, 0
-		if r, t, ok := loadCache[mirrorsResult]("mirrors"); ok {
+		if r, t, ok := loadCache[mirrorsResult](mirrorsCache); ok {
 			s.res, s.taken = r, t
 		}
 		return s.check()
@@ -118,7 +123,7 @@ func (s *mirrorsScreen) check() tea.Cmd {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Minute)
 			defer cancel()
-			imgs, arch, err := deploy.ListImages(ctx, &cfg)
+			imgs, arch, err := deploy.ListImages(ctx, &cfg, true)
 			if err != nil {
 				r.ImgErr = err.Error()
 				return
@@ -147,7 +152,7 @@ func (s *mirrorsScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		if !s.busy() {
 			s.taken = time.Now()
-			saveCache("mirrors", s.res)
+			saveCache(mirrorsCache, s.res)
 		}
 	case spinner.TickMsg:
 		return spinning(s.busy(), &s.spin, m)
@@ -202,8 +207,11 @@ func (s *mirrorsScreen) tally(part int) (ok, n int) {
 				ok++
 			}
 		}
-	case mirrorsImages:
+	case mirrorsImages: // the ones the setup needs
 		for _, c := range s.res.Images {
+			if !c.Needed {
+				continue
+			}
 			n++
 			if c.OK {
 				ok++
@@ -227,6 +235,11 @@ func (s *mirrorsScreen) tile(part int) func(w, h int) string {
 			note = "nothing to check"
 		case ok < n:
 			note, style = fmt.Sprintf("%d missing", n-ok), sBad
+		}
+		if part == mirrorsImages && ok == n && n > 0 {
+			if miss := s.unusedMissing(); miss > 0 {
+				note = fmt.Sprintf("needed all there · %d unused missing", miss)
+			}
 		}
 		if s.loading[part] && n > 0 {
 			note = s.spin.View() + " checking again"
@@ -310,6 +323,16 @@ func (s *mirrorsScreen) view(w, h int) string {
 		shown[len(shown)-1] = sFaint.Render(fmt.Sprintf("  ↓ %d more · ↑↓ scroll", len(rows)-end))
 	}
 	return head + strings.Join(shown, "\n")
+}
+
+// unusedMissing is how many images the setup doesn't use can't be pulled.
+func (s *mirrorsScreen) unusedMissing() (n int) {
+	for _, c := range s.res.Images {
+		if !c.Needed && !c.OK {
+			n++
+		}
+	}
+	return
 }
 
 // checkRow is one checked thing: icon, name, where, and what was found.
@@ -411,18 +434,35 @@ func (s *mirrorsScreen) imageRows(w int) []string {
 		where = s.cfg.Sources.RegistryPrefix
 	}
 	rows = append(rows, sMuted.Render(fmt.Sprintf("%d images for %s, from ", len(imgs), s.res.Arch))+sTitle.Render(truncateMid(where, max(10, w-40))), "")
-	for _, i := range failuresFirst(len(imgs), func(i int) bool { return imgs[i].OK }) {
-		im := imgs[i]
-		host, repo, tag := deploy.ParseRef(im.Ref)
-		detail := tag
-		if !im.OK {
-			detail = im.Detail
+	for _, needed := range []bool{true, false} {
+		var group []deploy.ImageStatus
+		for _, im := range imgs {
+			if im.Needed == needed {
+				group = append(group, im)
+			}
 		}
-		name := repo
-		if j := strings.LastIndex(name, "/"); j >= 0 && w < 100 {
-			name = name[j+1:]
+		title := fmt.Sprintf("Needed by %s · %d", s.cfg.Domain, len(group))
+		if !needed {
+			title = fmt.Sprintf("Not used by your setup · %d", len(group))
+			rows = append(rows, "")
 		}
-		rows = append(rows, checkRow(w, im.OK, name, host+"/"+repo+":"+tag, detail)...)
+		rows = append(rows, sectionHeading(title, min(w, 80)))
+		if len(group) == 0 {
+			rows = append(rows, sFaint.Render("  none"))
+		}
+		for _, i := range failuresFirst(len(group), func(i int) bool { return group[i].OK }) {
+			im := group[i]
+			host, repo, tag := deploy.ParseRef(im.Ref)
+			detail := tag
+			if !im.OK {
+				detail = im.Detail
+			}
+			name := repo
+			if j := strings.LastIndex(name, "/"); j >= 0 && w < 100 {
+				name = name[j+1:]
+			}
+			rows = append(rows, checkRow(w, im.OK, name, host+"/"+repo+":"+tag, detail)...)
+		}
 	}
 	return rows
 }
