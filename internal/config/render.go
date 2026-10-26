@@ -325,6 +325,9 @@ func normalizePrefix(p string) string {
 	return strings.TrimRight(p, "/") + "/"
 }
 
+// systemPython is the Python the playbook installs packages for.
+var systemPython = "/usr/bin/python3"
+
 // HostsINI renders inventory/hosts.
 func (c *Config) HostsINI() string {
 	var b strings.Builder
@@ -333,6 +336,11 @@ func (c *Config) HostsINI() string {
 	t := c.Target
 	if t.Mode == "local" {
 		parts = append(parts, "ansible_connection=local")
+		// Ansible would otherwise run modules with its own venv's Python,
+		// which lacks the Docker SDK the playbook installs for the system's.
+		if _, err := os.Stat(systemPython); err == nil {
+			parts = append(parts, "ansible_python_interpreter="+systemPython)
+		}
 		if os.Geteuid() != 0 {
 			parts = append(parts, "ansible_become=true", "ansible_become_user=root")
 		}

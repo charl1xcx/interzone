@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -47,5 +48,25 @@ func TestDNSRecords(t *testing.T) {
 	c.PlaybookDir = ""
 	if got := c.DNSRecords(); !slices.Contains(got, "chat.other.net") || !slices.Contains(got, "element.example.org") {
 		t.Errorf("no playbook: %v", got)
+	}
+}
+
+func TestLocalHostsUseSystemPython(t *testing.T) {
+	py := filepath.Join(t.TempDir(), "python3")
+	old := systemPython
+	t.Cleanup(func() { systemPython = old })
+	systemPython = py
+	c := Default()
+	c.Domain = "example.org"
+	if got := c.HostsINI(); strings.Contains(got, "ansible_python_interpreter") {
+		t.Errorf("no python there, but got %q", got)
+	}
+	_ = os.WriteFile(py, nil, 0o755)
+	if got := c.HostsINI(); !strings.Contains(got, "ansible_python_interpreter="+py) {
+		t.Errorf("got %q", got)
+	}
+	c.Target = Target{Mode: "ssh", Host: "192.0.2.1", User: "root"}
+	if got := c.HostsINI(); strings.Contains(got, "ansible_python_interpreter") {
+		t.Errorf("ssh got %q", got)
 	}
 }
