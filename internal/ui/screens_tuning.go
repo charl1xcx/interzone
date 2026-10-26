@@ -60,15 +60,12 @@ type tuningScreen struct {
 }
 
 func newTuningScreen() *tuningScreen {
-	sp := spinner.New()
-	sp.Spinner = spinner.MiniDot
-	sp.Style = sAccent
 	f := textinput.New()
 	f.Prompt = ""
 	f.Placeholder = "type to filter by name or description"
 	f.PlaceholderStyle = lipgloss.NewStyle().Foreground(cFaint)
 	f.TextStyle = lipgloss.NewStyle().Foreground(cText)
-	return &tuningScreen{spin: sp, filter: f, role: -1}
+	return &tuningScreen{spin: newSpinner(), filter: f, role: -1}
 }
 
 func (s *tuningScreen) tool()        {}
@@ -335,12 +332,7 @@ func (s *tuningScreen) update(msg tea.Msg) tea.Cmd {
 		s.load()
 		return nil
 	case spinner.TickMsg:
-		if s.fetching {
-			var cmd tea.Cmd
-			s.spin, cmd = s.spin.Update(m)
-			return cmd
-		}
-		return nil
+		return spinning(s.fetching, &s.spin, m)
 	case tea.KeyMsg:
 		return s.key(m)
 	}

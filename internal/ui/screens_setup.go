@@ -152,10 +152,7 @@ type serverScreen struct {
 }
 
 func newServerScreen() *serverScreen {
-	sp := spinner.New()
-	sp.Spinner = spinner.MiniDot
-	sp.Style = sAccent
-	return &serverScreen{spin: sp}
+	return &serverScreen{spin: newSpinner()}
 }
 
 func (s *serverScreen) name() string  { return "Server" }
@@ -344,12 +341,7 @@ func (s *serverScreen) update(msg tea.Msg) tea.Cmd {
 		s.checks = m
 		return nil
 	case spinner.TickMsg:
-		if s.checking {
-			var cmd tea.Cmd
-			s.spin, cmd = s.spin.Update(m)
-			return cmd
-		}
-		return nil
+		return spinning(s.checking, &s.spin, m)
 	case tea.KeyMsg:
 		if m.String() == "ctrl+t" && !s.checking {
 			cfg := config.Default()

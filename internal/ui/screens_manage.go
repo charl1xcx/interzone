@@ -95,10 +95,7 @@ type manageScreen struct {
 }
 
 func newManageScreen() *manageScreen {
-	sp := spinner.New()
-	sp.Spinner = spinner.MiniDot
-	sp.Style = sAccent
-	return &manageScreen{spin: sp}
+	return &manageScreen{spin: newSpinner()}
 }
 
 func (s *manageScreen) name() string { return "Manage" }
@@ -245,12 +242,7 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 	case logLinesMsg:
 		return s.logs.add(m)
 	case spinner.TickMsg:
-		if s.loading {
-			var cmd tea.Cmd
-			s.spin, cmd = s.spin.Update(m)
-			return cmd
-		}
-		return nil
+		return spinning(s.loading, &s.spin, m)
 	case formDoneMsg:
 		return s.register()
 	}

@@ -65,3 +65,14 @@ func TestConfirmKey(t *testing.T) {
 		}
 	}
 }
+
+// An imported server has no deploy to compare with, but x still switches
+// between what changes and the whole vars.yml.
+func TestReviewToggleImported(t *testing.T) {
+	s := newReviewScreen()
+	s.imported, s.showDiff = true, true
+	s.update(runes("x"))
+	if s.showDiff {
+		t.Error("x didn't switch to the whole vars.yml")
+	}
+}

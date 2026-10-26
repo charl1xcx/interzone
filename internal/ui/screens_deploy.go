@@ -50,10 +50,7 @@ type reviewScreen struct {
 func (s *reviewScreen) comparable() bool { return s.last != nil || s.imported }
 
 func newReviewScreen() *reviewScreen {
-	sp := spinner.New()
-	sp.Spinner = spinner.MiniDot
-	sp.Style = sAccent
-	return &reviewScreen{vp: viewport.New(0, 0), spin: sp}
+	return &reviewScreen{vp: viewport.New(0, 0), spin: newSpinner()}
 }
 
 func (s *reviewScreen) name() string  { return "Review" }
@@ -175,12 +172,7 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 		s.checks = m
 		return nil
 	case spinner.TickMsg:
-		if s.checking {
-			var cmd tea.Cmd
-			s.spin, cmd = s.spin.Update(m)
-			return cmd
-		}
-		return nil
+		return spinning(s.checking, &s.spin, m)
 	case tea.KeyMsg:
 		key := m.String()
 		if key != "enter" && key != "d" {
@@ -204,7 +196,7 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 			s.verbose = !s.verbose
 			return nil
 		case "x":
-			if s.last != nil {
+			if s.comparable() {
 				s.showDiff = !s.showDiff
 				s.setPreview()
 			}
@@ -218,12 +210,6 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 
 func (s *reviewScreen) view(w, h int) string {
 	c := s.cfg
-	hs := c.Homeserver
-	for _, x := range catalog.Homeservers {
-		if x.ID == c.Homeserver {
-			hs = x.Name
-		}
-	}
 	n := 0
 	for _, comp := range catalog.Components {
 		if c.Enabled(comp) {
@@ -239,7 +225,7 @@ func (s *reviewScreen) view(w, h int) string {
 	}
 	summary := []string{
 		kv("◎", "Domain", c.Domain),
-		kv("◆", "Homeserver", hs),
+		kv("◆", "Homeserver", homeserverName(c.Homeserver)),
 		kv("⌂", "Install on", where),
 		kv("▦", "Components", fmt.Sprint(n)),
 		kv("◈", "Certificates", sslLabels[indexOf(sslModes, c.SSL.Mode)]),
@@ -352,10 +338,11 @@ func (s *reviewScreen) checksView(w int) []string {
 			case deploy.Fail:
 				icon, style = sBad.Render("✗"), sBad
 			}
-			name := lipgloss.NewStyle().Width(nameW).Render(sTitle.Render(truncate(f.Name, nameW-2)))
+			nw := nameW
 			if g == "DNS" {
-				name = lipgloss.NewStyle().Width(dnsW).Render(sTitle.Render(truncate(f.Name, dnsW-2)))
+				nw = dnsW
 			}
+			name := lipgloss.NewStyle().Width(nw).Render(sTitle.Render(truncate(f.Name, nw-2)))
 			if w < 60 { // the detail goes under the name
 				name = sTitle.Render(f.Name)
 				if g == "DNS" {
@@ -623,11 +610,7 @@ func (s *deployScreen) update(msg tea.Msg) tea.Cmd {
 			return func() tea.Msg { return autoBackMsg{text} }
 		}
 	case spinner.TickMsg:
-		if s.running {
-			var cmd tea.Cmd
-			s.spin, cmd = s.spin.Update(m)
-			return cmd
-		}
+		return spinning(s.running, &s.spin, m)
 	case deployEventMsg:
 		if !m.ok {
 			s.running = false
