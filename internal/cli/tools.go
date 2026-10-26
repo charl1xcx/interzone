@@ -100,10 +100,7 @@ func SelfUpdate(args []string) error {
 
 // Changes previews what 'apply' would update.
 func Changes(args []string) error {
-	fs := flag.NewFlagSet("changes", flag.ExitOnError)
-	file := fs.String("config", "", "answers file (default: the wizard's saved answers)")
-	_ = fs.Parse(args)
-	c, _, err := loadConfig(*file)
+	c, err := configFlag("changes", args)
 	if err != nil {
 		return err
 	}
@@ -145,10 +142,7 @@ func Changes(args []string) error {
 
 // Images checks that every image the install needs can be pulled.
 func Images(args []string) error {
-	fs := flag.NewFlagSet("images", flag.ExitOnError)
-	file := fs.String("config", "", "answers file (default: the wizard's saved answers)")
-	_ = fs.Parse(args)
-	c, _, err := loadConfig(*file)
+	c, err := configFlag("images", args)
 	if err != nil {
 		return err
 	}
@@ -169,10 +163,7 @@ func Images(args []string) error {
 
 // Status prints the server's load, disks, certificates and containers.
 func Status(args []string) error {
-	fs := flag.NewFlagSet("status", flag.ExitOnError)
-	file := fs.String("config", "", "answers file (default: the wizard's saved answers)")
-	_ = fs.Parse(args)
-	c, _, err := loadConfig(*file)
+	c, err := configFlag("status", args)
 	if err != nil {
 		return err
 	}

@@ -52,6 +52,17 @@ func cursorKey(k string, cur, n int) int {
 	return cur
 }
 
+// confirmKey answers a row's confirm prompt: y or enter says yes, and any
+// other key cancels it, moving the cursor if it's a move.
+func confirmKey(k string, cursor *int, confirm *bool, n int) bool {
+	*confirm = false
+	if k == "y" || k == "enter" {
+		return true
+	}
+	*cursor = cursorKey(k, *cursor, n)
+	return false
+}
+
 // listRows renders a scrolled list with the cursor row highlighted.
 func listRows(rows []string, cur, h, w int) string {
 	start := max(0, min(cur-h/2, len(rows)-h))
@@ -242,15 +253,8 @@ func (s *historyScreen) update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 	if s.confirm {
-		switch k.String() {
-		case "y", "enter":
-			s.confirm = false
+		if confirmKey(k.String(), &s.cursor, &s.confirm, len(s.list)) {
 			return s.rollback(s.list[s.cursor])
-		case "esc", "n":
-			s.confirm = false
-		default: // moving away cancels
-			s.confirm = false
-			s.cursor = cursorKey(k.String(), s.cursor, len(s.list))
 		}
 		return nil
 	}
@@ -332,15 +336,8 @@ func (s *restoreScreen) update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 	if s.confirm {
-		switch k.String() {
-		case "y", "enter":
-			s.confirm = false
+		if confirmKey(k.String(), &s.cursor, &s.confirm, len(s.list)) {
 			return run(deploy.Options{Action: deploy.ActionRestore, Backup: s.list[s.cursor].Path})
-		case "esc", "n":
-			s.confirm = false
-		default: // moving away cancels
-			s.confirm = false
-			s.cursor = cursorKey(k.String(), s.cursor, len(s.list))
 		}
 		return nil
 	}
@@ -548,18 +545,11 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 		return s.form.Update(msg)
 	}
 	if s.confirm {
-		switch k.String() {
-		case "y", "x", "enter":
-			s.confirm = false
+		if confirmKey(k.String(), &s.cursor, &s.confirm, len(s.list)) || k.String() == "x" {
 			if err := config.RemoveProfile(s.list[s.cursor].Name); err != nil {
 				s.err = err.Error()
 			}
 			return s.enter(s.cfg)
-		case "esc", "n":
-			s.confirm = false
-		default: // moving away cancels
-			s.confirm = false
-			s.cursor = cursorKey(k.String(), s.cursor, len(s.list))
 		}
 		return nil
 	}

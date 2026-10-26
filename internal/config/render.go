@@ -34,15 +34,24 @@ func (w *yamlWriter) comment(s string) { fmt.Fprintf(&w.b, "# %s\n", s) }
 // raw writes an already-formatted scalar. Later writes of the same key are
 // dropped so components that share a variable never produce duplicates.
 func (w *yamlWriter) raw(key, value string) {
+	if !w.claim(key) {
+		return
+	}
+	fmt.Fprintf(&w.b, "%s: %s\n", key, value)
+}
+
+// claim reports whether key is still to be written, writing the Fine-tune
+// value instead when there is one.
+func (w *yamlWriter) claim(key string) bool {
 	if v, ok := w.over[key]; ok {
 		w.override(key, v)
-		return
+		return false
 	}
 	if w.seen[key] {
-		return
+		return false
 	}
 	w.seen[key] = true
-	fmt.Fprintf(&w.b, "%s: %s\n", key, value)
+	return true
 }
 
 // override writes a raw YAML value from the Tuning screen.
@@ -77,14 +86,9 @@ func indentKeep(s string) string {
 func (w *yamlWriter) str(key, value string) { w.raw(key, Quote(value)) }
 
 func (w *yamlWriter) block(key, body string) {
-	if v, ok := w.over[key]; ok {
-		w.override(key, v)
+	if !w.claim(key) {
 		return
 	}
-	if w.seen[key] {
-		return
-	}
-	w.seen[key] = true
 	body = strings.TrimRight(body, "\n ")
 	if strings.HasPrefix(body, "|") || strings.HasPrefix(body, ">") {
 		head, rest, _ := strings.Cut(body, "\n")

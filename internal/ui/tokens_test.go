@@ -52,3 +52,16 @@ func TestTokensFormChecksNumbers(t *testing.T) {
 		t.Errorf("took days 0: %v", ts.err)
 	}
 }
+
+func TestConfirmKey(t *testing.T) {
+	for _, tc := range []struct {
+		key    string
+		yes    bool
+		cursor int
+	}{{"y", true, 1}, {"enter", true, 1}, {"n", false, 1}, {"esc", false, 1}, {"down", false, 2}, {"q", false, 1}} {
+		cursor, confirm := 1, true
+		if yes := confirmKey(tc.key, &cursor, &confirm, 3); yes != tc.yes || confirm || cursor != tc.cursor {
+			t.Errorf("%s: yes %v confirm %v cursor %d", tc.key, yes, confirm, cursor)
+		}
+	}
+}

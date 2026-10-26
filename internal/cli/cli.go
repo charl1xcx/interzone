@@ -62,6 +62,15 @@ Run 'interzone COMMAND -h' for a command's options.`
 // the details have already been printed.
 var ErrFailed = errors.New("failed")
 
+// configFlag parses a command whose only flag is --config, and loads it.
+func configFlag(name string, args []string) (*config.Config, error) {
+	fs := flag.NewFlagSet(name, flag.ExitOnError)
+	file := fs.String("config", "", "answers file (default: the wizard's saved answers)")
+	_ = fs.Parse(args)
+	c, _, err := loadConfig(*file)
+	return c, err
+}
+
 func loadConfig(file string) (*config.Config, string, error) {
 	if file == "" {
 		c, ok := config.Load()
@@ -151,10 +160,7 @@ func Apply(args []string) error {
 
 // Check tests the mirrors, the server and DNS.
 func Check(args []string) error {
-	fs := flag.NewFlagSet("check", flag.ExitOnError)
-	file := fs.String("config", "", "answers file (default: the wizard's saved answers)")
-	_ = fs.Parse(args)
-	c, _, err := loadConfig(*file)
+	c, err := configFlag("check", args)
 	if err != nil {
 		return err
 	}
