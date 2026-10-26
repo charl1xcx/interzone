@@ -87,6 +87,7 @@ func New(cfg *config.Config, loaded bool) *App {
 		newRestoreScreen(),
 		newBackupsScreen(),
 		newUsersScreen(),
+		newTokensScreen(),
 		newDashboardScreen(),
 		newServersScreen(),
 		newMigrateScreen(),

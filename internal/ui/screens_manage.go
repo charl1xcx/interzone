@@ -51,7 +51,7 @@ var manageGroups = []string{"Keep it running", "People", "Data", "Look closer", 
 
 var actionGroup = map[string]int{
 	"update": 0, "check": 0, "restart": 0, "changes": 0, "images": 0, "selfupdate": 0,
-	"user": 1, "registration": 1, "users": 1,
+	"user": 1, "registration": 1, "users": 1, "tokens": 1,
 	"backup": 2, "schedule": 2, "restore": 2, "rollback": 2,
 	"dashboard": 3, "logs": 3, "tuning": 3,
 	"setup": 4, "migrate": 4, "servers": 4,
@@ -59,7 +59,7 @@ var actionGroup = map[string]int{
 
 var actionIcons = map[string]string{
 	"update": "↻", "check": "✓", "restart": "↯", "changes": "±", "images": "▣", "selfupdate": "⇪",
-	"user": "+", "registration": "⊕", "users": "@",
+	"user": "+", "registration": "⊕", "users": "@", "tokens": "⚿",
 	"backup": "⇩", "schedule": "◷", "restore": "↺", "rollback": "↶",
 	"dashboard": "▦", "logs": "≡", "tuning": "✎",
 	"setup": "◇", "migrate": "⇢", "servers": "▤",
@@ -73,7 +73,7 @@ var runsAtOnce = map[string]bool{"update": true, "check": true, "restart": true,
 // hotkeys run Manage actions from the list with one key; the runsAtOnce
 // ones need it pressed twice.
 var hotkeys = map[string]string{"update": "u", "check": "c", "restart": "r", "user": "a", "registration": "g",
-	"users": "m", "dashboard": "d", "changes": "n", "images": "i", "backup": "b", "schedule": "s",
+	"users": "m", "tokens": "t", "dashboard": "d", "changes": "n", "images": "i", "backup": "b", "schedule": "s",
 	"restore": "e", "rollback": "z", "logs": "l", "tuning": "f", "setup": "w", "migrate": "v", "servers": "o"}
 
 type manageScreen struct {
@@ -202,12 +202,18 @@ func (s *manageScreen) actions() []manageAction {
 		manageAction{id: "selfupdate", title: "Update interzone",
 			desc: "Download the newest interzone release and replace this program with it."},
 	)
+	if deploy.UsesMAS(c) {
+		acts = append(acts, manageAction{id: "tokens", title: "Sign-up tokens",
+			desc: "See how each registration token has been used, make new ones that run out after some uses or days, and revoke them."})
+	}
 	for i := range acts {
 		switch {
 		case acts[i].id == "user" && c.Homeserver != "synapse" && c.Homeserver != "dendrite":
 			acts[i].disabled = "Only Synapse and Dendrite can register users from Ansible; use a registration token or open registration instead."
 		case acts[i].id == "users" && c.Homeserver != "synapse":
 			acts[i].disabled = "Needs Synapse's admin API; " + homeserverName(c.Homeserver) + " doesn't have one."
+		case acts[i].id == "tokens" && c.Components["external-postgres"]:
+			acts[i].disabled = "MAS's tokens are read from the bundled Postgres; you use an external one."
 		case c.Components["external-postgres"] && (acts[i].id == "backup" || acts[i].id == "schedule" || acts[i].id == "restore"):
 			acts[i].disabled = "You use an external Postgres server; back it up where it runs."
 		}
@@ -341,8 +347,8 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 		return run(deploy.Options{Action: deploy.ActionImages})
 	case "selfupdate":
 		return run(deploy.Options{Action: deploy.ActionSelfUpdate})
-	case "users", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate":
-		screen := map[string]string{"users": "Users", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
+	case "users", "tokens", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate":
+		screen := map[string]string{"users": "Users", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
 			"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}[id]
 		return func() tea.Msg { return gotoMsg(screen) }
 	case "user":

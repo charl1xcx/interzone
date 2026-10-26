@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Sign-up tokens on example.org                                                            │
+│ ▾ Manage example.org   ││                                                                                            │
+│   ⌂ Overview           ││   ● Sign-up is open to anyone with an active token.                                        │
+│   @ Users              ││                                                                                            │
+│ ▌ ⚿ Tokens             ││   ▌ ●  q7KzR2mWx9P…  interzone   14 used  ╭────────────────────────────────────────────╮   │
+│   ▦ Dashboard          ││     ●  book-club               4/10 used  │ ●  q7KzR2mWx9PtL4vNb8Hc                    │   │
+│   ↻ Updates            ││     ⊘  family2025                used up  │    the token interzone made for sign-up    │   │
+│   ◷ Backups            ││     ⊘  old-link                  revoked  │                                            │   │
+│   ↺ Restore            ││                                           │ Used       14  no limit                    │   │
+│   ↶ Rollback           ││                                           │ Last used  3h ago                          │   │
+│   ✎ Fine-tune          ││                                           │ Made       0000-00-00  40d ago             │   │
+│   ⇢ Move server        ││                                           │ Expires    never                           │   │
+│   ▤ Servers            ││                                           │                                            │   │
+│                        ││                                           │  x  revoke    n  new token                 │   │
+│ ▸ Mirrors              ││                                           ╰────────────────────────────────────────────╯   │
+│                        ││                                                                                            │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ select   ·   n new   ·   x revoke   ·   r reload   ·   esc back   ·   ctrl+c quit                                   

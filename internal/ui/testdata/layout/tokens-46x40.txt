@@ -1,0 +1,40 @@
+ ◢◤ ◆ Manage › Tokens                         
+ Sign-up tokens on example.org                
+                                              
+ ● Sign-up is open to anyone with an active   
+ token.                                       
+                                              
+ ╭──────────────────────────────────────────╮ 
+ │ ●  q7KzR2mWx9PtL4vNb8Hc                  │ 
+ │    the token interzone made for sign-up  │ 
+ │                                          │ 
+ │ Used       14  no limit                  │ 
+ │ Last used  3h ago                        │ 
+ │ Made       0000-00-00  40d ago           │ 
+ │ Expires    never                         │ 
+ │                                          │ 
+ │  x  revoke    n  new token               │ 
+ ╰──────────────────────────────────────────╯ 
+   ●  book-club                     4/10 used 
+   ⊘  family2025                      used up 
+   ⊘  old-link                        revoked 
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+       ‹ back             ≡ menu          ⋯  

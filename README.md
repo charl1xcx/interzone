@@ -186,6 +186,10 @@ Need help, found a bug, or just like the project? Join the Matrix space
   service's log live. Every action has a one-letter shortcut on Manage
   (`u` update, `r` restart, `d` dashboard, `l` logs, `b` back up …); the
   ones that change the server right away want the letter twice. Also:
+  - **Sign-up tokens** (Synapse with MAS, `t`): every registration token
+    with how many accounts it has made, when it was last used and when it
+    runs out. Make new ones limited to some uses or days, and revoke or
+    restore them.
   - **Update preview:** the new playbook commits and the component
     versions they change, before installing anything.
   - **Rollback:** every successful install records its playbook commit and

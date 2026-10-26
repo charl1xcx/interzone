@@ -100,6 +100,7 @@ func TestLayout(t *testing.T) {
 		{"dashboard", openDashboard},
 		{"mirrors", openMirrors},
 		{"users", openUsers},
+		{"tokens", openTokens},
 		{"users-bridge", func(a *App) {
 			openUsers(a)
 			us := a.cur().(*usersScreen)
@@ -143,6 +144,21 @@ func openDashboard(a *App) {
 				CPU: "0.20%", Mem: "60MiB / 7.8GiB", MemPerc: 0.7, Net: "2.1GB / 2.0GB"},
 		}}
 	ds.st, ds.loading = st, false
+}
+
+func openTokens(a *App) {
+	a.cfg.Components["mas"], a.cfg.Signup, a.cfg.SignupToken = true, true, "q7KzR2mWx9PtL4vNb8Hc"
+	a.jump(a.index("Tokens"))
+	ts := a.cur().(*tokensScreen)
+	at := func(d time.Duration) *time.Time { t := time.Now().Add(d); return &t }
+	five, ten := 5, 10
+	ts.busy, ts.loaded = false, true
+	ts.list = []deploy.RegToken{
+		{Token: "q7KzR2mWx9PtL4vNb8Hc", TimesUsed: 14, CreatedAt: *at(-40 * 24 * time.Hour), LastUsedAt: at(-3 * time.Hour)},
+		{Token: "book-club", UsageLimit: &ten, TimesUsed: 4, CreatedAt: *at(-9 * 24 * time.Hour), ExpiresAt: at(21 * 24 * time.Hour)},
+		{Token: "family2025", UsageLimit: &five, TimesUsed: 5, CreatedAt: *at(-200 * 24 * time.Hour)},
+		{Token: "old-link", TimesUsed: 2, CreatedAt: *at(-300 * 24 * time.Hour), RevokedAt: at(-100 * 24 * time.Hour)},
+	}
 }
 
 func openUsers(a *App) {
