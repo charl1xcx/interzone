@@ -1,5 +1,7 @@
 package config
 
+import "slices"
+
 // MirrorKind says what a mirror serves.
 type MirrorKind string
 
@@ -99,10 +101,8 @@ func Mirrors(kind MirrorKind) []Mirror {
 func MirrorsFor(kind MirrorKind, distro string) []Mirror {
 	var out []Mirror
 	for _, m := range Mirrors(kind) {
-		for _, d := range m.Covers {
-			if d == distro {
-				out = append(out, m)
-			}
+		if slices.Contains(m.Covers, distro) {
+			out = append(out, m)
 		}
 	}
 	return out

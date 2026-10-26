@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -27,10 +28,8 @@ func layoutFile() string { return filepath.Join(config.Dir(), "layout") }
 func loadLayout() string {
 	b, _ := os.ReadFile(layoutFile())
 	l := strings.TrimSpace(string(b))
-	for _, k := range layouts {
-		if l == k {
-			return l
-		}
+	if slices.Contains(layouts, l) {
+		return l
 	}
 	return "auto"
 }
@@ -38,20 +37,15 @@ func loadLayout() string {
 // SetLayout forces a layout for this run without saving it, as the
 // -layout flag does. Unknown names are ignored.
 func (a *App) SetLayout(l string) {
-	for _, k := range layouts {
-		if l == k {
-			a.layout = l
-		}
+	if slices.Contains(layouts, l) {
+		a.layout = l
 	}
 }
 
 // cycleLayout switches to the next layout and remembers it.
 func (a *App) cycleLayout() {
-	for i, k := range layouts {
-		if k == a.layout {
-			a.layout = layouts[(i+1)%len(layouts)]
-			break
-		}
+	if i := slices.Index(layouts, a.layout); i >= 0 {
+		a.layout = layouts[(i+1)%len(layouts)]
 	}
 	if a.layout == "auto" {
 		_ = os.Remove(layoutFile())
