@@ -352,6 +352,10 @@ func (im *Import) mapVars(c *Config, v *varsFile) error {
 			// Don't have the server create an admin account it never had.
 			c.Overrides["matrix_user_creator_users_additional"] = "[]"
 		}
+		if c.Homeserver == "synapse" {
+			// The token itself lives in MAS's database; a new one is made.
+			c.Signup, _ = v.boolean("matrix_authentication_service_config_account_password_registration_enabled")
+		}
 	case "continuwuity", "tuwunel":
 		on, _ := v.boolean("matrix_" + c.Homeserver + "_config_allow_registration")
 		c.CloseRegistration = !on

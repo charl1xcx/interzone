@@ -160,6 +160,17 @@ func (s *manageScreen) actions() []manageAction {
 			acts = append(acts, manageAction{id: "registration", title: "Open registration",
 				desc: "Allow sign-ups again (with the registration token where supported). Re-runs the install to apply it."})
 		}
+	case "synapse":
+		if !deploy.UsesMAS(c) {
+			break
+		}
+		if c.RegistrationOpen() {
+			acts = append(acts, manageAction{id: "registration", title: "Close registration",
+				desc: "Anyone with the token " + c.SignupToken + " can sign up. Close it to stop new accounts; existing ones keep working. Re-runs the install to apply it."})
+		} else {
+			acts = append(acts, manageAction{id: "registration", title: "Open registration",
+				desc: "Let anyone with a sign-up token create an account through MAS, without an email address. Re-runs the install to apply it."})
+		}
 	}
 	acts = append(acts,
 		manageAction{id: "users", title: "Manage users",
@@ -316,7 +327,12 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 	case "backup":
 		return run(deploy.Options{Action: deploy.ActionBackup})
 	case "registration":
-		s.cfg.CloseRegistration = !s.cfg.CloseRegistration
+		if s.cfg.Homeserver == "synapse" {
+			s.cfg.Signup = !s.cfg.Signup
+			s.cfg.FillGenerated()
+		} else {
+			s.cfg.CloseRegistration = !s.cfg.CloseRegistration
+		}
 		_ = s.cfg.Save()
 		return run(deploy.Options{Action: deploy.ActionInstall})
 	case "setup":

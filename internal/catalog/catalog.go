@@ -412,25 +412,27 @@ func ByID(id string) (Component, bool) {
 	return Component{}, false
 }
 
-// Preset is a starting stack: a homeserver and the components to tick.
+// Preset is a starting stack: a homeserver and the components to tick,
+// and whether people can sign up with a token through MAS.
 type Preset struct {
 	ID          string
 	Name        string
 	Description string
 	Homeserver  string
 	Components  []string
+	Signup      bool `json:",omitempty"`
 }
 
 // Presets are the built-in stacks offered on the Homeserver step.
 var Presets = []Preset{
 	{"minimal", "Minimal chat", "Synapse with MAS logins, Element Web and Sable: the smallest usual setup.",
-		"synapse", []string{"coturn", "element", "sable", "mas"}},
+		"synapse", []string{"coturn", "element", "sable", "mas"}, false},
 	{"family", "Friends & family", "Chat plus voice and video calls, and an admin panel.",
-		"synapse", []string{"coturn", "element", "sable", "element-call", "mas", "ketesa"}},
+		"synapse", []string{"coturn", "element", "sable", "element-call", "mas", "ketesa"}, false},
 	{"bridges", "Bridge hub", "Telegram, WhatsApp, Signal and Discord in one place, encrypted, with your own name on the other side.",
-		"synapse", []string{"coturn", "element", "sable", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}},
-	{"community", "Public community", "Open sign-up through MAS, three web clients, moderation, antispam and monitoring.",
-		"synapse", []string{"coturn", "element", "cinny", "sable", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}},
+		"synapse", []string{"coturn", "element", "sable", "mas", "ketesa", "double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "discord"}, false},
+	{"community", "Public community", "Sign-up with a token through MAS, three web clients, moderation, antispam and monitoring.",
+		"synapse", []string{"coturn", "element", "cinny", "sable", "mas", "draupnir", "simple-antispam", "ketesa", "monitoring"}, true},
 	{"light", "Lightweight", "Tuwunel with Cinny and Sable for a Raspberry Pi or a 1 GB VPS.",
-		"tuwunel", []string{"coturn", "cinny", "sable"}},
+		"tuwunel", []string{"coturn", "cinny", "sable"}, false},
 }

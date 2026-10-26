@@ -469,6 +469,7 @@ func (r *Runner) install(ctx context.Context) error {
 	if err := r.playbookRun(ctx, StepInstall, "--tags=install-all,ensure-matrix-users-created,start"); err != nil {
 		return err
 	}
+	r.signupToken(ctx)
 	if err := RecordDeploy(r.cfg, r.gitHead(r.cfg.PlaybookDir)); err != nil {
 		r.note(StepInstall, "! couldn't record this deploy for rollbacks: "+err.Error())
 	}

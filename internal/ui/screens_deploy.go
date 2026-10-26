@@ -940,6 +940,9 @@ func (s *deployScreen) resultView(w int) string {
 	switch c.Homeserver {
 	case "synapse", "dendrite":
 		lines = append(lines, sMuted.Render("Admin       ")+sTitle.Render("@"+c.AdminUser+":"+c.Domain)+sMuted.Render("  (password saved in "+config.Dir()+")"))
+		if c.RegistrationOpen() {
+			lines = append(lines, sMuted.Render("Sign-up     ")+sTitle.Render(c.SignupToken)+sMuted.Render("  (share this token; close sign-up from Manage)"))
+		}
 	case "continuwuity", "tuwunel":
 		if c.RegistrationOpen() {
 			lines = append(lines, sMuted.Render("Register your first account with token ")+sTitle.Render(c.AdminPassword)+sMuted.Render(", then close registration from Manage."))

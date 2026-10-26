@@ -277,3 +277,20 @@ func TestImportTwiceUpdates(t *testing.T) {
 		t.Error("importing over a server for another domain should be refused")
 	}
 }
+
+// Open sign-up survives an import; MAS keeps the token, so a new one is
+// made.
+func TestImportSignup(t *testing.T) {
+	c := Default()
+	c.Domain = "example.org"
+	c.Components["mas"] = true
+	c.Signup = true
+	c.FillGenerated()
+	im, err := ImportMDAD(mdadLayout(t, c.VarsYAML("v1", "", ""), c.HostsINI()), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !im.Config.Signup {
+		t.Error("sign-up was closed by the import")
+	}
+}

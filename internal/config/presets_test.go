@@ -88,3 +88,35 @@ func TestEximStartsOff(t *testing.T) {
 		}
 	}
 }
+
+// Public community lets people sign up with a token and no email; the
+// others leave sign-up closed.
+func TestSignupWithToken(t *testing.T) {
+	var community catalog.Preset
+	for _, p := range catalog.Presets {
+		if p.Signup {
+			community = p
+		}
+	}
+	c := Fresh()
+	c.Domain = "example.org"
+	c.ApplyPreset(community)
+	if !c.RegistrationOpen() || c.SignupToken == "" {
+		t.Fatalf("%s: open %v, token %q", community.ID, c.RegistrationOpen(), c.SignupToken)
+	}
+	y := c.VarsYAML("", "", "")
+	for _, want := range []string{
+		"matrix_authentication_service_config_account_password_registration_enabled: true",
+		"matrix_authentication_service_config_account_password_registration_email_required: false",
+		"matrix_authentication_service_config_account_password_registration_token_required: true",
+	} {
+		if !strings.Contains(y, want) {
+			t.Errorf("missing %s", want)
+		}
+	}
+	c.ApplyPreset(catalog.Presets[0])
+	y = c.VarsYAML("", "", "")
+	if c.RegistrationOpen() || !strings.Contains(y, "password_registration_enabled: false") || strings.Contains(y, "email_required") {
+		t.Errorf("%s left sign-up open:\n%s", catalog.Presets[0].ID, y)
+	}
+}

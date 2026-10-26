@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -226,6 +227,17 @@ tls:
 	case "synapse", "dendrite":
 		w.block("matrix_user_creator_users_additional", fmt.Sprintf("- username: %s\n  initial_password: %s\n  initial_type: admin",
 			Quote(c.AdminUser), Quote(c.AdminPassword)))
+		if c.UsesMAS() {
+			if c.Signup {
+				w.comment("Anyone with the sign-up token can create an account; no email is asked")
+				w.comment("for, as the server sends none. interzone makes the token on each install.")
+			}
+			w.raw("matrix_authentication_service_config_account_password_registration_enabled", strconv.FormatBool(c.Signup))
+			if c.Signup {
+				w.raw("matrix_authentication_service_config_account_password_registration_email_required", "false")
+				w.raw("matrix_authentication_service_config_account_password_registration_token_required", "true")
+			}
+		}
 	case "continuwuity", "tuwunel":
 		if c.CloseRegistration {
 			w.comment("Registration was closed from interzone's Manage menu.")

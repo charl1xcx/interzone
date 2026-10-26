@@ -94,3 +94,28 @@ func TestSableSuggested(t *testing.T) {
 		}
 	}
 }
+
+// Manage opens and closes MAS sign-up, and shows the token while it's open.
+func TestManageSignup(t *testing.T) {
+	a := demoApp(t, 120, 36)
+	a.cfg.Components["mas"] = true
+	a.jump(a.index("Manage"))
+	ms := a.cur().(*manageScreen)
+	find := func() manageAction {
+		for _, act := range ms.actions() {
+			if act.id == "registration" {
+				return act
+			}
+		}
+		t.Fatal("no registration action")
+		return manageAction{}
+	}
+	if find().title != "Open registration" {
+		t.Fatalf("got %q", find().title)
+	}
+	a.cfg.Signup = true
+	a.cfg.FillGenerated()
+	if act := find(); act.title != "Close registration" || !strings.Contains(act.desc, a.cfg.SignupToken) {
+		t.Errorf("got %q: %q", act.title, act.desc)
+	}
+}

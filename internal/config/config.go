@@ -71,6 +71,11 @@ type Config struct {
 	// CloseRegistration turns off the open registration Conduit, Continuwuity
 	// and Tuwunel need for creating the first account.
 	CloseRegistration bool
+	// Signup lets anyone with SignupToken create an account through MAS,
+	// without an email address. It's off unless a preset or Manage turns
+	// it on; the token is made on the server by each install.
+	Signup      bool   `json:",omitempty"`
+	SignupToken string `json:",omitempty"`
 
 	GenericSecret    string
 	PostgresPassword string
@@ -204,8 +209,16 @@ func (c *Config) RegistrationOpen() bool {
 	switch c.Homeserver {
 	case "conduit", "continuwuity", "tuwunel":
 		return !c.CloseRegistration
+	case "synapse":
+		return c.Signup && c.UsesMAS()
 	}
 	return false
+}
+
+// UsesMAS reports whether the server's accounts live in MAS: ticked, or
+// turned on in Fine-tune.
+func (c *Config) UsesMAS() bool {
+	return c.Homeserver == "synapse" && (c.Components["mas"] || c.Overrides["matrix_authentication_service_enabled"] == "true")
 }
 
 // Enabled reports whether a component is active for the chosen homeserver.
@@ -218,6 +231,9 @@ func (c *Config) Enabled(comp catalog.Component) bool {
 
 // FillGenerated creates secrets for enabled components that still lack them.
 func (c *Config) FillGenerated() {
+	if c.Signup && c.SignupToken == "" {
+		c.SignupToken = RandomPassword(20)
+	}
 	for _, comp := range catalog.Components {
 		if !c.Enabled(comp) {
 			continue

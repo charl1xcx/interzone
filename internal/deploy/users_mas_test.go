@@ -84,3 +84,23 @@ func TestMASSession(t *testing.T) {
 		t.Errorf("admins %v %v", got, err)
 	}
 }
+
+// The install makes the sign-up token in MAS while sign-up is open.
+func TestSignupToken(t *testing.T) {
+	var tokens []any
+	old := runMAS
+	t.Cleanup(func() { runMAS = old })
+	runMAS = func(_ context.Context, _ *config.Config, _, _ string, vars map[string]any, _ ...string) (map[string]TaskResult, error) {
+		tokens = append(tokens, vars["interzone_token"])
+		return nil, nil
+	}
+	c := masConfig()
+	c.Signup, c.SignupToken = true, "letmein"
+	r := &Runner{cfg: c, events: make(chan Event, 10)}
+	r.signupToken(context.Background())
+	c.Signup = false
+	r.signupToken(context.Background())
+	if !reflect.DeepEqual(tokens, []any{"letmein"}) {
+		t.Errorf("tokens made: %v", tokens)
+	}
+}

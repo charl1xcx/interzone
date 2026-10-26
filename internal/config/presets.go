@@ -141,8 +141,9 @@ func presetID(name string) string {
 	return id
 }
 
-// ApplyPreset sets the homeserver and makes the ticked components exactly
-// the preset's. Settings already filled in stay, for if they're ticked again.
+// ApplyPreset sets the homeserver, makes the ticked components exactly the
+// preset's and opens or closes sign-up as it says. Settings already filled
+// in stay, for if they're ticked again.
 func (c *Config) ApplyPreset(p catalog.Preset) {
 	c.Homeserver = p.Homeserver
 	c.Components = map[string]bool{}
@@ -151,6 +152,7 @@ func (c *Config) ApplyPreset(p catalog.Preset) {
 			c.Components[comp.ID] = true
 		}
 	}
+	c.Signup = p.Signup
 	c.Preset = p.ID
 	c.FillGenerated()
 }

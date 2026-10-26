@@ -20,9 +20,7 @@ import (
 // Ansible's log on the server.
 
 // UsesMAS reports whether the server's accounts live in MAS.
-func UsesMAS(c *config.Config) bool {
-	return c.Homeserver == "synapse" && (c.Components["mas"] || c.Overrides["matrix_authentication_service_enabled"] == "true")
-}
+func UsesMAS(c *config.Config) bool { return c.UsesMAS() }
 
 const masPlay = `- name: interzone mas
   hosts: matrix_servers
@@ -56,6 +54,37 @@ func masRun(ctx context.Context, c *config.Config, secret bool, args ...string) 
 	}
 	r := res["interzone mas"]
 	return ansiEscape.ReplaceAllString(r.String("stdout")+"\n"+r.String("stderr"), ""), nil
+}
+
+// signupPlay makes the sign-up token in MAS. The token is the same on
+// every install, so MAS refusing it as a duplicate means it's there.
+const signupPlay = `- name: interzone signup
+  hosts: matrix_servers
+  become: true
+  gather_facts: false
+  tasks:
+    - name: interzone signup token
+      ansible.builtin.command:
+        argv: [docker, exec, matrix-authentication-service, mas-cli, manage, issue-user-registration-token,
+          --token, "{{ interzone_token }}", --unlimited]
+      register: interzone_issued
+      failed_when: interzone_issued.rc != 0 and 'user_registration_tokens_token_key' not in interzone_issued.stderr
+      changed_when: interzone_issued.rc == 0
+      no_log: true
+`
+
+// signupToken makes sure MAS knows the sign-up token while sign-up is
+// open. A failure is a warning: the install itself worked.
+func (r *Runner) signupToken(ctx context.Context) {
+	if !UsesMAS(r.cfg) || !r.cfg.Signup || r.cfg.SignupToken == "" {
+		return
+	}
+	if _, err := runMAS(ctx, r.cfg, "signup", signupPlay, map[string]any{"interzone_token": r.cfg.SignupToken}); err != nil {
+		r.note(StepInstall, "! couldn't make the sign-up token in MAS; run Update again to retry")
+		r.emit(Event{Step: StepInstall, Warn: true})
+		return
+	}
+	r.note(StepInstall, "sign-up is open to anyone with the token "+r.cfg.SignupToken)
 }
 
 // localpart is the name in @name:domain.

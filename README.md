@@ -81,7 +81,7 @@ Need help, found a bug, or just like the project? Join the Matrix space
 - **Presets** to start from on the Homeserver step: Minimal chat (Synapse,
   MAS, Element and Sable), Friends & family (adds Element Call and
   Ketesa), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
-  puppeting and encryption), Public community (MAS sign-up, Element, Cinny
+  puppeting and encryption), Public community (sign-up with a token through MAS, Element, Cinny
   and Sable, Draupnir, antispam, monitoring) and Lightweight (Tuwunel,
   Cinny and Sable). None sends email: tick the Exim relay on Components
   if you want it. Picking one sets the homeserver and ticks exactly its components;
@@ -180,8 +180,9 @@ Need help, found a bug, or just like the project? Join the Matrix space
   ones your enabled services need listed apart from the rest. `m` on
   Welcome opens it.
 - **Manage an existing server:** update, run the self-check, restart, add
-  users (Synapse/Dendrite), close registration (Conduit, Continuwuity,
-  Tuwunel), back up the Postgres database to this computer, and follow any
+  users (Synapse/Dendrite), open or close registration (Conduit,
+  Continuwuity, Tuwunel, and Synapse with MAS, where anyone with the
+  sign-up token can join without an email address), back up the Postgres database to this computer, and follow any
   service's log live. Every action has a one-letter shortcut on Manage
   (`u` update, `r` restart, `d` dashboard, `l` logs, `b` back up …); the
   ones that change the server right away want the letter twice. Also:
