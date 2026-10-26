@@ -174,8 +174,9 @@ Need help, found a bug, or just like the project? Join the Matrix space
 - **Mirrors:** its own section of the menu checks that everything a
   deploy downloads is there: the playbook and every role it pins, at that
   version, on the roles mirror; the registry and package mirrors in use
-  and every known mirror; and each container image the enabled services
-  use, for the server's architecture (once it's installed). `m` on
+  and every known mirror; and every container image the playbook can
+  deploy, for the server's architecture (once it's installed), with the
+  ones your enabled services need listed apart from the rest. `m` on
   Welcome opens it.
 - **Manage an existing server:** update, run the self-check, restart, add
   users (Synapse/Dendrite), close registration (Conduit, Continuwuity,
