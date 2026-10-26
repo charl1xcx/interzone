@@ -254,8 +254,8 @@ install itself from a PyPI mirror).
 (46×40) and desktop (120×36) size and compare them with
 `internal/ui/testdata/layout`; after an intended change, accept the new
 drawings with `go test ./internal/ui -run Layout -update`. The README's
-screenshots are retaken with `scripts/screenshots/shots.sh` (tmux, Python
-with Pillow).
+screenshots are retaken with `scripts/screenshots/shots.sh all` (tmux, Python
+with Pillow), about 15 seconds, against a demo server that doesn't exist.
 
 ## Use
 
