@@ -62,7 +62,7 @@ if sys.argv[1] == "--join":
     x = 0
     for p in parts:
         out.paste(p, (x, 0)); x += p.width + GAP
-    finish(out, sys.argv[2])
+    finish(out, sys.argv[2], 1400)  # as wide as the other shots
     sys.exit()
 
 lines = open(sys.argv[1], encoding="utf-8").read().rstrip("\n").split("\n")

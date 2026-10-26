@@ -9,9 +9,9 @@
 #   scripts/screenshots/shots.sh stop
 #
 # Drive the session between grabs with tmux send-keys or tmux attach -t shot.
-# The demo lives in a temporary directory with its own config, so nothing
-# touches your servers, but its target is still this machine: don't run
-# Manage actions from it.
+# The demo lives in a temporary directory with its own config, and its
+# target is 192.0.2.1 (an address reserved for examples), so nothing it does
+# reaches a real server, even screens that ask the server as they open.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 work=${SHOTS_DIR:-${TMPDIR:-/tmp}/interzone-shots}
@@ -30,6 +30,7 @@ start)
 {
   "Domain": "example.org",
   "Homeserver": "synapse",
+  "Target": {"Mode": "ssh", "Host": "192.0.2.1", "User": "demo"},
   "PlaybookDir": "~/.local/share/interzone/playbook",
   "SSL": {"Mode": "selfsigned"},
   "Sources": {"Blackout": true},
