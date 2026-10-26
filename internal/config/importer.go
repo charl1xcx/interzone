@@ -219,12 +219,7 @@ func parseVars(src string) (*varsFile, error) {
 		k, val := m.Content[2*i], m.Content[2*i+1]
 		if _, seen := v.node[k.Value]; seen {
 			v.dupes = append(v.dupes, k.Value)
-			for j, key := range v.keys {
-				if key == k.Value {
-					v.keys = append(v.keys[:j], v.keys[j+1:]...)
-					break
-				}
-			}
+			v.keys = slices.DeleteFunc(v.keys, func(key string) bool { return key == k.Value })
 		}
 		v.keys = append(v.keys, k.Value)
 		v.node[k.Value] = val
@@ -454,7 +449,7 @@ func (im *Import) reconcile(v *varsFile, defaults map[string]string) {
 		case !written:
 			extra = append(extra, v.text[k])
 			im.Kept = append(im.Kept, k)
-		case vaulted(v.node[k]) || !sameValue(got, v.value[k]):
+		case vaulted(v.node[k]) || !reflect.DeepEqual(got, v.value[k]):
 			c.Overrides[k] = v.valueYAML(k)
 			im.Override = append(im.Override, k)
 		}
@@ -470,7 +465,7 @@ func (im *Import) reconcile(v *varsFile, defaults map[string]string) {
 			continue
 		}
 		var def any
-		if yaml.Unmarshal([]byte(raw), &def) == nil && sameValue(got, def) {
+		if yaml.Unmarshal([]byte(raw), &def) == nil && reflect.DeepEqual(got, def) {
 			continue // what the playbook does anyway
 		}
 		c.Overrides[k] = raw
@@ -506,8 +501,6 @@ func renderedVars(src string) map[string]any {
 	_ = yaml.Unmarshal([]byte(src), &m)
 	return m
 }
-
-func sameValue(a, b any) bool { return reflect.DeepEqual(a, b) }
 
 // readHosts takes how to reach the server from an MDAD inventory/hosts.
 func readHosts(path string, c *Config) error {
@@ -824,22 +817,13 @@ func VarChanges(old, cur string) []VarChange {
 		}
 		return fmt.Sprint(v)
 	}
+	all := maps.Clone(o)
+	maps.Copy(all, n)
 	var out []VarChange
-	for _, k := range slices.Sorted(maps.Keys(mergeKeys(o, n))) {
+	for _, k := range slices.Sorted(maps.Keys(all)) {
 		if !reflect.DeepEqual(o[k], n[k]) {
 			out = append(out, VarChange{k, flat(o, k), flat(n, k)})
 		}
-	}
-	return out
-}
-
-func mergeKeys(a, b map[string]any) map[string]string {
-	out := map[string]string{}
-	for k := range a {
-		out[k] = ""
-	}
-	for k := range b {
-		out[k] = ""
 	}
 	return out
 }
