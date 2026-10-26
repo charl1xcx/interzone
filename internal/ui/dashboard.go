@@ -155,17 +155,7 @@ func (s *dashboardScreen) update(msg tea.Msg) tea.Cmd {
 }
 
 // meter draws a usage bar, amber above 75% and red above 90%.
-func meter(frac float64, w int) string {
-	frac = max(0, min(1, frac))
-	style := sGood
-	switch {
-	case frac > 0.9:
-		style = sBad
-	case frac > 0.75:
-		style = sWarn
-	}
-	return bar(frac, w, style)
-}
+func meter(frac float64, w int) string { return bar(frac, w, usageStyle(frac)) }
 
 func bar(frac float64, w int, style lipgloss.Style) string {
 	frac = max(0, min(1, frac))

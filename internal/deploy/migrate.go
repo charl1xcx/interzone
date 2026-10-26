@@ -29,7 +29,7 @@ func sshArgs(t config.Target) []string {
 		args = append(args, "-p", t.Port)
 	}
 	if t.SSHKey != "" {
-		args = append(args, "-i", expandHome(t.SSHKey))
+		args = append(args, "-i", config.ExpandHome(t.SSHKey))
 	}
 	return append(args, t.User+"@"+t.Host)
 }

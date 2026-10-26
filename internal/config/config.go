@@ -4,9 +4,10 @@ package config
 
 import (
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -293,7 +294,7 @@ func (c *Config) Missing() []string {
 			}
 		}
 	}
-	for _, k := range sortedKeys(c.Overrides) {
+	for _, k := range slices.Sorted(maps.Keys(c.Overrides)) {
 		if err := yaml.Unmarshal([]byte(c.Overrides[k]), new(any)); err != nil {
 			out = append(out, "Fine-tune: "+k+" isn't valid YAML ("+yamlError(err)+")")
 		}
@@ -313,13 +314,4 @@ func yamlError(err error) string {
 		return "expected lines like key: value"
 	}
 	return strings.TrimPrefix(err.Error(), "yaml: ")
-}
-
-func sortedKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }

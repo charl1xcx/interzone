@@ -109,9 +109,6 @@ def appservices():
         pass
     return out
 def run(tok):
-    if req["op"] == "logout":
-        call("POST", "/_matrix/client/v3/logout", {}, token=tok)
-        return {"ok": True}
     if req["op"] == "list":
         users, frm = [], "0"
         while frm is not None:
@@ -172,7 +169,7 @@ try:
     try:
         out = run(tok)
     except Failed as e:
-        if e.args[0]["errcode"] != "M_UNKNOWN_TOKEN" or not req.get("token") or req["op"] == "logout":
+        if e.args[0]["errcode"] != "M_UNKNOWN_TOKEN" or not req.get("token"):
             raise
         tok = login()
         out = run(tok)
@@ -362,14 +359,6 @@ func UpdateUser(ctx context.Context, c *config.Config, login *AdminLogin, userID
 	}
 	_, err := adminCall(ctx, c, login, map[string]any{"op": "update", "user": userID, "body": body})
 	return err
-}
-
-// Logout ends the admin session, removing interzone's device.
-func Logout(ctx context.Context, c *config.Config, login *AdminLogin) {
-	if login.Token != "" && !UsesMAS(c) {
-		_, _ = adminCall(ctx, c, login, map[string]any{"op": "logout"})
-		login.Token = ""
-	}
 }
 
 func truthy(v any) bool {

@@ -2,11 +2,13 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -104,7 +106,7 @@ func ImportMDAD(path string, base *Config) (*Import, error) {
 
 // locate finds vars.yml and the inventory around path.
 func locate(path string) (*Import, error) {
-	path, err := filepath.Abs(expandHome(path))
+	path, err := filepath.Abs(ExpandHome(path))
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +152,8 @@ func locate(path string) (*Import, error) {
 	return im, nil
 }
 
-func expandHome(p string) string {
+// ExpandHome turns a leading ~/ into the home directory.
+func ExpandHome(p string) string {
 	if rest, ok := strings.CutPrefix(p, "~/"); ok {
 		if h, err := os.UserHomeDir(); err == nil {
 			return filepath.Join(h, rest)
@@ -822,7 +825,7 @@ func VarChanges(old, cur string) []VarChange {
 		return fmt.Sprint(v)
 	}
 	var out []VarChange
-	for _, k := range sortedKeys(mergeKeys(o, n)) {
+	for _, k := range slices.Sorted(maps.Keys(mergeKeys(o, n))) {
 		if !reflect.DeepEqual(o[k], n[k]) {
 			out = append(out, VarChange{k, flat(o, k), flat(n, k)})
 		}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -144,7 +145,7 @@ func TestProbeDistro(t *testing.T) {
 	}
 }
 
-func itoa(n int64) string { b, _ := json.Marshal(n); return string(b) }
+func itoa(n int64) string { return strconv.FormatInt(n, 10) }
 
 func TestServerNeeds(t *testing.T) {
 	for _, tc := range []struct {

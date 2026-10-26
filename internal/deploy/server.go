@@ -5,9 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -63,15 +61,6 @@ else echo "sudo=fail"; fi
 `
 
 func shellQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
-
-func expandHome(p string) string {
-	if strings.HasPrefix(p, "~/") {
-		if h, err := os.UserHomeDir(); err == nil {
-			return filepath.Join(h, p[2:])
-		}
-	}
-	return p
-}
 
 // probe runs probeScript on the target, over SSH or locally.
 func probe(ctx context.Context, c *config.Config) (map[string]string, error) {

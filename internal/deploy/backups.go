@@ -303,7 +303,3 @@ func HumanSize(n int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
-// BackupLabel describes a dump for a list: when, how big.
-func BackupLabel(b LocalBackup) string {
-	return b.Time.Local().Format("2006-01-02 15:04") + "  " + HumanSize(b.Size) + "  " + filepath.Base(b.Path)
-}

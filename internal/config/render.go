@@ -2,8 +2,10 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -311,7 +313,7 @@ tls:
 	}
 
 	var rest []string
-	for _, k := range sortedKeys(c.Overrides) {
+	for _, k := range slices.Sorted(maps.Keys(c.Overrides)) {
 		if !w.seen[k] {
 			rest = append(rest, k)
 		}

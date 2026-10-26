@@ -1,9 +1,11 @@
 package config
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -48,10 +50,10 @@ func (c *Config) hostTable() ([]string, map[string][]string) {
 		if h == "" {
 			return
 		}
-		if !contains(recs, h) {
+		if !slices.Contains(recs, h) {
 			recs = append(recs, h)
 		}
-		if !contains(on[h], what) {
+		if !slices.Contains(on[h], what) {
 			on[h] = append(on[h], what)
 		}
 	}
@@ -90,31 +92,14 @@ func (c *Config) hostTable() ([]string, map[string][]string) {
 	return recs, on
 }
 
-func contains(list []string, s string) bool {
-	for _, x := range list {
-		if x == s {
-			return true
-		}
-	}
-	return false
-}
-
 // hostVars are the variables that may hold a component's hostname: one per
 // role it switches on.
 func hostVars(comp catalog.Component) []string {
 	var out []string
-	for _, v := range append([]string{comp.EnableVar}, keys(comp.Extra)...) {
+	for _, v := range append([]string{comp.EnableVar}, slices.Collect(maps.Keys(comp.Extra))...) {
 		if p, ok := strings.CutSuffix(v, "_enabled"); ok && p != "" {
 			out = append(out, p+"_hostname")
 		}
-	}
-	return out
-}
-
-func keys(m map[string]string) []string {
-	var out []string
-	for k := range m {
-		out = append(out, k)
 	}
 	return out
 }
