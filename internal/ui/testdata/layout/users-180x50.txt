@@ -15,7 +15,7 @@
 │   ▤ Servers            ││     ○  eve                                           never  │                                                                                      │   │
 │                        ││     ⊘  dave                                    deactivated  │ Last seen  2h ago  0000-00-00 00:00                                                  │   │
 │ ▸ Mirrors              ││     ⇄  Telegram  3 accounts                             ▸   │ Joined     0000-00-00  1y ago                                                        │   │
-│                        ││     ⇄  Whatsapp  1 account                              ▸   │ Sessions   3 devices                                                                 │   │
+│                        ││     ⇄  WhatsApp  1 account                              ▸   │ Sessions   3 devices                                                                 │   │
 │ ▾ Servers              ││                                                             │ Rooms      27                                                                        │   │
 │   ● example.org        ││                                                             │ Media      380 MB  142 files                                                         │   │
 │                        ││                                                             │ Email      alice@example.org                                                         │   │

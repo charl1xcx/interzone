@@ -8,7 +8,7 @@
    ○  eve                                 never 
    ⊘  dave                          deactivated 
    ⇄  Telegram  3 accounts                   ▸  
-   ⇄  Whatsapp  1 account                    ▸  
+   ⇄  WhatsApp  1 account                    ▸  
                                                 
                                                 
                                                 

@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -420,17 +421,30 @@ func (a *App) escListed() bool {
 }
 
 func (a *App) footer(w int) string {
-	var parts []string
-	for _, k := range a.cur().keys() {
-		parts = append(parts, hint(k[0], k[1]))
-	}
+	keys := slices.Clone(a.cur().keys())
 	if a.step > 0 && !a.escListed() {
-		parts = append(parts, hint("esc", "back"))
+		keys = append(keys, [2]string{"esc", "back"})
 	}
-	parts = append(parts, hint("ctrl+c", "quit"))
-	line := " " + strings.Join(parts, sFaint.Render("   ·   "))
+	keys = append(keys, [2]string{"ctrl+c", "quit"})
+	join := func(sep string) string {
+		var parts []string
+		for _, k := range keys {
+			parts = append(parts, hint(k[0], k[1]))
+		}
+		return " " + strings.Join(parts, sFaint.Render(sep))
+	}
+	line := join("   ·   ")
 	if lipgloss.Width(line) > w {
-		line = " " + strings.Join(parts, sFaint.Render(" · "))
+		line = join(" · ")
+	}
+	// Still too wide: leave out the hints everyone knows, quit and then
+	// the arrows, before the screen's own keys get cut off.
+	for _, drop := range []string{"ctrl+c", "↑↓"} {
+		if lipgloss.Width(line) <= w {
+			break
+		}
+		keys = slices.DeleteFunc(keys, func(k [2]string) bool { return k[0] == drop })
+		line = join(" · ")
 	}
 	if a.status != "" {
 		line = " " + a.status

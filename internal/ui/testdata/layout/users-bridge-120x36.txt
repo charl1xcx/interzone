@@ -18,7 +18,7 @@
 │                        ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
 │ ▾ Servers              ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
 │   ● example.org        ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
-│                        ││     ⇄  Whatsapp  1 account            ▸   ╰────────────────────────────────────────────╯   │
+│                        ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

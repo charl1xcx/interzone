@@ -570,6 +570,16 @@ func (s *tuningScreen) rolesView(w, h int) string {
 	if narrow {
 		nameW, labelW = w-18, 0
 	}
+	count := func(row roleRow) string {
+		if s.query() != "" && row.matching > 0 {
+			return fmt.Sprintf("%d matching", row.matching)
+		}
+		return plural(len(s.roles[row.idx].Vars), "setting")
+	}
+	countW := 0 // so "in use" lines up whatever the count's digits
+	for _, row := range rows {
+		countW = max(countW, len(count(row)))
+	}
 	var lines []string
 	for i, row := range rows {
 		r := s.roles[row.idx]
@@ -581,11 +591,7 @@ func (s *tuningScreen) rolesView(w, h int) string {
 		if row.change > 0 {
 			dot = sPink.Render("●")
 		}
-		count := plural(len(r.Vars), "setting")
-		if s.query() != "" && row.matching > 0 {
-			count = fmt.Sprintf("%d matching", row.matching)
-		}
-		info := sFaint.Render(count)
+		info := sFaint.Render(fmt.Sprintf("%-*s", countW, count(row)))
 		if row.change > 0 {
 			info += sPink.Render(fmt.Sprintf("  %d changed", row.change))
 		}

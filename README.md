@@ -43,6 +43,10 @@ every download can come from mirrors inside the country.
 | ![The Manage menu](docs/screenshots/manage.png) | ![Fine-tuning the playbook's roles](docs/screenshots/tuning.png) |
 | **Manage the server:** updates, users, backups, rollback, logs and more. | **Fine-tune:** search and change the settings of every playbook role. |
 
+![Managing the server's users](docs/screenshots/users.png)
+
+**Users:** totals, a card per person, bridge accounts grouped out of the way, search, filter and sort.
+
 ![The compact layout on a phone-sized terminal](docs/screenshots/phone.png)
 
 **On a phone** (Termux or any narrow terminal) the compact layout drops the sidebar and puts thumb-sized buttons along the bottom, so nothing needs ctrl or esc.

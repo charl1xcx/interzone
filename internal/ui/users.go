@@ -12,6 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"interzone/internal/catalog"
 	"interzone/internal/config"
 	"interzone/internal/deploy"
 )
@@ -873,6 +874,9 @@ func bridgeName(id string) string {
 	n = strings.Trim(strings.ReplaceAll(n, "_", " "), " -")
 	if n == "" {
 		return id
+	}
+	if c, ok := catalog.ByID(n); ok { // "WhatsApp (mautrix)" → WhatsApp
+		return strings.TrimSpace(strings.Split(c.Name, " (")[0])
 	}
 	return strings.ToUpper(n[:1]) + n[1:]
 }

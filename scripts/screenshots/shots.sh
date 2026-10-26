@@ -6,6 +6,8 @@
 #   scripts/screenshots/shots.sh grab NAME [WIDTH]   save the session's screen as NAME.png
 #                                                    (1400 px wide; phone shots: WIDTH 0)
 #   scripts/screenshots/shots.sh phone A B C         join three phone shots into phone.png
+#   scripts/screenshots/shots.sh users               draw users.png from the layout tests'
+#                                                    sample people (no server needed)
 #   scripts/screenshots/shots.sh stop
 #
 # Drive the session between grabs with tmux send-keys or tmux attach -t shot.
@@ -58,11 +60,16 @@ phone)
 	for n in "$@"; do pngs+=("$work/raw/$n.png"); done
 	python3 "$repo/scripts/screenshots/render.py" --join "$out/phone.png" "${pngs[@]}"
 	;;
+users)
+	mkdir -p "$work/raw"
+	(cd "$repo" && INTERZONE_SHOT="$work/raw" go test ./internal/ui -run '^TestShot$' -count=1 >/dev/null)
+	python3 "$repo/scripts/screenshots/render.py" "$work/raw/users.ans" "$out/users.png" 1400
+	;;
 stop)
 	tmux kill-session -t shot 2>/dev/null || true
 	;;
 *)
-	sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
 	exit 1
 	;;
 esac

@@ -14,7 +14,7 @@
       ●  Telegram bridge bot  bot      1h ago 
       ○  Nikolai (Telegram)             never 
       ○  Pavel (Telegram)               never 
-   ⇄  Whatsapp  1 account                  ▸  
+   ⇄  WhatsApp  1 account                  ▸  
                                               
                                               
                                               
