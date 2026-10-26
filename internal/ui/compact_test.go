@@ -86,9 +86,9 @@ func TestMenuTiles(t *testing.T) {
 	if !strings.Contains(view, "▦  Dashboard") || !strings.Contains(view, "▼ more below") {
 		t.Fatalf("expected Manage's tiles and a scroll hint:\n%s", view)
 	}
-	a.Update(tea.KeyMsg{Type: tea.KeyDown})
-	if a.View(); a.menuTop == 0 {
-		t.Error("↓ didn't scroll the menu")
+	a.Update(tea.KeyMsg{Type: tea.KeyEnd})
+	if a.View(); a.menuTop == 0 || a.menuSel != "app:theme" {
+		t.Errorf("the menu didn't scroll to the selection (top %d, selected %q)", a.menuTop, a.menuSel)
 	}
 	a.tap([]string{"side:mirrors:1"})
 	if a.menuOpen || a.cur().name() != "Mirrors" {
@@ -113,5 +113,63 @@ func TestPresetGroups(t *testing.T) {
 	}
 	if n != len(p.Components) {
 		t.Errorf("%d of %d components grouped", n, len(p.Components))
+	}
+}
+
+// The menu works from the keyboard: ctrl+b, the arrows, enter.
+func TestMenuKeys(t *testing.T) {
+	key := func(a *App, k tea.KeyType) { a.Update(tea.KeyMsg{Type: k}) }
+
+	a := demoApp(t, 120, 36) // wide: the keys go to the sidebar
+	a.jump(a.index("Manage"))
+	key(a, tea.KeyCtrlB)
+	if !a.sideFocus || a.menuSel != "side:manage:Manage" {
+		t.Fatalf("ctrl+b: focus %v, selected %q", a.sideFocus, a.menuSel)
+	}
+	if !strings.Contains(ansi.Strip(a.View()), "esc back to Manage") {
+		t.Error("the footer doesn't show the menu's keys")
+	}
+	key(a, tea.KeyDown)
+	if a.menuSel != "side:manage:Users" {
+		t.Errorf("↓ selected %q", a.menuSel)
+	}
+	key(a, tea.KeyLeft) // to the heading, then fold it
+	key(a, tea.KeyLeft)
+	if a.menuSel != "side:head:manage" || a.sideOpen[sideManage] {
+		t.Errorf("←←: selected %q, Manage open %v", a.menuSel, a.sideOpen[sideManage])
+	}
+	key(a, tea.KeyRight)
+	if !a.sideOpen[sideManage] {
+		t.Error("→ didn't unfold Manage")
+	}
+	a.menuSel = "side:mirrors:1"
+	a.sideOpen[sideMirrors] = true
+	key(a, tea.KeyEnter)
+	if a.sideFocus || a.cur().name() != "Mirrors" {
+		t.Errorf("enter led to %s (focus %v)", a.cur().name(), a.sideFocus)
+	}
+	key(a, tea.KeyCtrlB)
+	key(a, tea.KeyEsc)
+	if a.sideFocus || a.cur().name() != "Mirrors" {
+		t.Errorf("esc should only leave the menu (on %s, focus %v)", a.cur().name(), a.sideFocus)
+	}
+
+	a = demoApp(t, 46, 40) // compact: the tiles, two across
+	a.jump(a.index("Manage"))
+	key(a, tea.KeyCtrlB)
+	a.View()
+	if !a.menuOpen || a.menuSel != "side:manage:Manage" {
+		t.Fatalf("ctrl+b: open %v, selected %q", a.menuOpen, a.menuSel)
+	}
+	key(a, tea.KeyRight)
+	if a.menuSel != "side:manage:Users" {
+		t.Errorf("→ selected %q, want the tile beside Overview", a.menuSel)
+	}
+	key(a, tea.KeyDown)
+	if a.menuSel != "side:manage:Updates" {
+		t.Errorf("↓ selected %q, want the tile under Users", a.menuSel)
+	}
+	if v := ansi.Strip(a.View()); !strings.Contains(v, "›  Updates") {
+		t.Errorf("the selected tile isn't marked:\n%s", v)
 	}
 }

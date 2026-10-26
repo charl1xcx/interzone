@@ -195,7 +195,7 @@ func (a *App) tap(ids []string) (tea.Model, tea.Cmd) {
 	for _, id := range ids {
 		switch id {
 		case "app:menu":
-			a.menuOpen, a.sheetOpen, a.menuTop = !a.menuOpen, false, 0
+			a.menuOpen, a.sheetOpen, a.menuTop, a.menuKeys = !a.menuOpen, false, 0, false
 			return a, nil
 		case "app:sheet":
 			a.sheetOpen, a.menuOpen = !a.sheetOpen, false
@@ -209,6 +209,9 @@ func (a *App) tap(ids []string) (tea.Model, tea.Cmd) {
 		}
 		if (a.menuOpen || a.sheetOpen) && !strings.HasPrefix(id, "side:") && !strings.HasPrefix(id, "key:") {
 			continue // the screen under the menu isn't shown
+		}
+		if !strings.HasPrefix(id, "side:") {
+			a.sideFocus = false // a click on the screen takes the keys back to it
 		}
 		if name, ok := strings.CutPrefix(id, "key:"); ok {
 			if k, ok := keyMsg(name); ok {
@@ -253,8 +256,8 @@ func (a *App) busy() bool {
 }
 
 func (a *App) sideClick(id string) tea.Cmd {
-	inMenu := a.menuOpen
-	a.menuOpen = false
+	inMenu, focus := a.menuOpen, a.sideFocus
+	a.menuOpen, a.sideFocus = false, false
 	if id == "side:fold" {
 		a.toggleSidebar()
 		return nil
@@ -300,7 +303,7 @@ func (a *App) sideClick(id string) tea.Cmd {
 					a.toggleSection(sec)
 				}
 			}
-			a.menuOpen = inMenu
+			a.menuOpen, a.sideFocus = inMenu, focus
 			return nil
 		}
 		switch arg {

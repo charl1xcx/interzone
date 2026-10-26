@@ -31,6 +31,6 @@
 │                        ││      ○  Change the setup                                                                   │
 │ ◫ auto (wide)  ctrl+l  ││         Walk through the wizard again with your saved answers.                             │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ choose   ·   enter continue   ·   s servers   ·   m mirrors   ·   ctrl+c quit                                       

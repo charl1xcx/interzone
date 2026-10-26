@@ -31,6 +31,6 @@
 │                        ││                                                                                            │
 │ ◫ auto (wide)  ctrl+l  ││                                                                                            │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ select   ·   enter choose   ·   s save as preset   ·   esc back   ·   ctrl+c quit                                   

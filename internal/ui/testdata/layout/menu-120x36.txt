@@ -31,6 +31,6 @@
 │                        ││     ✎  Fine-tune the roles                                                          f      │
 │ ◫ auto (wide)  ctrl+l  ││                                                                                            │
 │ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         

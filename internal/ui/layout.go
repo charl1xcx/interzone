@@ -85,14 +85,14 @@ func (a *App) layoutName() string {
 	return l
 }
 
-// layoutLink is the clickable switch shown in the sidebar and the menu.
-func (a *App) layoutLink() string {
-	return mark("app:layout", sFaint.Render("◫ ")+sMuted.Render(a.layoutName())+sFaint.Render("  ctrl+l"))
-}
-
-// themeLink switches the theme the same way.
-func themeLink() string {
-	return mark("app:theme", sFaint.Render("◐ ")+sMuted.Render(themeName)+sFaint.Render("  ctrl+y"))
+// menuLink is one of the links under the menu (layout, theme, fold), to
+// click or select from the keys like its entries.
+func (a *App) menuLink(id, glyph, text, hint string) string {
+	g, t := sFaint.Render(glyph), sMuted.Render(text)
+	if a.focused(id) {
+		g, t = menuMarker(), sFocus.Render(text)
+	}
+	return mark(id, g+" "+t+sFaint.Render(hint))
 }
 
 // tight is set while a compact screen is drawn on a short terminal, such
@@ -122,7 +122,7 @@ func (a *App) compactView() string {
 	var content string
 	switch {
 	case a.menuOpen:
-		content = a.menuScrolled(a.menuTiles(inner)+"\n"+mark("app:layout", sFaint.Render("◫ ")+sMuted.Render(a.layoutName()))+"     "+mark("app:theme", sFaint.Render("◐ ")+sMuted.Render(themeName)), bodyH)
+		content = a.menuScrolled(a.menuTiles(inner)+"\n"+a.menuLink("app:layout", "◫", a.layoutName(), "")+"     "+a.menuLink("app:theme", "◐", themeName, ""), bodyH)
 	case a.sheetOpen:
 		content = a.sheetView(inner)
 	default:
@@ -162,6 +162,13 @@ func (a *App) menuScrolled(menu string, h int) string {
 		a.menuTop = 0
 		return menu
 	}
+	if a.menuFollow && a.menuFocusLine >= 0 {
+		// Keep the selection in view, clear of the ▲/▼ lines; a tile is
+		// three lines tall.
+		a.menuTop = min(a.menuTop, a.menuFocusLine-1)
+		a.menuTop = max(a.menuTop, a.menuFocusLine+4-h)
+	}
+	a.menuFollow = false
 	a.menuTop = max(0, min(a.menuTop, len(lines)-h))
 	view := append([]string(nil), lines[a.menuTop:a.menuTop+h]...)
 	if a.menuTop > 0 {

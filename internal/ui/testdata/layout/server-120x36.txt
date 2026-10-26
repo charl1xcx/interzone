@@ -31,6 +31,6 @@
 │                        ││                                                                                            │
 │ ◫ auto (wide)  ctrl+l  ││   Press ctrl+t to test that every download source is reachable from here.                  │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ move · ←→ choose · space toggle · ctrl+t test sources · ctrl+r reveal · enter next · esc back · ctrl+c quit         

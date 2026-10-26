@@ -278,15 +278,20 @@ The menu on the left shows where you are: the setup steps, the Manage
 screens (with the action running, if any), the mirror checks and your
 servers. Each section folds on its own: click its heading to open or
 close just that one, and going to a screen opens its section without
-closing the others; interzone remembers which are open. `ctrl+b` folds the
-whole menu to a rail of icons, and terminals narrower than 100 columns
-always get the rail.
+closing the others; interzone remembers which are open. `◂ fold` at its
+bottom folds the whole menu to a rail of icons, and terminals narrower
+than 100 columns always get the rail.
+
+The menu works from the keyboard too: `ctrl+b` moves the keys to it
+(unfolding it if needed), `↑↓` move, `←→` fold and unfold a section,
+`enter` opens what's selected and `esc` goes back to the screen.
 
 On a phone (Termux, or any narrow or portrait terminal) interzone switches
 to a compact layout: a one-line header saying where you are, no sidebar or
 borders, and lists without their side columns. Instead of key hints there's
 a bar of buttons at the bottom: `‹ back`, `≡ menu` (or `ctrl+b`, a grid of
-tiles to tap that scrolls with a swipe), the
+tiles to tap that scrolls with a swipe; the arrow keys move across the
+tiles and `enter` opens one), the
 screen's main action (`next ›`, `run ›`…) and `⋯`, which lists every
 other key of the screen and the global ones (save, layout, theme, quit) as
 rows to tap. When the screen gets short, as when the on-screen keyboard is
@@ -306,7 +311,7 @@ and a dark variant that follows the terminal's background.
 | `ctrl+n` / `ctrl+p` | next / previous step |
 | `ctrl+r` | reveal secrets |
 | `ctrl+s` | save answers |
-| `ctrl+b` | fold or unfold the menu on the left (compact layout: open the menu, like `≡ menu`) |
+| `ctrl+b` | go to the menu: `↑↓` `←→` to move and fold, `enter` to open, `esc` to go back (compact layout: open the menu, like `≡ menu`) |
 | `ctrl+l` | next layout: auto, compact, wide |
 | `ctrl+y` | next theme |
 | `esc` | back |

@@ -31,6 +31,6 @@
 │                        ││   │ postgres                                            █████░░░░░░░░░    2.7%   0.80% │   │
 │ ◫ auto (wide)  ctrl+l  ││   │ traefik                                             █░░░░░░░░░░░░░    0.7%   0.20% │   │
 │ ◐ interzone  ctrl+y    ││     ↓ 14 more lines · ↑↓ scroll                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  r refresh   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                                                             

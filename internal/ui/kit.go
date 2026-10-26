@@ -43,13 +43,20 @@ func tileGrid(tiles []func(w, h int) string, w, cols int) string {
 }
 
 // menuTile is one tile of the compact menu: an icon and a label, and a
-// second line when there's something going on.
-func menuTile(id, icon, label, sub string, on bool) func(w, h int) string {
+// second line when there's something going on. on is where you are,
+// focus the tile selected from the keyboard.
+func menuTile(id, icon, label, sub string, on, focus bool) func(w, h int) string {
 	return func(w, h int) string {
 		name := sTitle.Render(truncate(label, w-8))
 		border := lipgloss.TerminalColor(cFaint)
 		if on {
 			name, border = gradient(truncate(label, w-8)), cPurple
+		}
+		if focus {
+			icon, border = menuMarker(), cPink
+			if !on {
+				name = sFocus.Render(truncate(label, w-8))
+			}
 		}
 		lines := []string{icon + "  " + name}
 		if sub != "" {

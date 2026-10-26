@@ -31,6 +31,6 @@
 │                        ││                                                                                            │
 │ ◫ auto (wide)  ctrl+l  ││                                                                                            │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  enter begin   ·   i import a setup   ·   s servers   ·   m mirrors   ·   ctrl+c quit                                   

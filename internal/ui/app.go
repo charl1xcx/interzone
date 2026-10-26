@@ -57,6 +57,12 @@ type App struct {
 	menuOpen      bool                 // the compact layout shows the menu
 	sheetOpen     bool                 // the compact layout lists every key (⋯)
 	menuTop       int                  // how far the compact menu is scrolled
+	sideFocus     bool                 // the wide layout's keys are on the sidebar (menukeys.go)
+	menuSel       string               // the menu entry selected from the keyboard
+	menuKeys      bool                 // the selection is shown: the menu was reached by key
+	menuCols      int                  // tiles across in the compact menu, as last drawn
+	menuFollow    bool                 // scroll the compact menu to the selection
+	menuFocusLine int                  // the selection's line in the compact menu, or -1
 
 	health    *deploy.Health // the header's dot (health.go)
 	healthGen int
@@ -193,22 +199,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, nil
 			}
 		}
-		if a.menuOpen {
-			switch m.String() {
-			case "esc", "ctrl+b", "q":
-				a.menuOpen = false
-				return a, nil
-			case "ctrl+c":
-				a.menuOpen = false
-			case "up", "k":
-				a.menuTop = max(0, a.menuTop-3)
-				return a, nil
-			case "down", "j":
-				a.menuTop += 3 // menuScrolled stops it at the end
-				return a, nil
-			default:
-				return a, nil
-			}
+		if a.inMenu() {
+			return a.menuKey(m)
 		}
 		ds, deploying := a.cur().(*deployScreen)
 		switch m.String() {
@@ -249,9 +241,10 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "ctrl+b":
 			if a.compact() {
-				a.menuOpen, a.menuTop = true, 0
+				a.menuOpen, a.menuTop, a.menuKeys, a.menuFollow = true, 0, true, true
+				a.selectHere()
 			} else {
-				a.toggleSidebar()
+				a.focusSidebar()
 			}
 			return a, nil
 		case "ctrl+l":
@@ -343,7 +336,11 @@ func (a *App) View() string {
 	if lines := strings.Split(content, "\n"); len(lines) > contentH {
 		content = strings.Join(lines[:contentH], "\n") // never push the header off screen
 	}
-	body := sPanelFocus.Padding(padY, padX).Width(w - 2).Height(max(3, bodyH)).Render(title + "\n\n" + content)
+	panel := sPanelFocus // the purple border is where the keys go
+	if a.sideFocus {
+		panel = sPanel
+	}
+	body := panel.Padding(padY, padX).Width(w - 2).Height(max(3, bodyH)).Render(title + "\n\n" + content)
 	body = lipgloss.JoinHorizontal(lipgloss.Top, a.sidebar(max(3, bodyH)), body)
 
 	parts := []string{header}
@@ -433,7 +430,9 @@ func (a *App) escListed() bool {
 
 func (a *App) footer(w int) string {
 	keys := slices.Clone(a.cur().keys())
-	if a.step > 0 && !a.escListed() {
+	if a.sideFocus {
+		keys = a.menuKeyHints()
+	} else if a.step > 0 && !a.escListed() {
 		keys = append(keys, [2]string{"esc", "back"})
 	}
 	keys = append(keys, [2]string{"ctrl+c", "quit"})

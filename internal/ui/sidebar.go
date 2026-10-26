@@ -181,8 +181,13 @@ func (a *App) sidebar(h int) string {
 	if gap := h - lipgloss.Height(body) - 3; gap > 0 {
 		body += strings.Repeat("\n", gap)
 	}
-	body += "\n" + a.layoutLink() + "\n" + themeLink() + "\n" + mark("side:fold", sFaint.Render("◂ fold  ctrl+b"))
-	return sPanel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
+	body += "\n" + a.menuLink("app:layout", "◫", a.layoutName(), "  ctrl+l") + "\n" + a.menuLink("app:theme", "◐", themeName, "  ctrl+y") +
+		"\n" + a.menuLink("side:fold", "◂", "fold", "") + sFaint.Render("   ctrl+b menu")
+	panel := sPanel
+	if a.sideFocus {
+		panel = sPanelFocus
+	}
+	return panel.Padding(0, 1).Width(sidebarW - 2).Height(h).Render(body)
 }
 
 // menuItem is one entry of the menu: its zone id, an icon already
@@ -299,11 +304,18 @@ func (a *App) menuLines(inner int) []string {
 		if i > 0 {
 			lines = append(lines, "")
 		}
-		lines = append(lines, mark("side:head:"+sectionNames[m.sec], a.menuHead(m, inner)))
+		head := a.menuHead(m, inner)
+		if id := "side:head:" + sectionNames[m.sec]; a.focused(id) {
+			head = menuMarker() + a.menuHead(m, inner-1)
+		}
+		lines = append(lines, mark("side:head:"+sectionNames[m.sec], head))
 		for _, it := range m.items {
 			label := truncate(it.label, inner-4)
 			line := "  " + it.icon + " " + sMuted.Render(label)
-			if it.on {
+			switch {
+			case a.focused(it.id):
+				line = menuMarker() + " " + it.icon + " " + sFocus.Render(label)
+			case it.on:
 				line = sAccent.Render("▌") + " " + it.icon + " " + sTitle.Render(label)
 			}
 			lines = append(lines, markRow(it.id, line, inner))
@@ -323,7 +335,9 @@ func (a *App) menuTiles(inner int) string {
 	if inner >= 32 {
 		cols = 2
 	}
+	a.menuCols, a.menuFocusLine = cols, -1
 	var parts []string
+	lines := func() int { return lipgloss.Height(strings.Join(parts, "\n")) }
 	for _, m := range a.menu() {
 		arrow := sFaint.Render("▸")
 		if a.sideOpen[m.sec] {
@@ -333,17 +347,32 @@ func (a *App) menuTiles(inner int) string {
 		if m.sec == a.section() {
 			icon, title = sAccent.Render(m.icon), sSection.Render(truncate(m.title, inner-6))
 		}
+		id := "side:head:" + sectionNames[m.sec]
+		if a.focused(id) {
+			icon, title = menuMarker(), sFocus.Render(truncate(m.title, inner-6))
+			a.menuFocusLine = lines()
+		}
 		head := icon + "  " + title
 		head += strings.Repeat(" ", max(1, inner-lipgloss.Width(head)-1)) + arrow
-		parts = append(parts, markRow("side:head:"+sectionNames[m.sec], head, inner))
+		parts = append(parts, markRow(id, head, inner))
 		if len(m.items) == 0 {
 			continue
 		}
-		var tiles []func(w, h int) string
-		for _, it := range m.items {
-			tiles = append(tiles, menuTile(it.id, it.icon, it.label, it.sub, it.on))
+		// A row of tiles at a time, so the selected one's line is known.
+		for i := 0; i < len(m.items); i += cols {
+			var tiles []func(w, h int) string
+			for _, it := range m.items[i:min(len(m.items), i+cols)] {
+				if a.focused(it.id) {
+					a.menuFocusLine = lines()
+				}
+				tiles = append(tiles, menuTile(it.id, it.icon, it.label, it.sub, it.on, a.focused(it.id)))
+			}
+			parts = append(parts, tileGrid(tiles, inner, cols))
 		}
-		parts = append(parts, tileGrid(tiles, inner, cols), "")
+		parts = append(parts, "")
+	}
+	if a.focused("app:layout") || a.focused("app:theme") {
+		a.menuFocusLine = lines()
 	}
 	return strings.Join(parts, "\n")
 }

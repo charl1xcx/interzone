@@ -31,6 +31,6 @@
 │                        ││   │                                                                                    │   │
 │ ◫ auto (wide)  ctrl+l  ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  enter deploy · c check again · v details · ↑↓ scroll vars.yml · s save files only · esc back · ctrl+c quit             

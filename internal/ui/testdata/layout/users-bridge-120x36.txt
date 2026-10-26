@@ -31,6 +31,6 @@
 │                        ││                                                                                            │
 │ ◫ auto (wide)  ctrl+l  ││                                                                                            │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
-│ ◂ fold  ctrl+b         ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  ↑↓ select · enter hide · / search · f filter · o sort · n new · r reload · esc back · ctrl+c quit                      
