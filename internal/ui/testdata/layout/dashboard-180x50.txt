@@ -4,7 +4,7 @@
 │                        ││   How example.org is doing                                                                                                                             │
 │ ▾ Manage example.org   ││                                                                                                                                                        │
 │   ⌂ Overview           ││   ● example.org (vps1)  ·  Debian GNU/Linux 12 (bookworm)  ·  kernel 6.1.0-26-amd64  ·  Docker 27.3.1  ·  up 3d 8h                                     │
-│   @ Users              ││   updated just now                                                                                                                                     │
+│   @ Users              ││   ● live · every 5s · last at 00:00:00                                                                                                                 │
 │ ▌ ▦ Dashboard          ││   ╭─────────────────────────────────╮ ╭─────────────────────────────────╮ ╭─────────────────────────────────╮ ╭────────────────────────────────────╮   │
 │   ↻ Updates            ││   │ CPU                             │ │ Memory                          │ │ Disk /                          │ │ Containers                         │   │
 │   ◷ Backups            ││   │ 30%  load 1.20 on 4 cores       │ │ 62%  5.0 GB of 8.0 GB           │ │ 78%  18.0 GB free               │ │ 3/4  1 stopped, 1 unhealthy        │   │

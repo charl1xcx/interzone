@@ -5,7 +5,7 @@
 │ ▾ Manage example.org   ││                                                                                            │
 │   ⌂ Overview           ││   ● example.org (vps1)  ·  Debian GNU/Linux 12 (bookworm)  ·  kernel 6.1.0-26-amd64        │
 │   @ Users              ││     Docker 27.3.1  ·  up 3d 8h                                                             │
-│ ▌ ▦ Dashboard          ││   updated just now                                                                         │
+│ ▌ ▦ Dashboard          ││   ● live · every 5s · last at 00:00:00                                                     │
 │   ↻ Updates            ││   ╭────────────────────────────────────────╮ ╭─────────────────────────────────────────╮   │
 │   ◷ Backups            ││   │ CPU                                    │ │ Memory                                  │   │
 │   ↺ Restore            ││   │ 30%  load 1.20 on 4 cores              │ │ 62%  5.0 GB of 8.0 GB                   │   │

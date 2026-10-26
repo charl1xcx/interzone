@@ -101,7 +101,7 @@ const statusPlay = `- name: interzone status
 // hostnames are the ones the playbook gave Traefik, read from the running
 // containers, so components moved to other domains are checked where they
 // are; before anything runs behind Traefik, the usual ones are guessed.
-func Status(ctx context.Context, c *config.Config) (*ServerStatus, error) {
+func Status(ctx context.Context, c *config.Config, certs bool) (*ServerStatus, error) {
 	st := &ServerStatus{Taken: time.Now()}
 	res, err := runPlayJSON(ctx, c, "status", statusPlay, nil)
 	if err == nil {
@@ -110,6 +110,9 @@ func Status(ctx context.Context, c *config.Config) (*ServerStatus, error) {
 	hosts := st.Hosts
 	if len(hosts) == 0 {
 		hosts = c.DNSRecords()
+	}
+	if !certs { // they change rarely; the dashboard checks them less often
+		return st, err
 	}
 	st.Certs = CheckCerts(ctx, c, hosts)
 	known := c.HostServices()

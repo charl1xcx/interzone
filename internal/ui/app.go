@@ -137,12 +137,23 @@ func (a *App) jump(n int) tea.Cmd {
 	return a.cur().enter(a.cfg)
 }
 
+// ownedMsg is a result for one screen, named by owner.
+type ownedMsg interface{ owner() string }
+
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.w, a.h = m.Width, m.Height
 	case tea.MouseMsg:
 		return a.mouse(m)
+	case ownedMsg:
+		// A screen's result reaches it even when another one is showing by
+		// now, or the screen would wait for it forever.
+		for _, s := range a.screens {
+			if s.name() == m.owner() {
+				return a, s.update(msg)
+			}
+		}
 	case navMsg:
 		return a, a.go_(int(m))
 	case formDoneMsg:

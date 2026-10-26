@@ -35,15 +35,25 @@ func runPlayJSON(ctx context.Context, c *config.Config, name, play string, vars 
 		return nil, fmt.Errorf("no inventory in %s; run a full install first", c.PlaybookDir)
 	}
 	dir := c.PlaybookDir
-	playFile := filepath.Join(dir, "inventory", "interzone-"+name+".yml")
+	playDir := filepath.Join(dir, "inventory")
 	if strings.HasPrefix(play, "#root\n") {
 		// Plays that load the playbook's roles must sit next to setup.yml.
-		playFile = filepath.Join(dir, "interzone-"+name+".yml")
+		playDir = dir
 	}
-	if err := os.WriteFile(playFile, []byte(play), 0o644); err != nil {
+	// A name of its own, as two plays of the same kind can run at once.
+	f, err := os.CreateTemp(playDir, "interzone-"+name+"-*.yml")
+	if err != nil {
 		return nil, err
 	}
+	playFile := f.Name()
 	defer os.Remove(playFile)
+	_, err = f.WriteString(play)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		return nil, err
+	}
 	cmdArgs := []string{"-i", "inventory/hosts", playFile}
 	if len(vars) > 0 {
 		f, err := os.CreateTemp(filepath.Join(dir, "inventory"), ".interzone-vars-*.json")

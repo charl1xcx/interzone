@@ -25,18 +25,42 @@ import (
 type statusMsg struct {
 	server string
 	st     *deploy.ServerStatus
+	certs  bool // the certificates were checked too
 	err    error
 }
 
+func (statusMsg) owner() string { return "Dashboard" }
+
+// dashTickMsg is the time for the next refresh; gen tells an old one apart.
+type dashTickMsg struct {
+	server string
+	gen    int
+}
+
+func (dashTickMsg) owner() string { return "Dashboard" }
+
+// The dashboard refreshes itself this long after the last refresh ended,
+// while it's on screen (longer after a failed one), and checks the
+// certificates every certsEvery.
+const (
+	dashEvery  = 5 * time.Second
+	dashRetry  = 30 * time.Second
+	certsEvery = 5 * time.Minute
+)
+
 type dashboardScreen struct {
-	cfg     *config.Config
-	server  string // whose status is shown
-	st      *deploy.ServerStatus
-	err     error
-	loading bool
-	spin    spinner.Model
-	scroll  int
-	narrow  bool // the compact layout is on
+	cfg      *config.Config
+	server   string // whose status is shown
+	st       *deploy.ServerStatus
+	err      error
+	loading  bool
+	spin     spinner.Model
+	scroll   int
+	narrow   bool // the compact layout is on
+	shown    bool // on screen, so worth refreshing
+	gen      int  // of the pending dashTickMsg
+	certsAt  time.Time
+	certsNow bool // the next refresh checks the certificates whatever their age
 }
 
 func newDashboardScreen() *dashboardScreen { return &dashboardScreen{spin: newSpinner()} }
@@ -45,15 +69,15 @@ func (s *dashboardScreen) tool()                {}
 func (s *dashboardScreen) name() string         { return "Dashboard" }
 func (s *dashboardScreen) title() string        { return "How " + s.cfg.Domain + " is doing" }
 func (s *dashboardScreen) typing() bool         { return false }
-func (s *dashboardScreen) leave(*config.Config) {}
+func (s *dashboardScreen) leave(*config.Config) { s.shown = false }
 func (s *dashboardScreen) setCompact(on bool)   { s.narrow = on }
 func (s *dashboardScreen) keys() [][2]string {
 	return [][2]string{{"r", "refresh"}, {"↑↓", "scroll"}}
 }
 func (s *dashboardScreen) enter(c *config.Config) tea.Cmd {
-	s.cfg = c
+	s.cfg, s.shown = c, true
 	if srv := config.Active(); srv != s.server {
-		s.server, s.st, s.err, s.loading, s.scroll = srv, nil, nil, false, 0
+		s.server, s.st, s.err, s.loading, s.scroll, s.certsAt = srv, nil, nil, false, 0, time.Time{}
 		if st, _, ok := loadCache[deploy.ServerStatus]("status"); ok {
 			s.st = &st // shown while the fresh one loads
 		}
@@ -67,12 +91,28 @@ func (s *dashboardScreen) refresh() tea.Cmd {
 	}
 	s.loading = true
 	cfg, srv := *s.cfg, s.server
+	certs := s.certsNow || s.st == nil || len(s.st.Certs) == 0 || time.Since(s.certsAt) > certsEvery
+	s.certsNow = false
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
-		st, err := deploy.Status(ctx, &cfg)
-		return statusMsg{srv, st, err}
+		st, err := deploy.Status(ctx, &cfg, certs)
+		return statusMsg{srv, st, certs, err}
 	})
+}
+
+// next schedules the next refresh, while the dashboard is on screen.
+func (s *dashboardScreen) next() tea.Cmd {
+	if !s.shown {
+		return nil
+	}
+	after := dashEvery
+	if s.err != nil {
+		after = dashRetry
+	}
+	s.gen++
+	srv, gen := s.server, s.gen
+	return tea.Tick(after, func(time.Time) tea.Msg { return dashTickMsg{srv, gen} })
 }
 
 func (s *dashboardScreen) update(msg tea.Msg) tea.Cmd {
@@ -83,14 +123,25 @@ func (s *dashboardScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		s.loading, s.err = false, m.err
 		if m.err == nil && m.st != nil {
+			if m.certs {
+				s.certsAt = m.st.Taken
+			} else if s.st != nil {
+				m.st.Certs = s.st.Certs
+			}
 			s.st = m.st
 			saveCache("status", *m.st)
+		}
+		return s.next()
+	case dashTickMsg:
+		if m.server == s.server && m.gen == s.gen && s.shown {
+			return s.refresh()
 		}
 	case spinner.TickMsg:
 		return spinning(s.loading, &s.spin, m)
 	case tea.KeyMsg:
 		switch m.String() {
 		case "r":
+			s.certsNow = true
 			return s.refresh()
 		case "up", "k":
 			s.scroll = max(0, s.scroll-1)
@@ -185,10 +236,16 @@ func (s *dashboardScreen) view(w, h int) string {
 	if s.err != nil {
 		blocks = append(blocks, sBad.Render("✗ "+s.err.Error()))
 	}
-	when := sFaint.Render("updated " + ago(st.Taken))
+	// A clock time, as nothing redraws a "5s ago" between refreshes.
+	dot := sGood.Render("●")
 	if s.loading {
-		when = s.spin.View() + sFaint.Render(" refreshing · last "+ago(st.Taken))
+		dot = s.spin.View()
 	}
+	every := " live · every " + dashEvery.String()
+	if s.err != nil {
+		dot, every = sBad.Render("●"), " trying again every "+dashRetry.String()
+	}
+	when := dot + sFaint.Render(every+" · last at "+st.Taken.Format("15:04:05"))
 	blocks = append(blocks, s.headline(w)+"\n"+when)
 
 	wide := !s.narrow && w >= 80

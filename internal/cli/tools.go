@@ -178,7 +178,7 @@ func Status(args []string) error {
 	}
 	ctx, cancel := withTimeout(2 * time.Minute)
 	defer cancel()
-	st, err := deploy.Status(ctx, c)
+	st, err := deploy.Status(ctx, c, true)
 	if err != nil {
 		return err
 	}

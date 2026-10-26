@@ -119,7 +119,7 @@ def run(tok):
             users += page.get("users", [])
             frm = page.get("next_token")
         services = appservices()
-        people = 0
+        people = []
         for u in users:
             u["appservice"], u["bot"] = "", False
             local = u["name"][1:].split(":", 1)[0]
@@ -127,9 +127,9 @@ def run(tok):
                 if local == sender or any(r.match(u["name"]) for r in regexes):
                     u["appservice"], u["bot"] = sid, local == sender
                     break
-            if u["appservice"] or people >= 300:
-                continue
-            people += 1
+            if not u["appservice"] and len(people) < 300:
+                people.append(u)
+        def details(u):
             u["rooms"] = total("/_synapse/admin/v1/users/%s/joined_rooms", u["name"], tok)
             u["devices"] = total("/_synapse/admin/v2/users/%s/devices", u["name"], tok)
             try:
@@ -137,6 +137,10 @@ def run(tok):
                 u["threepids"] = [t.get("address", "") for t in d.get("threepids") or []]
             except Failed:
                 pass
+        # A few at a time: one by one, each person costs three round trips.
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(8) as pool:
+            list(pool.map(details, people))
         media, frm = {}, "0"
         try:
             while frm is not None:
@@ -263,16 +267,24 @@ func adminRun(ctx context.Context, c *config.Config, login *AdminLogin, req map[
 // ListUsers returns every account on the server, deactivated ones
 // included, with what they use: rooms, sessions and media.
 func ListUsers(ctx context.Context, c *config.Config, login *AdminLogin) (*UserList, error) {
+	// MAS decides who may act as a server admin, not Synapse; ask it
+	// alongside the list rather than after it.
+	var admins map[string]bool
+	var adminsErr error
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if UsesMAS(c) {
+			admins, adminsErr = masAdmins(ctx, c)
+		}
+	}()
 	out, err := adminCall(ctx, c, login, map[string]any{"op": "list"})
+	<-done
 	if err != nil {
 		return nil, err
 	}
-	var admins map[string]bool
-	if UsesMAS(c) {
-		// MAS decides who may act as a server admin, not Synapse.
-		if admins, err = masAdmins(ctx, c); err != nil {
-			return nil, err
-		}
+	if adminsErr != nil {
+		return nil, adminsErr
 	}
 	return parseUsers(out, admins)
 }

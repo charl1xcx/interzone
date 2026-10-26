@@ -27,12 +27,16 @@ import (
 
 type usersMsg struct {
 	server string
+	gen    int // of the reload that asked
 	list   *deploy.UserList
 	token  string
 	err    error
 }
 
+func (usersMsg) owner() string { return "Users" }
+
 type userOpMsg struct {
+	op       *userOp
 	info     string
 	password string // shown once after a reset or a new account
 	token    string
@@ -82,7 +86,9 @@ type usersScreen struct {
 	open      map[string]bool // bridges whose accounts are shown
 	narrow    bool
 
-	busy     bool
+	busy     bool // a change is running, or the first list is loading
+	syncing  bool // the shown list is being refreshed; it stays usable
+	gen      int  // of the latest reload, so an older answer is dropped
 	err      error
 	info     string
 	password string
@@ -140,7 +146,7 @@ func (s *usersScreen) enter(c *config.Config) tea.Cmd {
 	s.login = deploy.AdminLogin{User: c.AdminUser, Password: c.AdminPassword, Token: c.AdminToken}
 	s.mode, s.info, s.password, s.err = usersList, "", "", nil
 	if srv := config.Active(); srv != s.server {
-		s.server, s.list, s.cursor, s.busy = srv, nil, 0, false
+		s.server, s.list, s.cursor, s.busy, s.syncing = srv, nil, 0, false, false
 		s.open = map[string]bool{}
 		if list, _, ok := loadCache[deploy.UserList]("userlist"); ok {
 			s.list = &list // shown while the fresh list loads
@@ -150,14 +156,49 @@ func (s *usersScreen) enter(c *config.Config) tea.Cmd {
 }
 
 func (s *usersScreen) reload() tea.Cmd {
-	s.busy, s.err = true, nil
-	cfg, login, srv := *s.cfg, s.login, s.server
+	s.err = nil
+	if s.list == nil {
+		s.busy = true
+	} else {
+		s.syncing = true
+	}
+	s.gen++
+	cfg, login, srv, gen := *s.cfg, s.login, s.server, s.gen
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
 		list, err := deploy.ListUsers(ctx, &cfg, &login)
-		return usersMsg{srv, list, login.Token, err}
+		return usersMsg{srv, gen, list, login.Token, err}
 	})
+}
+
+// patch shows a change on the list as soon as the server has made it; the
+// refresh that follows fills in the rest.
+func (s *usersScreen) patch(op *userOp) {
+	if s.list == nil || op == nil {
+		return
+	}
+	var u *deploy.MatrixUser
+	for i := range s.list.Users {
+		if s.list.Users[i].ID == op.user {
+			u = &s.list.Users[i]
+		}
+	}
+	admin, setAdmin := op.body["admin"].(bool)
+	switch {
+	case u == nil:
+		if op.body["password"] != nil { // a new account
+			s.list.Users = append(s.list.Users, deploy.MatrixUser{ID: op.user, Admin: admin, Created: time.Now()})
+		}
+	case op.signOut, op.body["logout_devices"] != nil:
+		u.Devices = min(u.Devices, 0)
+	case op.body["deactivated"] == true: // Synapse also takes them out of every room
+		u.Deactivated, u.Devices, u.Rooms = true, min(u.Devices, 0), min(u.Rooms, 0)
+	case op.body["deactivated"] == false:
+		u.Deactivated = false
+	case setAdmin:
+		u.Admin = admin
+	}
 }
 
 func (s *usersScreen) saveToken(t string) {
@@ -192,7 +233,7 @@ func (s *usersScreen) run(op *userOp) tea.Cmd {
 		} else {
 			err = deploy.UpdateUser(ctx, &cfg, &login, op.user, op.body)
 		}
-		return userOpMsg{info: op.desc, password: op.password, token: login.Token, err: err}
+		return userOpMsg{op: op, info: op.desc, password: op.password, token: login.Token, err: err}
 	})
 }
 
@@ -291,10 +332,13 @@ func (s *usersScreen) current() (userRow, bool) {
 func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case usersMsg:
-		if m.server != s.server {
-			return nil // from before switching servers
+		if m.server != s.server || m.gen != s.gen {
+			return nil // from before switching servers, or a newer reload is on its way
 		}
-		s.busy = false
+		s.syncing = false
+		if s.list == nil {
+			s.busy = false
+		}
 		s.saveToken(m.token)
 		if _, bad := m.err.(deploy.ErrAdminLogin); bad {
 			s.err = m.err
@@ -321,9 +365,10 @@ func (s *usersScreen) update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		s.info, s.password = "✓ "+m.info, m.password
+		s.patch(m.op)
 		return s.reload()
 	case spinner.TickMsg:
-		return spinning(s.busy, &s.spin, m)
+		return spinning(s.busy || s.syncing, &s.spin, m)
 	case formDoneMsg:
 		switch s.mode {
 		case usersLogin:
@@ -544,7 +589,13 @@ func (s *usersScreen) footer(w int) string {
 	case s.err != nil:
 		status = append(status, sBad.Render("✗ "+s.err.Error()))
 	case s.info != "":
-		status = append(status, sGood.Render(s.info))
+		line := sGood.Render(s.info)
+		if s.syncing {
+			line += sFaint.Render("  ·  ") + s.spin.View() + sFaint.Render(" updating the list")
+		}
+		status = append(status, line)
+	case s.syncing:
+		status = append(status, s.spin.View()+sFaint.Render(" updating the list"))
 	}
 	if s.password != "" {
 		status = append(status, sMuted.Render("Password  ")+sTitle.Render(s.password)+sMuted.Render("   (shown once; it isn't saved)"))

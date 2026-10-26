@@ -202,7 +202,8 @@ Need help, found a bug, or just like the project? Join the Matrix space
     backup timer; the containers using the most; certificate expiry for
     every hostname; and each container's state, health check, restarts,
     CPU, memory and network traffic. Wide terminals get the cards side by
-    side, the compact layout stacks them.
+    side, the compact layout stacks them. While it's open it refreshes
+    itself every 5 seconds (certificates every 5 minutes, or on `r`).
     The Dashboard, Users and the logs' service list open with what they
     showed last time and refresh in the background.
   - **Health in the header:** once a server is installed, a dot says
