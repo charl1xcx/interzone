@@ -69,7 +69,10 @@ Need help, found a bug, or just like the project? Join the Matrix space
 ## Features
 
 - **Any homeserver:** Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.
-  Synapse-only components are greyed out for the others.
+  Synapse-only components are greyed out for the others. Conduit,
+  Continuwuity and Tuwunel federate over 443, so port 8448 stays closed.
+  Continuwuity and Tuwunel have their own OAuth login and sign-up page,
+  which apps like Element X use.
 - **Everything MDAD offers:** 79 components across clients, auth, storage,
   bridges, bots, monitoring, backups and calls, with search (`/`).
   Required settings are asked for; secrets are generated.
@@ -162,7 +165,7 @@ Need help, found a bug, or just like the project? Join the Matrix space
   ```
 - **Checks before it touches anything.** The Review screen logs into the
   server and checks root access, OS, CPU, Python, memory, disk and ports
-  80/443/8448, then resolves every DNS record the setup needs and compares
+  80/443 (and 8448 for Synapse and Dendrite), then resolves every DNS record the setup needs and compares
   it with the server's addresses. Once you've deployed, it shows what
   changes in `vars.yml` since the last successful deploy (`x` switches to
   the whole file).

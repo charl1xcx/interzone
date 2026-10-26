@@ -217,6 +217,16 @@ func (c *Config) RegistrationOpen() bool {
 
 // UsesMAS reports whether the server's accounts live in MAS: ticked, or
 // turned on in Fine-tune.
+// FederationPort is where other servers reach this one. Conduit and its
+// forks serve federation on 443 next to the client API.
+func (c *Config) FederationPort() string {
+	switch c.Homeserver {
+	case "conduit", "continuwuity", "tuwunel":
+		return "443"
+	}
+	return "8448"
+}
+
 func (c *Config) UsesMAS() bool {
 	return c.Homeserver == "synapse" && (c.Components["mas"] || c.Overrides["matrix_authentication_service_enabled"] == "true")
 }

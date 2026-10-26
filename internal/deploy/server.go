@@ -196,7 +196,11 @@ func ServerChecks(c *config.Config) []Finding {
 	}
 
 	ours := facts["traefik"] == "active"
-	for _, p := range []string{"80", "443", "8448"} {
+	ports := []string{"80", "443"}
+	if c.FederationPort() != "443" {
+		ports = append(ports, c.FederationPort())
+	}
+	for _, p := range ports {
 		switch st := facts["port"+p]; {
 		case st == "":
 		case st == "free":

@@ -176,6 +176,11 @@ func (c *Config) VarsYAML(migrationVersion, certPath, keyPath string) string {
 	w.raw("devture_systemd_docker_base_ipv6_enabled", fmt.Sprint(c.IPv6))
 	w.str("postgres_connection_password", c.PostgresPassword)
 	w.raw("matrix_homeserver_federation_enabled", fmt.Sprint(c.Federation))
+	if c.FederationPort() == "443" {
+		w.comment("Federation goes through 443 with the client API, so 8448 stays closed.")
+		w.raw("matrix_federation_public_port", "443")
+		w.raw("matrix_"+c.Homeserver+"_container_labels_public_federation_api_enabled", "false")
+	}
 
 	w.section("Mirrors")
 	if c.Sources.UseRegistry && c.Sources.RegistryPrefix != "" {
@@ -257,6 +262,12 @@ tls:
 		w.comment("Conduit can't create users from Ansible. Registration is open until you")
 		w.comment("create your account; close it afterwards from interzone's Manage menu.")
 		w.raw("matrix_conduit_allow_registration", "true")
+	}
+	// Continuwuity's own OAuth login is on by default; Tuwunel's needs this,
+	// and the client well-known it's only given with HTTPS.
+	if c.Homeserver == "tuwunel" && c.SSL.Mode != "none" {
+		w.comment("Tuwunel's own login and sign-up page, for apps with OAuth login like Element X.")
+		w.str("matrix_tuwunel_environment_variables_extension", "TUWUNEL_OIDC_NATIVE_AUTH=true")
 	}
 
 	w.section("Components")
