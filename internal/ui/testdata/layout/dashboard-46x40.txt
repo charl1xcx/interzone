@@ -22,7 +22,7 @@
  │ Memory       ████░░ 5.0 GB / 8.0 GB      │ 
  │ Swap         ███░░░ 1.0 GB / 2.0 GB      │ 
  │ Disk /       █████░ 18.0 GB free / 80.0  │ 
- │ Next backup  Tue 2026-10-27 03:00:00 UTC │ 
+ │ Next backup  Tue 0000-00-00 00:00:00 UTC │ 
  ╰──────────────────────────────────────────╯ 
  ╭──────────────────────────────────────────╮ 
  │ Heaviest  containers use 5% of 4 cores   │ 

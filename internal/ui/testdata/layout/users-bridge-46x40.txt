@@ -1,0 +1,40 @@
+ ◢◤ ◆ Manage › Users                          
+ Users on example.org                         
+                                              
+ 4 people   2 active   1 admin   1 new        
+ 31 rooms   396 MB media   4 bridged          
+  /  search    f  everyone    o  by last seen 
+                                              
+   ●  Alice Liddell  admin             2h ago 
+   ●  Bob                              3d ago 
+   ●  Carol                           45d ago 
+   ○  eve                               never 
+   ⊘  dave                        deactivated 
+ ▌ ⇄  Telegram  3 accounts                 ▾  
+      ●  Telegram bridge bot  bot      1h ago 
+      ○  Nikolai (Telegram)             never 
+      ○  Pavel (Telegram)               never 
+   ⇄  Whatsapp  1 account                  ▸  
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+    ‹ back       ≡ menu       hide ›      ⋯  

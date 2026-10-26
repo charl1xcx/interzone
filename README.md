@@ -180,9 +180,16 @@ Need help, found a bug, or just like the project? Join the Matrix space
   - **Scheduled backups:** a systemd timer on the server dumps the database
     by itself (`/matrix/interzone-backups`, keeping the newest N);
     download them for Restore.
-  - **Users** (Synapse): list accounts, reset passwords, grant or remove
-    admin rights, deactivate and reactivate, through the admin API from
-    inside the Synapse container. Nothing needs to be exposed publicly.
+  - **Users** (Synapse): totals at the top (people, active in the last
+    30 days, admins, new, rooms, media), then everyone with how recently
+    they were seen; the one selected opens into a card with when they
+    joined, their sessions, rooms, uploaded media, email and picture.
+    Bridges' puppets and bots are folded into a group per bridge. `/`
+    searches, `f` filters (admins, active, inactive, deactivated) and `o`
+    sorts (last seen, name, joined, media). Reset passwords, grant or
+    remove admin rights, sign someone out everywhere, deactivate and
+    reactivate, through the admin API from inside the Synapse container.
+    Nothing needs to be exposed publicly.
     With MAS (Matrix Authentication Service), accounts are changed with
     `mas-cli` in its container instead, and signing in needs only the
     admin's username: MAS issues the session.

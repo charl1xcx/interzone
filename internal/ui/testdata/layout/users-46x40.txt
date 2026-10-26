@@ -1,0 +1,40 @@
+ ◢◤ ◆ Manage › Users                          
+ Users on example.org                         
+                                              
+ 4 people   2 active   1 admin   1 new        
+ 31 rooms   396 MB media   4 bridged          
+  /  search    f  everyone    o  by last seen 
+                                              
+ ╭──────────────────────────────────────────╮ 
+ │ ●  Alice Liddell   admin                 │ 
+ │    @alice:example.org                    │ 
+ │                                          │ 
+ │ Last seen  2h ago  0000-00-00 00:00      │ 
+ │ Joined     0000-00-00  1y ago            │ 
+ │ Sessions   3 devices                     │ 
+ │ Rooms      27                            │ 
+ │ Media      380 MB  142 files             │ 
+ │ Email      alice@example.org             │ 
+ │ Picture    set                           │ 
+ │                                          │ 
+ │  p  new password    a  remove admin      │ 
+ │  s  sign out everywhere    d  deactivate │ 
+ ╰──────────────────────────────────────────╯ 
+   ●  Bob                              3d ago 
+   ●  Carol                           45d ago 
+   ○  eve                               never 
+   ⊘  dave                        deactivated 
+   ⇄  Telegram  3 accounts                 ▸  
+   ⇄  Whatsapp  1 account                  ▸  
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+       ‹ back             ≡ menu          ⋯  

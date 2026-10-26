@@ -150,7 +150,7 @@ func (s *usersScreen) click(id string) (tea.Cmd, bool) {
 	if s.mode != usersList || s.busy {
 		return nil, false
 	}
-	return listClick(id, &s.cursor, len(s.users), s.update)
+	return listClick(id, &s.cursor, len(s.rows()), s.update)
 }
 
 func (s *serversScreen) click(id string) (tea.Cmd, bool) {

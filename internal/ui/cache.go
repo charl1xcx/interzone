@@ -49,8 +49,12 @@ func saveCache[T any](name string, data T) {
 	}
 }
 
-// ago says how long ago t was, roughly: "just now", "5m ago", "3h ago".
+// ago says how long ago t was, roughly: "just now", "5m ago", "3h ago",
+// "4d ago", "3mo ago".
 func ago(t time.Time) string {
+	if t.IsZero() {
+		return "never"
+	}
 	d := time.Since(t)
 	switch {
 	case d < time.Minute:
@@ -59,6 +63,10 @@ func ago(t time.Time) string {
 		return fmt.Sprintf("%dm ago", int(d/time.Minute))
 	case d < 48*time.Hour:
 		return fmt.Sprintf("%dh ago", int(d/time.Hour))
+	case d < 60*24*time.Hour:
+		return fmt.Sprintf("%dd ago", int(d/(24*time.Hour)))
+	case d < 365*24*time.Hour:
+		return fmt.Sprintf("%dmo ago", int(d/(30*24*time.Hour)))
 	}
-	return fmt.Sprintf("%dd ago", int(d/(24*time.Hour)))
+	return fmt.Sprintf("%dy ago", int(d/(365*24*time.Hour)))
 }
