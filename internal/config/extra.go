@@ -15,10 +15,12 @@ type ExtraGroup struct {
 	Text string
 }
 
-// ExtraGroups splits ExtraYAML by the component each top-level key belongs
-// to, judged by the longest matching variable prefix. Comments go with the
-// key under them. Every enabled component gets a group, empty or not, and
-// the homeserver comes first and Other last.
+// ExtraGroups splits ExtraYAML by the playbook role each top-level key
+// belongs to: the role whose defaults define it, else the role or
+// component with the longest matching name prefix, else "Other". A group
+// is named after interzone's component when there is one. Comments go
+// with the key under them. Only groups holding vars are listed, in the
+// order they first appear, the homeserver first and Other last.
 func (c *Config) ExtraGroups() []ExtraGroup {
 	hs := c.Homeserver
 	for _, h := range catalog.Homeservers {
@@ -26,19 +28,52 @@ func (c *Config) ExtraGroups() []ExtraGroup {
 			hs = h.Name
 		}
 	}
-	names := []string{hs}
-	prefix := map[string]string{"matrix_" + c.Homeserver: hs}
+	// What each role is called: the component it runs, if interzone has one.
+	byVar := map[string]string{}
+	for _, comp := range catalog.Components {
+		for _, v := range append([]string{comp.EnableVar, comp.HostVar()}, slices.Collect(maps.Keys(comp.Extra))...) {
+			byVar[v] = comp.Name
+		}
+	}
+	owner := map[string]string{}  // variable → group
+	prefix := map[string]string{} // name prefix → group
+	roles, _ := Roles(c.PlaybookDir)
+	for _, r := range roles {
+		name := r.Name
+		if r.Name == HomeserverRole[c.Homeserver] {
+			name = hs
+		} else {
+			for _, v := range r.Vars {
+				if n, ok := byVar[v.Name]; ok && r.Name != PlaybookRole {
+					name = n
+					break
+				}
+			}
+		}
+		for _, v := range r.Vars {
+			if _, ok := owner[v.Name]; !ok {
+				owner[v.Name] = name
+			}
+		}
+		if r.Name != PlaybookRole {
+			prefix[strings.ReplaceAll(r.Name, "-", "_")] = name
+		}
+	}
+	// Without the playbook (or for a key no role defines), names do.
 	for _, comp := range catalog.Components {
 		for _, v := range append(hostVars(comp), comp.HostVar()) {
 			if p, ok := strings.CutSuffix(v, "_hostname"); ok && p != "" {
-				prefix[p] = comp.Name
+				if _, taken := prefix[p]; !taken {
+					prefix[p] = comp.Name
+				}
 			}
 		}
-		if c.Enabled(comp) && !slices.Contains(names, comp.Name) {
-			names = append(names, comp.Name)
-		}
 	}
-	owner := func(key string) string {
+	prefix["matrix_"+c.Homeserver] = hs
+	group := func(key string) string {
+		if n, ok := owner[key]; ok {
+			return n
+		}
 		best := ""
 		for p := range prefix {
 			if (key == p || strings.HasPrefix(key, p+"_")) && len(p) > len(best) {
@@ -51,11 +86,15 @@ func (c *Config) ExtraGroups() []ExtraGroup {
 		return prefix[best]
 	}
 
+	names := []string{hs}
 	text := map[string][]string{}
 	var block []string
 	flush := func(name string) {
 		if b := strings.TrimRight(strings.Join(block, "\n"), "\n "); strings.TrimSpace(b) != "" {
 			text[name] = append(text[name], b)
+			if !slices.Contains(names, name) {
+				names = append(names, name)
+			}
 		}
 		block = nil
 	}
@@ -71,21 +110,17 @@ func (c *Config) ExtraGroups() []ExtraGroup {
 			block = block[:j]
 			flush(cur)
 			block = lead
-			cur = owner(strings.TrimSpace(k))
+			cur = group(strings.TrimSpace(k))
 		}
 		block = append(block, line)
 	}
 	flush(cur)
 
-	for _, n := range slices.Sorted(maps.Keys(text)) {
-		if !slices.Contains(names, n) && n != "Other" {
-			names = append(names, n) // a component that is off, still holding vars
+	var out []ExtraGroup
+	for _, n := range append(slices.DeleteFunc(names, func(n string) bool { return n == "Other" }), "Other") {
+		if t := text[n]; len(t) > 0 || n == "Other" {
+			out = append(out, ExtraGroup{n, strings.Join(t, "\n")})
 		}
-	}
-	names = append(names, "Other")
-	out := make([]ExtraGroup, len(names))
-	for i, n := range names {
-		out[i] = ExtraGroup{n, strings.Join(text[n], "\n")}
 	}
 	return out
 }

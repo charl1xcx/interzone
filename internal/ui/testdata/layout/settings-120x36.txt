@@ -3,34 +3,34 @@
 │ ▾ Setup                ││                                                                                            │
 │   ● Server             ││   Fill in the details                                                                      │
 │   ● Homeserver         ││                                                                                            │
-│   ● Components         ││   ◆ Your admin account ──────────────────── │ ◆ Advanced ───────────────────────────────   │
-│ ▌ ◉ Settings           ││                                             │                                              │
-│   ○ Review             ││   ▌  Admin username                         │    Synapse                                   │
-│   ○ Deploy             ││   ▌  › admin                                │    │                                         │
+│   ● Components         ││   ◆ Your admin account ──────────────────── │ ⇄ show as plain text  ctrl+o                 │
+│ ▌ ◉ Settings           ││                                             │ ◆ Advanced ───────────────────────────────   │
+│   ○ Review             ││   ▌  Admin username                         │                                              │
+│   ○ Deploy             ││   ▌  › admin                                │    Other                                     │
 │                        ││   ▌  Created automatically after install.   │    │                                         │
 │ ▸ Manage example.org   ││                                             │    │                                         │
-│                        ││      Admin password                         │                                              │
-│ ▸ Mirrors              ││      › ••••••••••••••••••••                 │    Coturn TURN server                        │
-│                        ││                                             │    │                                         │
-│ ▾ Servers              ││                                             │    │                                         │
-│   ● example.org        ││   ◆ Coturn TURN server ──────────────────── │    │                                         │
+│                        ││      Admin password                         │    │                                         │
+│ ▸ Mirrors              ││      › ••••••••••••••••••••                 │                                              │
 │                        ││                                             │                                              │
-│                        ││      Public IP address(es)                  │    Element Web                               │
-│                        ││      › comma, separated, values             │    │                                         │
-│                        ││                                             │    │                                         │
-│                        ││                                             │    │                                         │
+│ ▾ Servers              ││                                             │                                              │
+│   ● example.org        ││   ◆ Coturn TURN server ──────────────────── │                                              │
+│                        ││                                             │                                              │
+│                        ││      Public IP address(es)                  │                                              │
+│                        ││      › comma, separated, values             │                                              │
+│                        ││                                             │                                              │
+│                        ││                                             │                                              │
 │                        ││   ◆ Addresses ───────────────────────────── │                                              │
-│                        ││                                             │    Cinny                                     │
-│                        ││      Element Web                            │    │                                         │
-│                        ││      › element.example.org                  │    │                                         │
-│                        ││                                             │    │                                         │
+│                        ││                                             │                                              │
+│                        ││      Element Web                            │                                              │
+│                        ││      › element.example.org                  │                                              │
+│                        ││                                             │                                              │
 │                        ││      Cinny                                  │                                              │
-│                        ││      › cinny.example.org                    │    Appservice Double Puppet                  │
-│                        ││                                             │    │                                         │
-│                        ││                                             │    │                                         │
-│                        ││                                             │    │                                         │
+│                        ││      › cinny.example.org                    │                                              │
+│                        ││                                             │                                              │
+│                        ││                                             │                                              │
+│                        ││                                             │                                              │
 │ ◫ auto (wide)  ctrl+l  ││                                             │                                              │
-│ ◐ interzone  ctrl+y    ││                                             │   ▼ more below                               │
+│ ◐ interzone  ctrl+y    ││                                             │                                              │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  tab/↑↓ move   ·   space toggle   ·   ctrl+r reveal secrets   ·   enter next   ·   esc back   ·   ctrl+c quit           

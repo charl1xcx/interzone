@@ -48,6 +48,16 @@ func TestSettingsStep(t *testing.T) {
 	if a.cur().name() != "Settings" || s.adv.current().label != "Other" {
 		t.Fatalf("scrolling down: %s, at %v", a.cur().name(), s.adv.current())
 	}
+	// ctrl+o: all of it as plain text, and back, losing nothing.
+	ctrlO := tea.KeyMsg{Type: tea.KeyCtrlO}
+	press(a, ctrlO)
+	if len(s.adv.fields) != 1 || !strings.Contains(s.adv.fields[0].Value(), "disable_custom_urls: true") || !strings.Contains(s.adv.fields[0].Value(), "docker_daemon_options") {
+		t.Fatalf("plain text: %d boxes", len(s.adv.fields))
+	}
+	press(a, ctrlO)
+	if len(s.adv.fields) < 2 || !s.right {
+		t.Fatalf("by component again: %d boxes, right %v", len(s.adv.fields), s.right)
+	}
 	press(a, tea.KeyMsg{Type: tea.KeyEsc})
 	if a.cur().name() != "Components" {
 		t.Fatalf("esc led to %s", a.cur().name())

@@ -296,7 +296,8 @@ where downloads come from, HTTPS certificates, networking), **Homeserver**
 (a preset, or only the homeserver),
 **Components** (pick them), **Settings** (what they need, the admin
 account and each component's address, with Advanced beside it: hand-written
-vars.yml lines in a box per component, tab across) and **Review**.
+vars.yml lines in a box per playbook role they belong to, or as plain text
+with `ctrl+o`; tab across) and **Review**.
 
 The menu on the left shows where you are: the setup steps, the Manage
 screens (with the action running, if any), the mirror checks and your

@@ -387,8 +387,10 @@ type settingsScreen struct {
 	form  *form
 	adv   *form             // Advanced: the extra vars
 	right bool              // the keys go to adv
+	plain bool              // adv is one box of plain text, not one per role
 	vars  map[string]string // form key → vars.yml variable
 	extra []config.ExtraGroup
+	cfg   *config.Config
 }
 
 func (s *settingsScreen) name() string  { return "Settings" }
@@ -402,7 +404,11 @@ func (s *settingsScreen) activeForm() *form {
 }
 func (s *settingsScreen) keys() [][2]string {
 	if c := s.activeForm().current(); c != nil && c.kind == fArea {
-		return [][2]string{{"enter", "new line"}, {"tab", "leave box"}, {"ctrl+n", "next step"}}
+		k := [][2]string{{"enter", "new line"}, {"tab", "leave box"}, {"ctrl+n", "next step"}}
+		if s.right {
+			k = append(k, [2]string{"ctrl+o", s.plainLabel()})
+		}
+		return k
 	}
 	return [][2]string{{"tab/↑↓", "move"}, {"space", "toggle"}, {"ctrl+r", "reveal secrets"}, {"enter", "next"}}
 }
@@ -472,12 +478,25 @@ func (s *settingsScreen) enter(c *config.Config) tea.Cmd {
 	}
 	s.form = newForm(fields...)
 
-	s.extra = c.ExtraGroups()
+	s.cfg = c
+	s.buildAdv()
+	s.side(false)
+	return nil
+}
+
+// buildAdv makes the Advanced form from the config's extra vars: a box
+// per playbook role holding some, or all of them as plain text.
+func (s *settingsScreen) buildAdv() {
+	s.extra = []config.ExtraGroup{{Name: "Extra vars.yml lines", Text: strings.TrimSpace(s.cfg.ExtraYAML)}}
+	if !s.plain {
+		s.extra = s.cfg.ExtraGroups()
+	}
 	var boxes []*field
 	for i, g := range s.extra {
 		help := "Extra vars.yml lines for " + g.Name + " from the MDAD docs, written at the end of vars.yml as-is. They win over interzone's own."
-		if g.Name == "Other" {
-			help = "Anything else from the MDAD docs, written at the end of vars.yml as-is."
+		if s.plain || g.Name == "Other" {
+			help = "Anything from the MDAD docs, written at the end of vars.yml as-is. They win over interzone's own; " +
+				"ctrl+o sorts them by component."
 		}
 		b := areaField("extra."+strconv.Itoa(i), g.Name, g.Text, help)
 		if i == 0 {
@@ -486,8 +505,28 @@ func (s *settingsScreen) enter(c *config.Config) tea.Cmd {
 		boxes = append(boxes, b)
 	}
 	s.adv = newForm(boxes...)
-	s.side(false)
-	return nil
+}
+
+// togglePlain switches Advanced between a box per component and plain text.
+func (s *settingsScreen) togglePlain() {
+	s.saveExtra(s.cfg)
+	s.plain = !s.plain
+	s.buildAdv()
+	s.side(s.right)
+}
+
+func (s *settingsScreen) saveExtra(c *config.Config) {
+	for i := range s.extra {
+		s.extra[i].Text = s.adv.value("extra." + strconv.Itoa(i))
+	}
+	c.ExtraYAML = config.JoinExtra(s.extra)
+}
+
+func (s *settingsScreen) plainLabel() string {
+	if s.plain {
+		return "by component"
+	}
+	return "plain text"
 }
 
 // side gives the keys to the left (false) or right form, entering it at
@@ -524,10 +563,7 @@ func (s *settingsScreen) leave(c *config.Config) {
 	for key, v := range s.vars {
 		c.Values[v] = f.value(key)
 	}
-	for i := range s.extra {
-		s.extra[i].Text = s.adv.value("extra." + strconv.Itoa(i))
-	}
-	c.ExtraYAML = config.JoinExtra(s.extra)
+	s.saveExtra(c)
 }
 
 func (s *settingsScreen) update(msg tea.Msg) tea.Cmd {
@@ -535,6 +571,9 @@ func (s *settingsScreen) update(msg tea.Msg) tea.Cmd {
 	if k, ok := msg.(tea.KeyMsg); ok {
 		c := f.current()
 		switch {
+		case k.String() == "ctrl+o":
+			s.togglePlain()
+			return nil
 		case !s.right && f.atEdge(1) && (k.String() == "tab" || k.String() == "enter" && c != nil && c.kind != fArea):
 			s.side(true)
 			return nil
@@ -548,6 +587,9 @@ func (s *settingsScreen) update(msg tea.Msg) tea.Cmd {
 
 func (s *settingsScreen) click(id string) (tea.Cmd, bool) {
 	switch id {
+	case "settings:plain":
+		s.togglePlain()
+		return nil, true
 	case "settings:left", "settings:right":
 		s.side(id == "settings:right")
 		return nil, true
@@ -573,11 +615,20 @@ func (s *settingsScreen) view(w, h int) string {
 			return mark(id, sMuted.Padding(0, 1).Render(name))
 		}
 		head := tab("settings:left", "Details", !s.right) + " " + tab("settings:right", "Advanced", s.right)
-		return head + "\n\n" + s.activeForm().View(w, h-2)
+		if s.right {
+			return head + "\n\n" + s.advView(w, h-2)
+		}
+		return head + "\n\n" + s.form.View(w, h-2)
 	}
 	lw := (w - 3) / 2
 	left := lipgloss.NewStyle().Width(lw).Render(s.form.View(lw, h))
-	right := lipgloss.NewStyle().Width(w - lw - 3).Render(s.adv.View(w-lw-3, h))
+	right := lipgloss.NewStyle().Width(w - lw - 3).Render(s.advView(w-lw-3, h))
 	bar := strings.TrimRight(strings.Repeat(" "+sFaint.Render("│")+" \n", h), "\n")
 	return lipgloss.JoinHorizontal(lipgloss.Top, left, bar, right)
+}
+
+// advView is the Advanced form under its plain-text/by-component button.
+func (s *settingsScreen) advView(w, h int) string {
+	button := mark("settings:plain", sAccent.Render("⇄ ")+sMuted.Render("show as "+s.plainLabel())+sFaint.Render("  ctrl+o"))
+	return button + "\n" + s.adv.View(w, h-1)
 }
