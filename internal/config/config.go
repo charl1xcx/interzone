@@ -19,6 +19,7 @@ import (
 const (
 	DefaultPlaybookGit    = "https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy"
 	DefaultRegistryPrefix = "mechatok.g0th.ir/"
+	DefaultRolesGitBase   = "https://itsjustadream.g0th.ir/"
 	UpstreamGitHub        = "https://github.com/"
 )
 
@@ -117,7 +118,7 @@ func Default() *Config {
 		Target:     Target{Mode: "local", User: "root", Port: "22"},
 		Sources: Sources{
 			PlaybookGit:    DefaultPlaybookGit,
-			RolesGitBase:   "https://itsjustadream.g0th.ir/",
+			RolesGitBase:   DefaultRolesGitBase,
 			UseRegistry:    true,
 			RegistryPrefix: DefaultRegistryPrefix,
 		},

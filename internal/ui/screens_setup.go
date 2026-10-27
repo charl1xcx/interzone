@@ -213,7 +213,7 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 
 		choiceField("net", "Network situation", []string{"online", "blackout"},
 			[]string{"Normal internet", "Blackout: in-country mirrors only"}, netMode,
-			"Blackout mode adds mirrors for Docker Engine, OS packages and PyPI."),
+			"Blackout points every download at in-country mirrors. Before deploying, interzone checks them against the server and the images it needs and switches to another known mirror where one falls short."),
 		textField("git", "Playbook git repository", src.PlaybookGit, config.DefaultPlaybookGit,
 			"Where matrix-docker-ansible-deploy is cloned from."),
 		textField("roles", "Git mirror for Ansible roles", src.RolesGitBase, "https://github.com/",
@@ -257,6 +257,21 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 	s.form = f
 	s.explainSSL()
 	return nil
+}
+
+// blackoutSources points every download at the in-country mirrors when
+// blackout mode is chosen; the deploy then swaps in another known mirror
+// wherever one lacks something the server needs.
+func (s *serverScreen) blackoutSources() {
+	f := s.form
+	for k, v := range map[string]string{
+		"git": config.DefaultPlaybookGit, "roles": config.DefaultRolesGitBase, "registry": config.DefaultRegistryPrefix,
+		"dockerpkg": config.DefaultMirror(config.MirrorDocker), "apt": config.DefaultMirror(config.MirrorOS),
+		"pypi": config.DefaultMirror(config.MirrorPyPI),
+	} {
+		f.get(k).input.SetValue(v)
+	}
+	f.get("useRegistry").on = true
 }
 
 // explainSSL makes the certificate choice's help describe the picked one.
@@ -351,7 +366,11 @@ func (s *serverScreen) update(msg tea.Msg) tea.Cmd {
 			return tea.Batch(s.spin.Tick, func() tea.Msg { return checksMsg(deploy.Preflight(cfg)) })
 		}
 	}
+	was := s.form.value("net")
 	cmd := s.form.Update(msg)
+	if was != "blackout" && s.form.value("net") == "blackout" {
+		s.blackoutSources()
+	}
 	s.cfg.Sources.Blackout = s.form.value("net") == "blackout" // keeps the header badge live
 	s.explainSSL()
 	return cmd

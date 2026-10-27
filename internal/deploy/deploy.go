@@ -133,17 +133,18 @@ func Plan(a Action) []Step {
 type Event struct {
 	Plan    []Step // the steps of this run; sent first
 	Step    Step
-	Started bool    // a step began
-	Skipped bool    // a step was not needed
-	Warn    bool    // a step finished with problems that don't stop the run
-	Line    string  // a line of command output
-	Note    bool    // Line is interzone's own message, not command output
-	Task    string  // current Ansible task, when Line starts one
-	Failed  bool    // Line reports a failed task
-	Moved   bool    // migration: the data is on the new server, which is now the target
-	Err     error   // the whole run failed
-	Done    bool    // the whole run finished
-	Result  *Result // set with Done
+	Started bool            // a step began
+	Skipped bool            // a step was not needed
+	Warn    bool            // a step finished with problems that don't stop the run
+	Line    string          // a line of command output
+	Note    bool            // Line is interzone's own message, not command output
+	Task    string          // current Ansible task, when Line starts one
+	Failed  bool            // Line reports a failed task
+	Moved   bool            // migration: the data is on the new server, which is now the target
+	Sources *config.Sources // blackout: the run picked other mirrors; the caller saves them
+	Err     error           // the whole run failed
+	Done    bool            // the whole run finished
+	Result  *Result         // set with Done
 }
 
 // Result is what a finished run produced besides log output.
@@ -236,7 +237,9 @@ type Runner struct {
 // Start launches the run in the background. Events arrive on the returned
 // channel, which is closed when the run ends.
 func Start(ctx context.Context, cfg *config.Config, opts Options) <-chan Event {
-	if opts.Action == ActionMigrate {
+	// A migration and blackout mirror picks change the run's config; the
+	// caller applies those changes through events.
+	if opts.Action == ActionMigrate || cfg.Sources.Blackout {
 		cp := *cfg
 		cfg = &cp
 	}
@@ -305,6 +308,9 @@ func (r *Runner) ansible(ctx context.Context) error {
 		return nil
 	}
 	r.begin(StepAnsible)
+	if !hasWheels(wheelsDir()) {
+		r.pickPyPI(ctx)
+	}
 	if err := r.exec(ctx, StepAnsible, "", "python3", "-m", "venv", venvDir()); err != nil {
 		return err
 	}
@@ -382,7 +388,15 @@ func (r *Runner) inventory(ctx context.Context) error {
 	if err := os.MkdirAll(hostDir, 0o700); err != nil {
 		return err
 	}
+	return r.writeInventory(StepInventory)
+}
 
+// writeInventory renders vars.yml and hosts from the config; mirror picks
+// call it again when they change what vars.yml says.
+func (r *Runner) writeInventory(step Step) error {
+	c := r.cfg
+	inv := filepath.Join(c.PlaybookDir, "inventory")
+	hostDir := filepath.Join(inv, "host_vars", c.HostName())
 	var cert, key string
 	switch c.SSL.Mode {
 	case "selfsigned":
@@ -391,7 +405,7 @@ func (r *Runner) inventory(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("self-signed certificate: %w", err)
 		}
-		r.note(StepInventory, "self-signed certificate: "+cert)
+		r.note(step, "self-signed certificate: "+cert)
 	case "custom":
 		cert, key = c.SSL.CertPath, c.SSL.KeyPath
 	}
@@ -401,7 +415,7 @@ func (r *Runner) inventory(ctx context.Context) error {
 	fixed := *c
 	fixed.Values, fixed.Overrides = maps.Clone(c.Values), maps.Clone(c.Overrides)
 	for _, n := range fixed.RenameOld(c.PlaybookDir) {
-		r.note(StepInventory, "renamed "+n)
+		r.note(step, "renamed "+n)
 	}
 	vars := fixed.VarsYAML(config.MigrationVersion(c.PlaybookDir), cert, key)
 	files := map[string]string{
@@ -412,7 +426,7 @@ func (r *Runner) inventory(ctx context.Context) error {
 		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 			return err
 		}
-		r.note(StepInventory, "wrote "+path)
+		r.note(step, "wrote "+path)
 	}
 	return nil
 }
@@ -430,12 +444,20 @@ func (r *Runner) roles(ctx context.Context) error {
 }
 
 func (r *Runner) mirrors(ctx context.Context) error {
+	if r.cfg.Sources.Blackout {
+		r.begin(StepMirrors)
+		if err := r.pickPackages(ctx); err != nil {
+			return err
+		}
+	}
 	src := r.cfg.Sources
 	if src.APTMirror == "" && src.DockerPackageURL == "" {
 		r.skip(StepMirrors, "no OS or Docker package mirror configured")
 		return nil
 	}
-	r.begin(StepMirrors)
+	if !src.Blackout {
+		r.begin(StepMirrors)
+	}
 	inv := filepath.Join(r.cfg.PlaybookDir, "inventory")
 	_ = os.Remove(filepath.Join(inv, "interzone-apt-mirror.yml")) // the play before v0.3
 	vars, err := json.MarshalIndent(mirrorVars(src), "", "  ")

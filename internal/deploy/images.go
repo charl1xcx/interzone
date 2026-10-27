@@ -348,6 +348,14 @@ func shortNetErr(err error) string {
 // failure: the server may already have them.
 func (r *Runner) images(ctx context.Context) error {
 	r.begin(StepImages)
+	if src := &r.cfg.Sources; src.Blackout && (!src.UseRegistry || src.RegistryPrefix == "") {
+		// Upstream registries are out of reach in a blackout.
+		src.UseRegistry, src.RegistryPrefix = true, config.DefaultRegistryPrefix
+		r.picked(StepImages, "Container images", "", src.RegistryPrefix)
+		if err := r.writeInventory(StepImages); err != nil {
+			return err
+		}
+	}
 	r.note(StepImages, "asking the playbook which images the enabled services use…")
 	imgs, arch, err := ListImages(ctx, r.cfg, false)
 	if err != nil {
@@ -362,7 +370,13 @@ func (r *Runner) images(ctx context.Context) error {
 		return nil
 	}
 	r.note(StepImages, fmt.Sprintf("%d images for %s; checking the registries…", len(imgs), arch))
-	for _, st := range CheckImages(ctx, imgs, arch) {
+	statuses := func() []ImageStatus {
+		if r.cfg.Sources.Blackout {
+			return r.pickRegistry(ctx, imgs, arch)
+		}
+		return CheckImages(ctx, imgs, arch)
+	}()
+	for _, st := range statuses {
 		if st.OK {
 			r.result.Images = append(r.result.Images, st.Ref)
 			r.emit(Event{Step: StepImages, Line: "ok: " + st.Ref})

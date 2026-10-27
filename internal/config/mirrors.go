@@ -86,6 +86,11 @@ var KnownMirrors = []Mirror{
 	{MirrorPyPI, "Chabokan", "https://mirror2.chabokan.net/pypi/simple", nil},
 }
 
+// KnownRegistries are container registries that carry every registry's
+// images under one prefix (<prefix><owner>/<image>), best first. Blackout
+// deploys fall back to them when the chosen registry lacks an image.
+var KnownRegistries = []string{DefaultRegistryPrefix}
+
 // Mirrors returns the known mirrors of one kind, best first.
 func Mirrors(kind MirrorKind) []Mirror {
 	var out []Mirror

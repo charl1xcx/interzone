@@ -115,15 +115,21 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   CentOS Stream), Docker mirrors their repository indexes, and PyPI
   mirrors must list `ansible-core`.
 
-  **Distros in blackout mode.** Interzone reads the server's distro and
-  release and checks that the chosen mirrors carry them before deploying.
-  The OS package step handles each family the playbook supports:
+  **Blackout mode picks its mirrors.** Choosing blackout on the Server step
+  points every source at the defaults above. A deploy then reads the
+  server's distro, release and architecture and checks the mirrors against
+  them: PyPI before Ansible is installed, the container registry against
+  every image the enabled services use, the OS and Docker package mirrors
+  against the server's release. Wherever the chosen mirror falls short,
+  interzone switches to the first known mirror that has everything, says so
+  in the log and saves it on the Server step.
 
   The defaults point at infamous.g0th.ir, an
   [interzone-mirror](https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)
   that carries what interzone and the playbook install on Debian, Ubuntu
-  (x86 and ARM), Raspberry Pi OS and Arch. On RHEL-family and Fedora servers,
-  choose one of the public mirrors below instead.
+  (x86 and ARM), Raspberry Pi OS and Arch. On RHEL-family and Fedora servers
+  the deploy switches to one of the public mirrors below. The OS package
+  step handles each family the playbook supports:
 
   | Server | OS packages | Docker | In-country mirror? |
   |---|---|---|---|

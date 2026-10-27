@@ -669,6 +669,10 @@ func (s *deployScreen) handle(ev deploy.Event) {
 			s.backAt = time.Now().Add(autoBackDelay)
 		}
 		return
+	case ev.Sources != nil:
+		s.cfg.Sources = *ev.Sources
+		_ = s.cfg.Save()
+		return
 	case ev.Moved:
 		// The data now lives on the new server: from here on it is the
 		// server, even if a later step fails.
