@@ -280,7 +280,9 @@ install itself from a PyPI mirror).
 `internal/ui/testdata/layout`; after an intended change, accept the new
 drawings with `go test ./internal/ui -run Layout -update`. The README's
 screenshots are retaken with `scripts/screenshots/shots.sh all` (tmux, Python
-with Pillow), about 15 seconds, against a demo server that doesn't exist.
+with Pillow), about 15 seconds, against a demo server that doesn't exist;
+`python3 scripts/screenshots/social.py docs/social-preview.png` redraws the
+link preview from them.
 
 ## Use
 
