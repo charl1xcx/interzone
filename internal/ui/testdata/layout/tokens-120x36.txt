@@ -12,14 +12,14 @@
 │   ↺ Restore            ││                                           │ Used       14  no limit                    │   │
 │   ↶ Rollback           ││                                           │ Last used  3h ago                          │   │
 │   ✎ Fine-tune          ││                                           │ Made       0000-00-00  40d ago             │   │
-│   ⇢ Move server        ││                                           │ Expires    never                           │   │
-│   ▤ Servers            ││                                           │                                            │   │
-│                        ││                                           │  x  revoke    n  new token                 │   │
-│ ▸ Mirrors              ││                                           ╰────────────────────────────────────────────╯   │
+│   ⚒ Maintenance        ││                                           │ Expires    never                           │   │
+│   ⇢ Move server        ││                                           │                                            │   │
+│   ▤ Servers            ││                                           │  x  revoke    n  new token                 │   │
+│                        ││                                           ╰────────────────────────────────────────────╯   │
+│ ▸ Mirrors              ││                                                                                            │
 │                        ││                                                                                            │
 │ ▾ Servers              ││                                                                                            │
 │   ● example.org        ││                                                                                            │
-│                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

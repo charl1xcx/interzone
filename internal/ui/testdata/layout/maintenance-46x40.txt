@@ -1,0 +1,40 @@
+ ◢◤ ◆ Manage › Maintenance                    
+ Maintenance                                  
+                                              
+ ▌  Task                                      
+ ▌    Services                                
+ ▌    Vacuum                                  
+ ▌    Upgrade                                 
+ ▌    Compress                                
+ ▌    Tags                                    
+ ▌    Uninstall                               
+ ▌  Give the disk space of deleted rows       
+ ▌  back (Postgres VACUUM). Do it after       
+ ▌  deleting a lot, e.g. after compressing    
+ ▌  Synapse's state.                          
+                                              
+    Kind of vacuum                            
+      Complete (FULL, ANALYZE; services stop) 
+      Full (services stop)                    
+      Plain (services keep running)           
+      Plain + ANALYZE (services keep running) 
+      ANALYZE only (fastest)                  
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+    ‹ back       ≡ menu       run ›       ⋯  

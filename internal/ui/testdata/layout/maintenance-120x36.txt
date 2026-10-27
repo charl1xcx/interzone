@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Maintenance                                                                              │
+│ ▾ Manage example.org   ││                                                                                            │
+│   ⌂ Overview           ││   ▌  Task                                                                                  │
+│   @ Users              ││   ▌    Services      Vacuum      Upgrade      Compress      Tags      Uninstall            │
+│   ▦ Dashboard          ││   ▌  Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting      │
+│   ↻ Updates            ││   ▌  a lot, e.g. after compressing Synapse's state.                                        │
+│   ◷ Backups            ││                                                                                            │
+│   ↺ Restore            ││      Kind of vacuum                                                                        │
+│   ↶ Rollback           ││        Complete (FULL, ANALYZE; services stop)                                             │
+│   ✎ Fine-tune          ││        Full (services stop)                                                                │
+│ ▌ ⚒ Maintenance        ││        Plain (services keep running)                                                       │
+│   ⇢ Move server        ││        Plain + ANALYZE (services keep running)                                             │
+│   ▤ Servers            ││        ANALYZE only (fastest)                                                              │
+│                        ││                                                                                            │
+│ ▸ Mirrors              ││                                                                                            │
+│                        ││                                                                                            │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ←→ task   ·   ↑↓ move   ·   enter run   ·   esc back   ·   ctrl+c quit                                                 

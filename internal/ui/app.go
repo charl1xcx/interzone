@@ -83,6 +83,7 @@ func New(cfg *config.Config, loaded bool) *App {
 		newManageScreen(), // not a wizard step: reached from Welcome
 		// Reached from Manage:
 		newTuningScreen(),
+		newMaintenanceScreen(),
 		newUpdatesScreen(),
 		newHistoryScreen(),
 		newRestoreScreen(),
@@ -181,6 +182,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, a.onHealth(m)
 	case gotoMsg:
 		return a, a.jump(a.index(string(m)))
+	case maintainMsg:
+		a.screens[a.index("Maintenance")].(*maintenanceScreen).open(string(m))
+		return a, a.jump(a.index("Maintenance"))
 	case noteMsg:
 		a.status = sGood.Render(string(m))
 		return a, nil

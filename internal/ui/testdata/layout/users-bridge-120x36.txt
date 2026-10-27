@@ -11,14 +11,14 @@
 │   ↺ Restore            ││                                                                                            │
 │   ↶ Rollback           ││     ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
 │   ✎ Fine-tune          ││     ●  Bob                        3d ago  │ ⇄  Telegram  bridge                        │   │
-│   ⇢ Move server        ││     ●  Carol                     45d ago  │                                            │   │
-│   ▤ Servers            ││     ○  eve                         never  │ Accounts   3  1 active this month          │   │
-│                        ││     ⊘  dave                  deactivated  │ Bot        @telegrambot:example.org        │   │
-│ ▸ Mirrors              ││   ▌ ⇄  Telegram  3 accounts           ▾   │ Media      4.0 MB                          │   │
-│                        ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
-│ ▾ Servers              ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
-│   ● example.org        ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
-│                        ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
+│   ⚒ Maintenance        ││     ●  Carol                     45d ago  │                                            │   │
+│   ⇢ Move server        ││     ○  eve                         never  │ Accounts   3  1 active this month          │   │
+│   ▤ Servers            ││     ⊘  dave                  deactivated  │ Bot        @telegrambot:example.org        │   │
+│                        ││   ▌ ⇄  Telegram  3 accounts           ▾   │ Media      4.0 MB                          │   │
+│ ▸ Mirrors              ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
+│                        ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
+│ ▾ Servers              ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
+│   ● example.org        ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

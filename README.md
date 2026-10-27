@@ -246,6 +246,17 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     value the playbook's `group_vars` sets instead, and yours. The roles
     in your setup are listed first, and `/` searches every role at once.
     Changes are written into `vars.yml` and applied on the next update.
+  - **Maintenance:** the playbook's own maintenance, one tab each.
+    *Services* starts, stops or reinstalls every service or one group of
+    them (`start-all`, `stop-group`, `install-SERVICE`); reinstalling
+    everything runs `setup-all`, which also removes the components you've
+    turned off, where a normal update leaves them installed. *Vacuum* runs
+    one of the five Postgres `VACUUM` presets, *Upgrade* moves Postgres to
+    its newest major version (keeping the old data), *Compress* runs
+    rust-synapse-compress-state, *Tags* runs any playbook tags with extra
+    vars, and *Uninstall* runs the playbook's `remove-all` after you type
+    the domain. Manage's *Database shell* opens `psql` on the server right
+    in the terminal.
   - **Move to another server:** stops and disables the old server,
     streams `/matrix` to the new one through this computer, then installs
     there (following the playbook's migration guide).

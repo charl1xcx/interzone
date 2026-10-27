@@ -13,6 +13,7 @@
    ↯  Restart all services               r    
    ±  See what an update brings          n    
    ▣  Check container images             i    
+   ⏻  Start, stop or reinstall servic…   p    
    ⇪  Update interzone                        
                                               
  People ───────────────────────────────────── 
@@ -24,17 +25,16 @@
    ◷  Scheduled backups                  s    
    ↺  Restore a backup                   e    
    ↶  Roll back                          z    
+   ⌫  Vacuum the database                     
+   ⇡  Upgrade Postgres                        
+   ⇲  Compress Synapse's state                
                                               
  Look closer ──────────────────────────────── 
    ▦  Server dashboard                   d    
    ≡  View logs                          l    
    ✎  Fine-tune the roles                f    
+   $  Database shell                          
+   #  Run playbook tags                  x    
                                               
- Change things ────────────────────────────── 
-   ◇  Change the setup                   w    
-   ⇢  Move to another server             v    
-   ▤  Other servers                      o    
-                                              
-                                              
-                                              
+   ▼ more below                               
     ‹ back       ≡ menu       run ›       ⋯  

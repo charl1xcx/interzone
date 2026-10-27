@@ -38,7 +38,7 @@ func flatten(cmd tea.Cmd) []tea.Msg {
 			out = append(out, flatten(c)...)
 		}
 		return out
-	case noteMsg, navMsg, formDoneMsg, gotoMsg:
+	case noteMsg, navMsg, formDoneMsg, gotoMsg, maintainMsg:
 		return []tea.Msg{m}
 	}
 	return nil

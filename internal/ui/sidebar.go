@@ -95,6 +95,7 @@ var manageMenu = []struct{ screen, label, icon string }{
 	{"Restore", "Restore", "↺"},
 	{"Rollback", "Rollback", "↶"},
 	{"Tuning", "Fine-tune", "✎"},
+	{"Maintenance", "Maintenance", "⚒"},
 	{"Move", "Move server", "⇢"},
 	{"Servers", "Servers", "▤"},
 }

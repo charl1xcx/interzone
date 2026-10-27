@@ -497,11 +497,15 @@ var actionTitles = map[deploy.Action][3]string{ // running, done, failed
 	deploy.ActionSchedule:     {"Setting up scheduled backups…", "Scheduled backups set", "Couldn't set up scheduled backups"},
 	deploy.ActionFetchBackups: {"Downloading backups…", "Backups downloaded", "Couldn't download the backups"},
 	deploy.ActionMigrate:      {"Moving the server…", "Moved to the new server ✨", "The move stopped"},
+	deploy.ActionUninstall:    {"Removing everything…", "Everything was removed", "The removal stopped"},
 }
 
 func (s *deployScreen) name() string { return "Deploy" }
 func (s *deployScreen) title() string {
 	t := actionTitles[s.opts.Action]
+	if s.opts.Action == deploy.ActionTags {
+		t = [3]string{s.opts.Title + "…", s.opts.Title + ": done", s.opts.Title + ": stopped"}
+	}
 	switch {
 	case s.running:
 		return t[0]
@@ -897,6 +901,12 @@ func (s *deployScreen) resultView(w int) string {
 			sMuted.Render(fmt.Sprintf("%d backup(s) of %s on this computer now.", n, c.Domain)))
 	case deploy.ActionLogs:
 		return ""
+	case deploy.ActionTags:
+		return panel(cMint, sGood.Render("✓ Done in "+s.elapsed.Round(time.Second).String()+"."),
+			sMuted.Render("The full output is above and in ")+s.logPath())
+	case deploy.ActionUninstall:
+		return panel(cMint, sGood.Render("✓ The Matrix services, their images and /matrix are gone from the server."),
+			sMuted.Render("Docker and the matrix-* Docker networks stay. interzone keeps your answers: Manage › Update the server installs it all again."))
 	}
 
 	scheme := "https://"

@@ -50,11 +50,11 @@ type manageAction struct {
 var manageGroups = []string{"Keep it running", "People", "Data", "Look closer", "Change things"}
 
 var actionGroup = map[string]int{
-	"update": 0, "check": 0, "restart": 0, "changes": 0, "images": 0, "selfupdate": 0,
+	"update": 0, "check": 0, "restart": 0, "services": 0, "changes": 0, "images": 0, "selfupdate": 0,
 	"user": 1, "registration": 1, "users": 1, "tokens": 1,
-	"backup": 2, "schedule": 2, "restore": 2, "rollback": 2,
-	"dashboard": 3, "logs": 3, "tuning": 3,
-	"setup": 4, "migrate": 4, "servers": 4,
+	"backup": 2, "schedule": 2, "restore": 2, "rollback": 2, "vacuum": 2, "pgupgrade": 2, "compress": 2,
+	"dashboard": 3, "logs": 3, "tuning": 3, "psql": 3, "tags": 3,
+	"setup": 4, "migrate": 4, "servers": 4, "uninstall": 4,
 }
 
 var actionIcons = map[string]string{
@@ -63,6 +63,7 @@ var actionIcons = map[string]string{
 	"backup": "⇩", "schedule": "◷", "restore": "↺", "rollback": "↶",
 	"dashboard": "▦", "logs": "≡", "tuning": "✎",
 	"setup": "◇", "migrate": "⇢", "servers": "▤",
+	"services": "⏻", "vacuum": "⌫", "pgupgrade": "⇡", "compress": "⇲", "psql": "$", "tags": "#", "uninstall": "✗",
 }
 
 // runsAtOnce are the Manage actions that start changing the server as
@@ -74,7 +75,8 @@ var runsAtOnce = map[string]bool{"update": true, "check": true, "restart": true,
 // ones need it pressed twice.
 var hotkeys = map[string]string{"update": "u", "check": "c", "restart": "r", "user": "a", "registration": "g",
 	"users": "m", "tokens": "t", "dashboard": "d", "changes": "n", "images": "i", "backup": "b", "schedule": "s",
-	"restore": "e", "rollback": "z", "logs": "l", "tuning": "f", "setup": "w", "migrate": "v", "servers": "o"}
+	"restore": "e", "rollback": "z", "logs": "l", "tuning": "f", "setup": "w", "migrate": "v", "servers": "o",
+	"services": "p", "tags": "x"}
 
 type manageScreen struct {
 	cfg      *config.Config
@@ -196,6 +198,20 @@ func (s *manageScreen) actions() []manageAction {
 			desc: "Copy everything in /matrix to a new machine and install there; the old one is stopped."},
 		manageAction{id: "servers", title: "Other servers",
 			desc: "Switch between the servers interzone manages, or add another."},
+		manageAction{id: "services", title: "Start, stop or reinstall services",
+			desc: "Every service or one group of them. Reinstalling everything also removes the components you've turned off."},
+		manageAction{id: "vacuum", title: "Vacuum the database",
+			desc: "Give the disk space of deleted rows back to the server (Postgres VACUUM)."},
+		manageAction{id: "pgupgrade", title: "Upgrade Postgres",
+			desc: "Move the database to the newest Postgres major version; the playbook never does it by itself."},
+		manageAction{id: "compress", title: "Compress Synapse's state",
+			desc: "Shrink Synapse's largest tables with rust-synapse-compress-state."},
+		manageAction{id: "psql", title: "Database shell",
+			desc: "Open psql on the server's Postgres, right here in the terminal."},
+		manageAction{id: "tags", title: "Run playbook tags",
+			desc: "Run any of the playbook's tags with extra vars, as just run-tags does."},
+		manageAction{id: "uninstall", title: "Uninstall everything",
+			desc: "Remove every Matrix service, the Docker images and /matrix with all its data from the server."},
 		manageAction{id: "selfupdate", title: "Update interzone",
 			desc: "Download the newest interzone release and replace this program with it."},
 	)
@@ -211,6 +227,10 @@ func (s *manageScreen) actions() []manageAction {
 			acts[i].disabled = "Needs Synapse's admin API; " + homeserverName(c.Homeserver) + " doesn't have one."
 		case acts[i].id == "tokens" && c.Components["external-postgres"]:
 			acts[i].disabled = "MAS's tokens are read from the bundled Postgres; you use an external one."
+		case acts[i].id == "compress" && c.Homeserver != "synapse":
+			acts[i].disabled = "Only Synapse has state to compress."
+		case c.Components["external-postgres"] && (acts[i].id == "vacuum" || acts[i].id == "pgupgrade" || acts[i].id == "compress" || acts[i].id == "psql"):
+			acts[i].disabled = "You use an external Postgres server; maintain it where it runs."
 		case c.Components["external-postgres"] && (acts[i].id == "backup" || acts[i].id == "schedule" || acts[i].id == "restore"):
 			acts[i].disabled = "You use an external Postgres server; back it up where it runs."
 		}
@@ -343,6 +363,10 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 		screen := map[string]string{"users": "Users", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
 			"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}[id]
 		return func() tea.Msg { return gotoMsg(screen) }
+	case "psql":
+		return databaseShell(s.cfg)
+	case "services", "vacuum", "pgupgrade", "compress", "tags", "uninstall":
+		return func() tea.Msg { return maintainMsg(id) }
 	case "user":
 		u := textField("name", "Username", "", "alice", "Just the name, not @alice:"+s.cfg.Domain+".")
 		u.required = true

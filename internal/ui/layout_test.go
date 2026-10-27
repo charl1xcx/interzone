@@ -98,6 +98,7 @@ func TestLayout(t *testing.T) {
 		{"mirrors", openMirrors},
 		{"users", openUsers},
 		{"tokens", openTokens},
+		{"maintenance", func(a *App) { deliver(a, maintainMsg("vacuum")) }},
 		{"users-bridge", func(a *App) {
 			openUsers(a)
 			us := a.cur().(*usersScreen)

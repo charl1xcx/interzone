@@ -11,7 +11,8 @@
 │   ↺ Restore            ││   │    press r again to run                                                            │   │
 │   ↶ Rollback           ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │   ✎ Fine-tune          ││     ±  See what an update brings                                                    n      │
-│   ⇢ Move server        ││     ▣  Check container images                                                       i      │
+│   ⚒ Maintenance        ││     ▣  Check container images                                                       i      │
+│   ⇢ Move server        ││     ⏻  Start, stop or reinstall services                                            p      │
 │   ▤ Servers            ││     ⇪  Update interzone                                                                    │
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││   People ───────────────────────────────────────────────────────────────────────────────   │
@@ -23,13 +24,12 @@
 │                        ││     ◷  Scheduled backups                                                            s      │
 │                        ││     ↺  Restore a backup                                                             e      │
 │                        ││     ↶  Roll back                                                                    z      │
+│                        ││     ⌫  Vacuum the database                                                                 │
+│                        ││     ⇡  Upgrade Postgres                                                                    │
+│                        ││     ⇲  Compress Synapse's state                                                            │
 │                        ││                                                                                            │
 │                        ││   Look closer ──────────────────────────────────────────────────────────────────────────   │
-│                        ││     ▦  Server dashboard                                                             d      │
-│                        ││     ≡  View logs                                                                    l      │
-│                        ││     ✎  Fine-tune the roles                                                          f      │
-│                        ││                                                                                            │
-│ ◫ auto (wide)  ctrl+l  ││   Change things ────────────────────────────────────────────────────────────────────────   │
+│ ◫ auto (wide)  ctrl+l  ││     ▦  Server dashboard                                                             d      │
 │ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯

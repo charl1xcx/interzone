@@ -46,6 +46,8 @@ const (
 	StepFetchBackups
 	StepStopOld
 	StepCopyData
+	StepTags
+	StepUninstall
 )
 
 var stepNames = map[Step]string{
@@ -70,6 +72,8 @@ var stepNames = map[Step]string{
 	StepFetchBackups: "Download the server's backups",
 	StepStopOld:      "Stop the old server",
 	StepCopyData:     "Copy /matrix to the new server",
+	StepTags:         "Run the playbook",
+	StepUninstall:    "Remove everything",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -93,6 +97,8 @@ const (
 	ActionSchedule
 	ActionFetchBackups
 	ActionMigrate
+	ActionTags      // run Options.Tags (docs/playbook-tags.md)
+	ActionUninstall // the playbook's remove-all (docs/uninstalling.md)
 )
 
 // Plan lists the steps an action runs, in order.
@@ -124,6 +130,10 @@ func Plan(a Action) []Step {
 		return []Step{StepAnsible, StepInventory, StepSchedule}
 	case ActionFetchBackups:
 		return []Step{StepAnsible, StepInventory, StepFetchBackups}
+	case ActionTags:
+		return []Step{StepAnsible, StepInventory, StepTags}
+	case ActionUninstall:
+		return []Step{StepAnsible, StepInventory, StepUninstall}
 	case ActionMigrate:
 		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepStopOld, StepCopyData, StepMirrors, StepInstall, StepSelfCheck}
 	}
@@ -174,6 +184,11 @@ type Options struct {
 	// config; the caller switches its own Target when the Moved event comes.
 	NewTarget config.Target
 	Force     bool // ActionSelfUpdate: reinstall even if up to date
+	// ActionTags: the playbook tags to run, comma-separated, their
+	// --extra-vars, and what the run does, for its title.
+	Tags  string
+	Vars  map[string]string
+	Title string
 }
 
 func dataDir() string   { return config.DataDir() }
@@ -288,6 +303,8 @@ func (r *Runner) run(ctx context.Context) error {
 		StepFetchBackups: r.fetchBackups,
 		StepStopOld:      r.stopOld,
 		StepCopyData:     r.copyData,
+		StepTags:         r.tags,
+		StepUninstall:    r.uninstall,
 	}
 	plan := Plan(r.opts.Action)
 	r.emit(Event{Plan: plan})
