@@ -4,16 +4,16 @@
 │ ▌ ◉ Server             ││   Tell me about your server                                                                │
 │   ○ Homeserver         ││                                                                                            │
 │   ○ Components         ││   ▌  Base domain *                                                                         │
-│   ○ Review             ││   ▌  › example.org                                                                         │
-│   ○ Deploy             ││   ▌  User IDs look like @alice:<domain>. Point matrix.<domain> at your server.             │
+│   ○ Settings           ││   ▌  › example.org                                                                         │
+│   ○ Review             ││   ▌  User IDs look like @alice:<domain>. Point matrix.<domain> at your server.             │
+│   ○ Deploy             ││                                                                                            │
+│                        ││      Install where?                                                                        │
+│ ▸ Manage example.org   ││        This machine      A remote server over SSH                                          │
 │                        ││                                                                                            │
-│ ▸ Manage example.org   ││      Install where?                                                                        │
-│                        ││        This machine      A remote server over SSH                                          │
-│ ▸ Mirrors              ││                                                                                            │
-│                        ││      sudo password                                                                         │
-│ ▾ Servers              ││      ›                                                                                     │
+│ ▸ Mirrors              ││      sudo password                                                                         │
+│                        ││      ›                                                                                     │
+│ ▾ Servers              ││                                                                                            │
 │   ● example.org        ││                                                                                            │
-│                        ││                                                                                            │
 │                        ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
 │                        ││                                                                                            │
 │                        ││      Network situation                                                                     │

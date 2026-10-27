@@ -3,17 +3,17 @@
 │ ▾ Setup                ││                                                                                            │
 │   ● Server             ││   Fill in the details                                                                      │
 │   ● Homeserver         ││                                                                                            │
-│ ▌ ◉ Components         ││   ◆ Your admin account ─────────────────────────────────────────────────────────────────   │
-│   ○ Review             ││                                                                                            │
-│   ○ Deploy             ││   ▌  Admin username                                                                        │
-│                        ││   ▌  › admin                                                                               │
-│ ▸ Manage example.org   ││   ▌  Created automatically after install.                                                  │
+│   ● Components         ││   ◆ Your admin account ─────────────────────────────────────────────────────────────────   │
+│ ▌ ◉ Settings           ││                                                                                            │
+│   ○ Review             ││   ▌  Admin username                                                                        │
+│   ○ Deploy             ││   ▌  › admin                                                                               │
+│                        ││   ▌  Created automatically after install.                                                  │
+│ ▸ Manage example.org   ││                                                                                            │
+│                        ││      Admin password                                                                        │
+│ ▸ Mirrors              ││      › ••••••••••••••••••••                                                                │
 │                        ││                                                                                            │
-│ ▸ Mirrors              ││      Admin password                                                                        │
-│                        ││      › ••••••••••••••••••••                                                                │
 │ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││                                                                                            │
-│                        ││   ◆ Coturn TURN server ─────────────────────────────────────────────────────────────────   │
+│   ● example.org        ││   ◆ Coturn TURN server ─────────────────────────────────────────────────────────────────   │
 │                        ││                                                                                            │
 │                        ││      Public IP address(es)                                                                 │
 │                        ││      › comma, separated, values                                                            │

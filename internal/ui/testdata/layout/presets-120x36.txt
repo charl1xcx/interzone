@@ -4,16 +4,16 @@
 │   ● Server             ││   Choose your homeserver                                                                   │
 │ ▌ ◉ Homeserver         ││                                                                                            │
 │   ○ Components         ││   Start from a preset                                                                      │
-│   ○ Review             ││     Minimal chat      Synapse · 4 components                                               │
-│   ○ Deploy             ││   › Friends & family  Synapse · 6 components  ● now                                        │
-│                        ││     ╭────────────────────────────────────────────────────────────────────────────────╮     │
-│ ▸ Manage example.org   ││     │ Chat plus voice and video calls, and an admin panel.                           │     │
-│                        ││     │                                                                                │     │
-│ ▸ Mirrors              ││     │ Core   • Coturn TURN server                                                    │     │
-│                        ││     │ Apps   • Element Web                                                           │     │
-│ ▾ Servers              ││     │        • Sable                                                                 │     │
-│   ● example.org        ││     │ Login  • Matrix Authentication Service                                         │     │
-│                        ││     │        • Ketesa admin panel                                                    │     │
+│   ○ Settings           ││     Minimal chat      Synapse · 4 components                                               │
+│   ○ Review             ││   › Friends & family  Synapse · 6 components  ● now                                        │
+│   ○ Deploy             ││     ╭────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││     │ Chat plus voice and video calls, and an admin panel.                           │     │
+│ ▸ Manage example.org   ││     │                                                                                │     │
+│                        ││     │ Core   • Coturn TURN server                                                    │     │
+│ ▸ Mirrors              ││     │ Apps   • Element Web                                                           │     │
+│                        ││     │        • Sable                                                                 │     │
+│ ▾ Servers              ││     │ Login  • Matrix Authentication Service                                         │     │
+│   ● example.org        ││     │        • Ketesa admin panel                                                    │     │
 │                        ││     │ Calls  • Element Call                                                          │     │
 │                        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││     Bridge hub        Synapse · 11 components                                              │

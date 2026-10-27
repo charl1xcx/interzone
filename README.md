@@ -47,7 +47,7 @@ Click a screenshot to see it full size.
 </tr>
 <tr>
 <td width="33%" valign="top"><p align="center"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" alt="Filling in the components' settings" width="280"></a></p>
-<b>…and their settings</b> on the step's second page.</td>
+<b>…and their settings</b> on the Settings step.</td>
 <td width="33%" valign="top"><p align="center"><a href="docs/screenshots/manage.png"><img src="docs/screenshots/manage.png" alt="The Manage menu" width="280"></a></p>
 <b>Manage the server:</b> updates, users, backups, rollback, logs and more.</td>
 <td width="33%" valign="top"><p align="center"><a href="docs/screenshots/tuning.png"><img src="docs/screenshots/tuning.png" alt="Fine-tuning the playbook's roles" width="280"></a></p>
@@ -78,7 +78,7 @@ Need help, found a bug, or just like the project? Join the Matrix space
   Required settings are asked for; secrets are generated. Components with
   their own address (Element at `element.<domain>`, Grafana at
   `stats.<domain>`, …) can be moved to any hostname under Addresses on the
-  settings page.
+  Settings step.
 - **MAS with Synapse:** a new Synapse server gets the Matrix
   Authentication Service (OAuth 2.0/OIDC logins, which Element X needs),
   in the presets too. Untick it on Components to keep Synapse's own
@@ -294,8 +294,8 @@ with Pillow), about 15 seconds, against a demo server that doesn't exist.
 The wizard has four steps before the deploy: **Server** (where it runs,
 where downloads come from, HTTPS certificates, networking), **Homeserver**
 (a preset, or only the homeserver),
-**Components** (pick them, then fill in what they need on the second page)
-and **Review**.
+**Components** (pick them), **Settings** (what they need, the admin
+account and each component's address) and **Review**.
 
 The menu on the left shows where you are: the setup steps, the Manage
 screens (with the action running, if any), the mirror checks and your

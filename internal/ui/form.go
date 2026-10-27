@@ -231,9 +231,7 @@ func (f *form) Update(msg tea.Msg) tea.Cmd {
 				}
 			case "down":
 				if c.area.Line() >= c.area.LineCount()-1 {
-					if !f.move(1) {
-						return done
-					}
+					f.move(1) // the last box stays put: the wheel sends ↓ too
 					return nil
 				}
 			}

@@ -4,16 +4,16 @@
 │   ● Server             ││   Pick what you want on your server                                                        │
 │   ● Homeserver         ││                                                                                            │
 │ ▌ ◉ Components         ││       Core services  1/6    Clients  2/7    Authentication  1/9   ›          4 selected    │
-│   ○ Review             ││                                                                                            │
-│   ○ Deploy             ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
-│                        ││   │ ●  Coturn TURN server    needs settings                                            │   │
-│ ▸ Manage example.org   ││   │    Relays voice/video calls for users behind NAT. Strongly recommended.            │   │
-│                        ││   │                                                                                    │   │
-│ ▸ Mirrors              ││   │    docs/configuring-playbook-turn.md                                               │   │
-│                        ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││     ○  Exim email relay    needs settings                                                  │
-│                        ││        Lets services send email (password resets, notifications).                          │
+│   ○ Settings           ││                                                                                            │
+│   ○ Review             ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
+│   ○ Deploy             ││   │ ●  Coturn TURN server    needs settings                                            │   │
+│                        ││   │    Relays voice/video calls for users behind NAT. Strongly recommended.            │   │
+│ ▸ Manage example.org   ││   │                                                                                    │   │
+│                        ││   │    docs/configuring-playbook-turn.md                                               │   │
+│ ▸ Mirrors              ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
+│                        ││                                                                                            │
+│ ▾ Servers              ││     ○  Exim email relay    needs settings                                                  │
+│   ● example.org        ││        Lets services send email (password resets, notifications).                          │
 │                        ││                                                                                            │
 │                        ││     ○  Serve the base domain                                                               │
 │                        ││        Host a simple page and .well-known files on <domain> itself (only if nothing els…   │

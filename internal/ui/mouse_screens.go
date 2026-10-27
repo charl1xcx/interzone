@@ -83,7 +83,7 @@ func (s *welcomeScreen) click(id string) (tea.Cmd, bool) {
 }
 
 func (s *componentsScreen) click(id string) (tea.Cmd, bool) {
-	if s.details || s.saver != nil {
+	if s.saver != nil {
 		return nil, false // the settings form takes it
 	}
 	items := s.items()

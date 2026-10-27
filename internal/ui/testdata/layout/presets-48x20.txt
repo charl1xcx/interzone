@@ -1,4 +1,4 @@
- ◢◤ 2/5 Homeserver                              
+ ◢◤ 2/6 Homeserver                              
  Choose your homeserver                         
  Start from a preset                            
    Minimal chat      Synapse · 4 components     

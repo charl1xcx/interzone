@@ -72,10 +72,7 @@ func TestLayout(t *testing.T) {
 			a.jump(a.index("Homeserver"))
 		}},
 		{"components", func(a *App) { a.jump(a.index("Components")) }},
-		{"settings", func(a *App) {
-			a.jump(a.index("Components"))
-			a.cur().(*componentsScreen).openDetails()
-		}},
+		{"settings", func(a *App) { a.jump(a.index("Settings")) }},
 		{"review", func(a *App) { a.jump(a.index("Review")) }},
 		{"manage", func(a *App) {
 			a.jump(a.index("Manage"))

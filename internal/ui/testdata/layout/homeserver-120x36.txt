@@ -4,16 +4,16 @@
 │   ● Server             ││   Choose your homeserver                                                                   │
 │ ▌ ◉ Homeserver         ││                                                                                            │
 │   ○ Components         ││   Start from a preset                                                                      │
-│   ○ Review             ││     Minimal chat      Synapse · 4 components                                               │
-│   ○ Deploy             ││     Friends & family  Synapse · 6 components                                               │
-│                        ││     Bridge hub        Synapse · 11 components                                              │
-│ ▸ Manage example.org   ││     Public community  Synapse · 9 components                                               │
-│                        ││     Lightweight       Tuwunel · 3 components                                               │
-│ ▸ Mirrors              ││                                                                                            │
-│                        ││   Or only the homeserver, and pick the components yourself                                 │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│                        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
+│   ○ Settings           ││     Minimal chat      Synapse · 4 components                                               │
+│   ○ Review             ││     Friends & family  Synapse · 6 components                                               │
+│   ○ Deploy             ││     Bridge hub        Synapse · 11 components                                              │
+│                        ││     Public community  Synapse · 9 components                                               │
+│ ▸ Manage example.org   ││     Lightweight       Tuwunel · 3 components                                               │
+│                        ││                                                                                            │
+│ ▸ Mirrors              ││   Or only the homeserver, and pick the components yourself                                 │
+│                        ││                                                                                            │
+│ ▾ Servers              ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│   ● example.org        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
 │                        ││   │                                                                                  │     │
 │                        ││   │     Most complete and best supported implementation. Every component in this     │     │
 │                        ││   │     tool works with it.                                                          │     │

@@ -77,6 +77,7 @@ func New(cfg *config.Config, loaded bool) *App {
 		newServerScreen(),
 		&homeserverScreen{},
 		newComponentsScreen(),
+		&settingsScreen{},
 		newReviewScreen(),
 		newDeployScreen(),
 		newManageScreen(), // not a wizard step: reached from Welcome
@@ -289,11 +290,7 @@ func (a *App) back() tea.Cmd {
 	if _, ok := a.cur().(toolScreen); ok {
 		return a.jump(a.index("Manage"))
 	}
-	cmd := a.go_(-1)
-	if cs, ok := a.cur().(*componentsScreen); ok {
-		return tea.Batch(cmd, cs.openDetails()) // back from Review lands on the settings page
-	}
-	return cmd
+	return a.go_(-1)
 }
 
 func (a *App) View() string {

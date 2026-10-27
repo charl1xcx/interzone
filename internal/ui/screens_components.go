@@ -15,9 +15,7 @@ import (
 
 // ── Components ─────────────────────────────────────────────────────
 //
-// Two pages in one step: the list to pick from, then the settings the
-// picked components (and the admin account) need. enter on the list opens
-// the settings; esc there returns to the list.
+// The list to pick from; enter moves on to Settings.
 
 type componentsScreen struct {
 	cfg       *config.Config
@@ -28,9 +26,7 @@ type componentsScreen struct {
 	filter    textinput.Model
 	filtering bool
 
-	details  bool // the settings page is shown
-	settings settingsScreen
-	saver    *presetSaver
+	saver *presetSaver
 }
 
 func newComponentsScreen() *componentsScreen {
@@ -47,55 +43,25 @@ func (s *componentsScreen) title() string {
 	if s.saver != nil {
 		return "Save as a preset"
 	}
-	if s.details {
-		return s.settings.title()
-	}
 	return "Pick what you want on your server"
 }
 func (s *componentsScreen) typing() bool {
 	if s.saver != nil {
 		return s.saver.form.typing()
 	}
-	if s.details {
-		return s.settings.typing()
-	}
 	return s.filtering
 }
-func (s *componentsScreen) handlesEsc() bool { return s.details || s.saver != nil }
+func (s *componentsScreen) handlesEsc() bool { return s.saver != nil }
 func (s *componentsScreen) activeForm() *form {
 	if s.saver != nil {
 		return s.saver.form
 	}
-	if s.details {
-		return s.settings.form
-	}
 	return nil
-}
-
-// openDetails shows the settings page.
-func (s *componentsScreen) openDetails() tea.Cmd {
-	if !s.details {
-		s.leave(s.cfg)
-		s.details = true
-		return s.settings.enter(s.cfg)
-	}
-	return nil
-}
-
-// nextPage is ctrl+n: from the list it opens the settings page.
-func (s *componentsScreen) nextPage() (tea.Cmd, bool) {
-	if s.details {
-		return nil, false
-	}
-	return s.openDetails(), true
 }
 
 func (s *componentsScreen) keys() [][2]string {
 	if s.saver != nil {
 		return s.saver.keys()
-	}
-	if s.details {
-		return s.settings.keys()
 	}
 	if s.filtering {
 		return [][2]string{{"type", "search"}, {"↑↓", "move"}, {"space", "toggle"}, {"enter", "done"}}
@@ -105,7 +71,7 @@ func (s *componentsScreen) keys() [][2]string {
 
 func (s *componentsScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg = c
-	s.details, s.saver = false, nil
+	s.saver = nil
 	s.selected = map[string]bool{}
 	for k, v := range c.Components {
 		s.selected[k] = v
@@ -114,9 +80,6 @@ func (s *componentsScreen) enter(c *config.Config) tea.Cmd {
 }
 
 func (s *componentsScreen) leave(c *config.Config) {
-	if s.details {
-		s.settings.leave(c)
-	}
 	c.Components = s.selected
 	c.FillGenerated()
 }
@@ -148,14 +111,6 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 			s.saver = nil
 		}
 		return cmd
-	}
-	if s.details {
-		if k, ok := msg.(tea.KeyMsg); ok && k.String() == "esc" {
-			s.settings.leave(s.cfg)
-			s.details = false
-			return nil
-		}
-		return s.settings.update(msg)
 	}
 	k, ok := msg.(tea.KeyMsg)
 	if !ok {
@@ -219,7 +174,7 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 		s.filter.SetValue("")
 		return s.filter.Focus()
 	case "enter":
-		return s.openDetails()
+		return func() tea.Msg { return formDoneMsg{} } // on to Settings
 	}
 	return nil
 }
@@ -227,9 +182,6 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 func (s *componentsScreen) view(w, h int) string {
 	if s.saver != nil {
 		return s.saver.view(w, h)
-	}
-	if s.details {
-		return s.settings.view(w, h)
 	}
 	// Category tabs.
 	var tabs []string
@@ -427,16 +379,17 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 
 // ── Settings ───────────────────────────────────────────────────────
 //
-// The second page of Components.
+// What the picked components (and the admin account) need.
 
 type settingsScreen struct {
 	form *form
 	vars map[string]string // form key → vars.yml variable
 }
 
-func (s *settingsScreen) name() string  { return "Settings" }
-func (s *settingsScreen) title() string { return "Fill in the details" }
-func (s *settingsScreen) typing() bool  { return s.form.typing() }
+func (s *settingsScreen) name() string      { return "Settings" }
+func (s *settingsScreen) title() string     { return "Fill in the details" }
+func (s *settingsScreen) typing() bool      { return s.form.typing() }
+func (s *settingsScreen) activeForm() *form { return s.form }
 func (s *settingsScreen) keys() [][2]string {
 	if c := s.form.current(); c != nil && c.kind == fArea {
 		return [][2]string{{"enter", "new line"}, {"tab", "leave box"}, {"ctrl+n", "next step"}}
