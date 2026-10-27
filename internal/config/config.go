@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -265,6 +266,11 @@ func (c *Config) FillGenerated() {
 	}
 }
 
+var hostname = regexp.MustCompile(`^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9-]*[a-z]$`)
+
+// ValidHost reports whether h is a plain lowercase hostname like chat.example.com.
+func ValidHost(h string) bool { return len(h) <= 253 && hostname.MatchString(h) }
+
 // Missing lists required fields that are still empty, as "Component: Field".
 func (c *Config) Missing() []string {
 	var out []string
@@ -280,6 +286,9 @@ func (c *Config) Missing() []string {
 	for _, comp := range catalog.Components {
 		if !c.Enabled(comp) {
 			continue
+		}
+		if h := c.Values[comp.HostVar()]; h != "" && !ValidHost(h) {
+			out = append(out, comp.Name+": address "+h+" isn't a hostname")
 		}
 		for _, f := range comp.Fields {
 			if f.ShowIf != "" && c.Values[f.ShowIf] != "true" {

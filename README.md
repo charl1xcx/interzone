@@ -75,7 +75,10 @@ Need help, found a bug, or just like the project? Join the Matrix space
   which apps like Element X use.
 - **Everything MDAD offers:** 79 components across clients, auth, storage,
   bridges, bots, monitoring, backups and calls, with search (`/`).
-  Required settings are asked for; secrets are generated.
+  Required settings are asked for; secrets are generated. Components with
+  their own address (Element at `element.<domain>`, Grafana at
+  `stats.<domain>`, …) can be moved to any hostname under Addresses on the
+  settings page.
 - **MAS with Synapse:** a new Synapse server gets the Matrix
   Authentication Service (OAuth 2.0/OIDC logins, which Element X needs),
   in the presets too. Untick it on Components to keep Synapse's own

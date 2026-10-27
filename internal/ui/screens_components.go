@@ -492,6 +492,21 @@ func (s *settingsScreen) enter(c *config.Config) tea.Cmd {
 			fields = append(fields, fl)
 		}
 	}
+	first := true
+	for _, comp := range catalog.Components {
+		hv := comp.HostVar()
+		if !c.Enabled(comp) || hv == "" {
+			continue
+		}
+		def := comp.Subdomain + "." + c.Domain
+		key := "host." + comp.ID
+		s.vars[key] = hv
+		fl := textField(key, comp.Name, c.Values[hv], def, "Default "+def+". Leave empty to keep it, or type any hostname pointed at the server.")
+		if first {
+			fl.section, first = "Addresses", false
+		}
+		fields = append(fields, fl)
+	}
 	extra := areaField("extra", "Extra vars.yml lines", c.ExtraYAML,
 		"Anything else from the MDAD docs. Written at the end of vars.yml as-is.")
 	extra.section = "Advanced"

@@ -3,6 +3,8 @@
 // with the vars.yml variables each one needs.
 package catalog
 
+import "strings"
+
 // Kind controls how a field is edited in the UI and rendered into vars.yml.
 type Kind int
 
@@ -49,6 +51,18 @@ type Component struct {
 	Doc         string
 	// Subdomain is the DNS label the component needs ("" if it lives on matrix.<domain>).
 	Subdomain string
+	// Host is the variable holding its hostname, when that isn't the
+	// enable variable's <prefix>_hostname.
+	Host string
+}
+
+// HostVar is the variable that sets the component's address, or "" when
+// it has no subdomain of its own.
+func (c Component) HostVar() string {
+	if c.Host != "" || c.Subdomain == "" {
+		return c.Host
+	}
+	return strings.TrimSuffix(c.EnableVar, "_enabled") + "_hostname"
 }
 
 func (c Component) DocURL(base string) string {
@@ -339,7 +353,7 @@ var Components = []Component{
 		}},
 
 	// ── Administration ─────────────────────────────────────────────
-	{ID: "monitoring", Name: "Prometheus + Grafana", Category: "Administration", EnableVar: "prometheus_enabled", Subdomain: "stats",
+	{ID: "monitoring", Name: "Prometheus + Grafana", Category: "Administration", EnableVar: "prometheus_enabled", Subdomain: "stats", Host: "grafana_hostname",
 		Description: "Metrics and pretty dashboards for your server.", Doc: "configuring-playbook-prometheus-grafana.md",
 		Extra: map[string]string{"prometheus_node_exporter_enabled": "true", "prometheus_postgres_exporter_enabled": "true", "grafana_enabled": "true"},
 		Fields: []Field{

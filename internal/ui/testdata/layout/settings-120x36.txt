@@ -19,18 +19,18 @@
 │                        ││      › comma, separated, values                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
+│                        ││   ◆ Addresses ──────────────────────────────────────────────────────────────────────────   │
+│                        ││                                                                                            │
+│                        ││      Element Web                                                                           │
+│                        ││      › element.example.org                                                                 │
+│                        ││                                                                                            │
+│                        ││      Cinny                                                                                 │
+│                        ││      › cinny.example.org                                                                   │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
 │                        ││   ◆ Advanced ───────────────────────────────────────────────────────────────────────────   │
-│                        ││                                                                                            │
-│                        ││      Extra vars.yml lines                                                                  │
-│                        ││      │                                                                                     │
-│                        ││      │                                                                                     │
-│                        ││      │                                                                                     │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
 │ ◫ auto (wide)  ctrl+l  ││                                                                                            │
-│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  tab/↑↓ move   ·   space toggle   ·   ctrl+r reveal secrets   ·   enter next   ·   esc back   ·   ctrl+c quit           

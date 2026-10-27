@@ -391,6 +391,9 @@ func (im *Import) mapVars(c *Config, v *varsFile) error {
 			// from inventing secrets the server never had.
 			c.Values[f.Var] = fieldValue(v, f)
 		}
+		if h, ok := v.str(comp.HostVar()); ok && ValidHost(h) {
+			c.Values[comp.HostVar()] = h
+		}
 	}
 	return nil
 }

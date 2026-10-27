@@ -17,21 +17,21 @@
     › comma, separated, values                
                                               
                                               
+ ◆ Addresses ──────────────────────────────── 
+                                              
+    Element Web                               
+    › element.example.org                     
+                                              
+    Cinny                                     
+    › cinny.example.org                       
+                                              
+                                              
  ◆ Advanced ───────────────────────────────── 
                                               
     Extra vars.yml lines                      
     │                                         
     │                                         
     │                                         
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
                                               
                                               
                                               

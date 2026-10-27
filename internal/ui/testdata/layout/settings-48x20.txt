@@ -9,12 +9,12 @@
  ◆ Coturn TURN server ───────────────────────── 
     Public IP address(es)  –                    
                                                 
+ ◆ Addresses ────────────────────────────────── 
+    Element Web  –                              
+    Cinny  –                                    
+                                                
  ◆ Advanced ─────────────────────────────────── 
     Extra vars.yml lines  empty                 
-                                                
-                                                
-                                                
-                                                
                                                 
                                                 
     ‹ back       ≡ menu        next ›       ⋯  
