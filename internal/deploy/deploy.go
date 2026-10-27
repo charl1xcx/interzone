@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -395,7 +396,14 @@ func (r *Runner) inventory(ctx context.Context) error {
 		cert, key = c.SSL.CertPath, c.SSL.KeyPath
 	}
 
-	vars := c.VarsYAML(config.MigrationVersion(c.PlaybookDir), cert, key)
+	// The playbook was just updated and may have renamed settings since the
+	// config was loaded; a copy, as the UI reads c while this runs.
+	fixed := *c
+	fixed.Values, fixed.Overrides = maps.Clone(c.Values), maps.Clone(c.Overrides)
+	for _, n := range fixed.RenameOld(c.PlaybookDir) {
+		r.note(StepInventory, "renamed "+n)
+	}
+	vars := fixed.VarsYAML(config.MigrationVersion(c.PlaybookDir), cert, key)
 	files := map[string]string{
 		filepath.Join(hostDir, "vars.yml"): vars,
 		filepath.Join(inv, "hosts"):        c.HostsINI(),

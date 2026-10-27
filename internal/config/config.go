@@ -179,6 +179,7 @@ func LoadFile(file string) (*Config, error) {
 	if c.Overrides == nil {
 		c.Overrides = map[string]string{}
 	}
+	c.RenameOld(c.PlaybookDir)
 	return c, nil
 }
 
