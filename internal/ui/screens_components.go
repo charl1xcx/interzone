@@ -630,5 +630,12 @@ func (s *settingsScreen) view(w, h int) string {
 // advView is the Advanced form under its plain-text/by-component button.
 func (s *settingsScreen) advView(w, h int) string {
 	button := mark("settings:plain", sAccent.Render("⇄ ")+sMuted.Render("show as "+s.plainLabel())+sFaint.Render("  ctrl+o"))
+	if s.plain { // the one box takes all the height the rest leaves
+		a := &s.adv.fields[0].area
+		a.MaxHeight = 0
+		a.SetHeight(1)
+		used := strings.Count(s.adv.View(w, 1<<16), "\n") + 1
+		a.SetHeight(max(3, h-1-used+1))
+	}
 	return button + "\n" + s.adv.View(w, h-1)
 }

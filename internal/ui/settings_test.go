@@ -67,3 +67,19 @@ func TestSettingsStep(t *testing.T) {
 		t.Errorf("extra vars:\n%s\nwant like\n%s", got, want)
 	}
 }
+
+// Plain text is one box as high as the right half.
+func TestPlainFillsHeight(t *testing.T) {
+	a := demoApp(t, 120, 36)
+	a.jump(a.index("Settings"))
+	s := a.cur().(*settingsScreen)
+	s.side(true)
+	press(a, tea.KeyMsg{Type: tea.KeyCtrlO})
+	out := s.advView(40, 30)
+	if n := strings.Count(out, "\n") + 1; n != 30 || strings.Contains(out, "more below") {
+		t.Fatalf("%d lines:\n%s", n, out)
+	}
+	if h := s.adv.fields[0].area.Height(); h < 20 {
+		t.Errorf("box is %d lines high", h)
+	}
+}
