@@ -64,7 +64,8 @@ Click a screenshot to see it full size.
 ## Community
 
 Need help, found a bug, or just like the project? Join the Matrix space
-[#interzone:foid.ir](https://matrix.to/#/%23interzone%3Afoid.ir).
+[#interzone:foid.ir](https://matrix.to/#/%23interzone%3Afoid.ir)
+or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
 
 ## Features
 
