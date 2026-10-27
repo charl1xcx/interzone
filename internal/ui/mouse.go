@@ -241,10 +241,7 @@ func (a *App) tap(ids []string) (tea.Model, tea.Cmd) {
 // while it takes typing (a form's text field), so the wheel can send them.
 func (a *App) wheelOK() bool {
 	if fh, ok := a.cur().(formHolder); ok {
-		if f := fh.activeForm(); f != nil {
-			c := f.current()
-			return c == nil || c.kind != fArea
-		}
+		return fh.activeForm() != nil // in a box, ↓ runs down its lines and on out
 	}
 	return false
 }

@@ -181,6 +181,16 @@ func (f *form) move(dir int) bool {
 	return true
 }
 
+// atEdge reports whether no visible field follows the focus in direction dir.
+func (f *form) atEdge(dir int) bool {
+	for i := f.focus + dir; i >= 0 && i < len(f.fields); i += dir {
+		if f.fields[i].visible() {
+			return false
+		}
+	}
+	return true
+}
+
 // typing reports whether the focused field consumes printable keys.
 func (f *form) typing() bool {
 	c := f.current()

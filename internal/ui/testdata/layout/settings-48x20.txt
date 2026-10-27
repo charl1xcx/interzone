@@ -1,5 +1,7 @@
  ◢◤ 4/6 Settings                                
  Fill in the details                            
+  Details   Advanced                            
+                                                
  ◆ Your admin account ───────────────────────── 
  ▌  Admin username                              
  ▌  › admin                                     
@@ -13,8 +15,6 @@
     Element Web  –                              
     Cinny  –                                    
                                                 
- ◆ Advanced ─────────────────────────────────── 
-    Extra vars.yml lines  empty                 
                                                 
                                                 
     ‹ back       ≡ menu        next ›       ⋯  

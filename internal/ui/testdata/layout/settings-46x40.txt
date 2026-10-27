@@ -1,6 +1,8 @@
  ◢◤ 4/6 Settings                              
  Fill in the details                          
                                               
+  Details   Advanced                          
+                                              
  ◆ Your admin account ─────────────────────── 
                                               
  ▌  Admin username                            
@@ -26,12 +28,10 @@
     › cinny.example.org                       
                                               
                                               
- ◆ Advanced ───────────────────────────────── 
                                               
-    Extra vars.yml lines                      
-    │                                         
-    │                                         
-    │                                         
+                                              
+                                              
+                                              
                                               
                                               
                                               

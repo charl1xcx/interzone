@@ -379,19 +379,29 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 
 // ── Settings ───────────────────────────────────────────────────────
 //
-// What the picked components (and the admin account) need.
+// What the picked components (and the admin account) need on the left,
+// and the hand-written extra vars, one box per component, on the right.
+// tab runs off the end of one side onto the other.
 
 type settingsScreen struct {
-	form *form
-	vars map[string]string // form key → vars.yml variable
+	form  *form
+	adv   *form             // Advanced: the extra vars
+	right bool              // the keys go to adv
+	vars  map[string]string // form key → vars.yml variable
+	extra []config.ExtraGroup
 }
 
-func (s *settingsScreen) name() string      { return "Settings" }
-func (s *settingsScreen) title() string     { return "Fill in the details" }
-func (s *settingsScreen) typing() bool      { return s.form.typing() }
-func (s *settingsScreen) activeForm() *form { return s.form }
+func (s *settingsScreen) name() string  { return "Settings" }
+func (s *settingsScreen) title() string { return "Fill in the details" }
+func (s *settingsScreen) typing() bool  { return s.activeForm().typing() }
+func (s *settingsScreen) activeForm() *form {
+	if s.right {
+		return s.adv
+	}
+	return s.form
+}
 func (s *settingsScreen) keys() [][2]string {
-	if c := s.form.current(); c != nil && c.kind == fArea {
+	if c := s.activeForm().current(); c != nil && c.kind == fArea {
 		return [][2]string{{"enter", "new line"}, {"tab", "leave box"}, {"ctrl+n", "next step"}}
 	}
 	return [][2]string{{"tab/↑↓", "move"}, {"space", "toggle"}, {"ctrl+r", "reveal secrets"}, {"enter", "next"}}
@@ -460,12 +470,47 @@ func (s *settingsScreen) enter(c *config.Config) tea.Cmd {
 		}
 		fields = append(fields, fl)
 	}
-	extra := areaField("extra", "Extra vars.yml lines", c.ExtraYAML,
-		"Anything else from the MDAD docs. Written at the end of vars.yml as-is.")
-	extra.section = "Advanced"
-	fields = append(fields, extra)
 	s.form = newForm(fields...)
+
+	s.extra = c.ExtraGroups()
+	var boxes []*field
+	for i, g := range s.extra {
+		help := "Extra vars.yml lines for " + g.Name + " from the MDAD docs, written at the end of vars.yml as-is. They win over interzone's own."
+		if g.Name == "Other" {
+			help = "Anything else from the MDAD docs, written at the end of vars.yml as-is."
+		}
+		b := areaField("extra."+strconv.Itoa(i), g.Name, g.Text, help)
+		if i == 0 {
+			b.section = "Advanced"
+		}
+		boxes = append(boxes, b)
+	}
+	s.adv = newForm(boxes...)
+	s.side(false)
 	return nil
+}
+
+// side gives the keys to the left (false) or right form, entering it at
+// its last field when coming back from the right.
+func (s *settingsScreen) side(right bool) {
+	from, to := s.form, s.adv
+	if !right {
+		from, to = to, from
+	}
+	if c := from.current(); c != nil {
+		c.input.Blur()
+		c.area.Blur()
+	}
+	from.focus = -1
+	if to.current() == nil {
+		if right {
+			to.move(1)
+		} else {
+			to.focus = len(to.fields)
+			to.move(-1)
+		}
+	}
+	s.right = right
 }
 
 func (s *settingsScreen) leave(c *config.Config) {
@@ -479,10 +524,60 @@ func (s *settingsScreen) leave(c *config.Config) {
 	for key, v := range s.vars {
 		c.Values[v] = f.value(key)
 	}
-	c.ExtraYAML = f.value("extra")
+	for i := range s.extra {
+		s.extra[i].Text = s.adv.value("extra." + strconv.Itoa(i))
+	}
+	c.ExtraYAML = config.JoinExtra(s.extra)
 }
 
-func (s *settingsScreen) update(msg tea.Msg) tea.Cmd { return s.form.Update(msg) }
+func (s *settingsScreen) update(msg tea.Msg) tea.Cmd {
+	f := s.activeForm()
+	if k, ok := msg.(tea.KeyMsg); ok {
+		c := f.current()
+		switch {
+		case !s.right && f.atEdge(1) && (k.String() == "tab" || k.String() == "enter" && c != nil && c.kind != fArea):
+			s.side(true)
+			return nil
+		case s.right && f.atEdge(-1) && k.String() == "shift+tab":
+			s.side(false)
+			return nil
+		}
+	}
+	return f.Update(msg)
+}
+
+func (s *settingsScreen) click(id string) (tea.Cmd, bool) {
+	switch id {
+	case "settings:left", "settings:right":
+		s.side(id == "settings:right")
+		return nil, true
+	}
+	for _, f := range []*form{s.form, s.adv} {
+		if strings.HasPrefix(id, f.id) {
+			s.side(f == s.adv)
+			return f.click(id)
+		}
+	}
+	return nil, false
+}
+
+// splitWidth is the narrowest the two sides are shown side by side.
+const splitWidth = 80
+
 func (s *settingsScreen) view(w, h int) string {
-	return s.form.View(w, h)
+	if w < splitWidth { // one side at a time, with tabs to switch
+		tab := func(id, name string, on bool) string {
+			if on {
+				return mark(id, lipgloss.NewStyle().Foreground(cOnAccent).Background(cPurple).Bold(true).Padding(0, 1).Render(name))
+			}
+			return mark(id, sMuted.Padding(0, 1).Render(name))
+		}
+		head := tab("settings:left", "Details", !s.right) + " " + tab("settings:right", "Advanced", s.right)
+		return head + "\n\n" + s.activeForm().View(w, h-2)
+	}
+	lw := (w - 3) / 2
+	left := lipgloss.NewStyle().Width(lw).Render(s.form.View(lw, h))
+	right := lipgloss.NewStyle().Width(w - lw - 3).Render(s.adv.View(w-lw-3, h))
+	bar := strings.TrimRight(strings.Repeat(" "+sFaint.Render("│")+" \n", h), "\n")
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, bar, right)
 }
