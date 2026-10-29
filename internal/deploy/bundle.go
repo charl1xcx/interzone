@@ -14,6 +14,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"interzone/internal/ipfs"
 )
 
 // An offline bundle is a .tar.gz holding everything a deploy downloads
@@ -25,6 +27,7 @@ import (
 //	  interzone     this binary
 //	  playbook/     matrix-docker-ansible-deploy, roles in roles/galaxy
 //	  wheels/       ansible + passlib for `pip install --no-index`
+//	  ipfs/         the IPFS daemon for both arches, with the IPFS source on
 
 const (
 	bundleRoot   = "interzone-bundle"
@@ -148,6 +151,11 @@ func (r *Runner) archive(ctx context.Context) error {
 			return err
 		}
 	}
+	if r.cfg.Sources.IPFS {
+		if err := r.bundleKubo(ctx, tw); err != nil {
+			return err
+		}
+	}
 	if err := tw.Close(); err != nil {
 		return err
 	}
@@ -167,6 +175,27 @@ func (r *Runner) archive(ctx context.Context) error {
 	return nil
 }
 
+// bundleKubo adds the IPFS daemon for both arches, so a server can join
+// the swarm without anything else from the internet.
+func (r *Runner) bundleKubo(ctx context.Context, tw *tar.Writer) error {
+	idx, _ := indexFromWeb(ctx)
+	version := ipfs.KuboVersion
+	if idx != nil {
+		version = idx.Kubo
+	}
+	r.note(StepArchive, "adding the IPFS daemon "+version)
+	for _, arch := range []string{"amd64", "arm64"} {
+		if _, _, err := kuboBinary(ctx, arch, version, idx); err != nil {
+			r.note(StepArchive, "! no IPFS daemon for "+arch+": "+err.Error())
+			r.emit(Event{Step: StepArchive, Warn: true})
+		}
+	}
+	if d := filepath.Join(dataDir(), "ipfs", version); exists(d) {
+		return addTree(ctx, tw, d, bundleRoot+"/ipfs/"+version, nil)
+	}
+	return nil
+}
+
 const bundleReadme = `interzone offline bundle
 
 Copy this file to the machine you deploy from (it needs no internet), then:
@@ -176,7 +205,8 @@ Copy this file to the machine you deploy from (it needs no internet), then:
     ./interzone-bundle/interzone
 
 Container images are not included: point interzone at a registry mirror
-inside your network (Server step, "Container registry mirror").
+inside your network (Server step, "Container registry mirror"), or pick
+IPFS as the network situation to fetch them from interzone's swarm.
 `
 
 func addFile(tw *tar.Writer, src, name string) error {
@@ -306,6 +336,12 @@ func Unbundle(src, playbookDir string, log func(string)) (*BundleInfo, error) {
 			return nil, err
 		}
 		log("Python packages installed in " + dst)
+	}
+	if d := filepath.Join(root, "ipfs"); exists(d) {
+		if err := copyTree(d, filepath.Join(dataDirFor(playbookDir), "ipfs")); err != nil {
+			return nil, err
+		}
+		log("IPFS daemon kept for the IPFS source")
 	}
 	return &info, nil
 }

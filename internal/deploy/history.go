@@ -128,7 +128,11 @@ func defaultBranch(dir string) string {
 // checkout puts the playbook at commit, fetching it first if the shallow
 // clone doesn't have it.
 func (r *Runner) checkout(ctx context.Context, dir, commit string) error {
-	r.note(StepPlaybook, "holding the playbook at "+short(commit)+" (rollback)")
+	why := r.pinWhy
+	if why == "" {
+		why = "rollback"
+	}
+	r.note(StepPlaybook, "holding the playbook at "+short(commit)+" ("+why+")")
 	if exec.Command("git", "-C", dir, "cat-file", "-e", commit+"^{commit}").Run() != nil {
 		if err := r.exec(ctx, StepPlaybook, dir, "git", "fetch", "origin", commit); err != nil {
 			if err := r.exec(ctx, StepPlaybook, dir, "git", "fetch", "--unshallow", "origin"); err != nil {

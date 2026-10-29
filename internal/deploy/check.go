@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"interzone/internal/config"
+	"interzone/internal/ipfs"
 )
 
 type Check struct {
@@ -44,12 +45,25 @@ func Preflight(c *config.Config) []Check {
 		})
 	}
 	s := c.Sources
-	add("Playbook git", s.PlaybookGit, func(ctx context.Context) (string, error) { return gitReachable(ctx, s.PlaybookGit) })
-	if s.RolesGitBase != "" {
+	if s.IPFS {
+		add("IPFS publish", ipfs.IndexURL, func(ctx context.Context) (string, error) {
+			idx, err := indexFromWeb(ctx)
+			if err != nil {
+				return "", err
+			}
+			return "signed, from " + idx.Created, nil
+		})
+		add("IPFS entry node", "infamous.g0th.ir", func(ctx context.Context) (string, error) {
+			return ipfsEntryReachable(ctx)
+		})
+	} else {
+		add("Playbook git", s.PlaybookGit, func(ctx context.Context) (string, error) { return gitReachable(ctx, s.PlaybookGit) })
+	}
+	if s.RolesGitBase != "" && !s.IPFS {
 		u := strings.TrimRight(s.RolesGitBase, "/") + "/mother-of-all-self-hosting/ansible-role-aux"
 		add("Roles git mirror", s.RolesGitBase, func(ctx context.Context) (string, error) { return gitReachable(ctx, u) })
 	}
-	if s.UseRegistry && s.RegistryPrefix != "" {
+	if s.UseRegistry && s.RegistryPrefix != "" && !s.IPFS {
 		host := strings.SplitN(strings.TrimPrefix(strings.TrimPrefix(s.RegistryPrefix, "https://"), "http://"), "/", 2)[0]
 		add("Container registry", s.RegistryPrefix, func(ctx context.Context) (string, error) {
 			return httpReachable(ctx, "https://"+host+"/v2/")

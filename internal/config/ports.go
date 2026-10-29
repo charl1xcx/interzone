@@ -64,6 +64,9 @@ func (c *Config) Ports() []Port {
 		out = append(out, Port{For: "Postmoogle (receiving email)",
 			TCP: []string{port("matrix_bridge_postmoogle_smtp_host_bind_port", "25"), port("matrix_bridge_postmoogle_submission_host_bind_port", "587")}})
 	}
+	if c.Sources.IPFS && c.Sources.IPFSSeed == "yes" {
+		out = append(out, Port{For: "IPFS (other servers fetch what this one seeds)", TCP: []string{"4001"}})
+	}
 	return out
 }
 

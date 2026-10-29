@@ -224,7 +224,11 @@ var authParam = regexp.MustCompile(`(\w+)="([^"]*)"`)
 // has reports nil if the registry serves ref for arch.
 func (c *registryClient) has(ctx context.Context, ref, arch string) error {
 	host, repo, tag := ParseRef(ref)
-	url := "https://" + host + "/v2/" + repo + "/manifests/" + tag
+	scheme := "https://"
+	if strings.HasPrefix(host, "127.0.0.1:") { // as Docker does: the IPFS deploy's serve-registry
+		scheme = "http://"
+	}
+	url := scheme + host + "/v2/" + repo + "/manifests/" + tag
 	resp, err := c.get(ctx, url, "")
 	if err != nil {
 		return err

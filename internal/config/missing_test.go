@@ -34,3 +34,17 @@ func TestMissingFlagsPasswordProviderWithMAS(t *testing.T) {
 		t.Fatalf("LDAP without MAS reported: %v", m)
 	}
 }
+
+// Seeding over IPFS is asked during setup, never assumed.
+func TestMissingIPFSSeedChoice(t *testing.T) {
+	c := Default()
+	c.Domain = "example.org"
+	c.Sources.IPFS = true
+	if got := strings.Join(c.Missing(), "\n"); !strings.Contains(got, "IPFS") {
+		t.Fatalf("unanswered seeding not reported: %q", got)
+	}
+	c.Sources.IPFSSeed = "no"
+	if m := c.Missing(); len(m) != 0 {
+		t.Fatalf("answered seeding reported: %v", m)
+	}
+}

@@ -52,6 +52,7 @@ const (
 	StepDryPlaybook
 	StepDryRun
 	StepBulkUsers
+	StepIPFS
 )
 
 var stepNames = map[Step]string{
@@ -83,6 +84,7 @@ var stepNames = map[Step]string{
 	StepDryPlaybook:  "Get the newest playbook, beside yours",
 	StepDryRun:       "Run it without changing anything",
 	StepBulkUsers:    "Create the users",
+	StepIPFS:         "Join the IPFS swarm",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -272,14 +274,16 @@ type Runner struct {
 
 	playbookUpdated bool
 	onLine          func(Event) // extra parsing for the running command
+	ipfs            *ipfsRun    // what an IPFS run started on the server
+	pinWhy          string      // why PinnedCommit holds the playbook, if not a rollback
 }
 
 // Start launches the run in the background. Events arrive on the returned
 // channel, which is closed when the run ends.
 func Start(ctx context.Context, cfg *config.Config, opts Options) <-chan Event {
-	// A migration and blackout mirror picks change the run's config; the
-	// caller applies those changes through events.
-	if opts.Action == ActionMigrate || opts.Action == ActionDryRun || cfg.Sources.Blackout {
+	// A migration, blackout mirror picks and IPFS sources change the run's
+	// config; the caller applies what it keeps through events.
+	if opts.Action == ActionMigrate || opts.Action == ActionDryRun || cfg.Sources.Blackout || cfg.Sources.IPFS {
 		cfg = cfg.Clone()
 	}
 	if opts.Action == ActionDryRun {
@@ -337,8 +341,13 @@ func (r *Runner) run(ctx context.Context) error {
 		StepDryPlaybook:  r.dryPlaybook,
 		StepDryRun:       r.dryRun,
 		StepBulkUsers:    r.bulkUsers,
+		StepIPFS:         r.ipfsSetup,
 	}
 	plan := Plan(r.opts.Action)
+	if r.cfg.Sources.IPFS && usesDownloads(plan) {
+		plan = append([]Step{StepIPFS}, plan...)
+		defer r.ipfsDone()
+	}
 	r.emit(Event{Plan: plan})
 	for _, st := range plan {
 		if err := fns[st](ctx); err != nil {
@@ -417,7 +426,11 @@ func (r *Runner) playbook(ctx context.Context) error {
 		return err
 	}
 	r.playbookUpdated = true
-	if err := r.exec(ctx, StepPlaybook, "", "git", "clone", "--depth", "1", "--", r.cfg.Sources.PlaybookGit, dir); err != nil {
+	depth := []string{"--depth", "1"}
+	if r.cfg.Sources.IPFS {
+		depth = nil // dumb HTTP, as IPFS serves git, can't make shallow clones
+	}
+	if err := r.exec(ctx, StepPlaybook, "", "git", append(append([]string{"clone"}, depth...), "--", r.cfg.Sources.PlaybookGit, dir)...); err != nil {
 		return err
 	}
 	if pin := r.cfg.PinnedCommit; pin != "" {

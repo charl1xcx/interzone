@@ -46,6 +46,14 @@ type Sources struct {
 	APTMirror        string // mirror for the server's distro packages
 	PyPIIndex        string // used when ansible has to be installed locally
 	Blackout         bool
+	// IPFS fetches everything a deploy needs from interzone's IPFS swarm
+	// instead of the sources above, which are kept but unused.
+	IPFS bool `json:",omitempty"`
+	// IPFSSeed is "yes" if the server keeps serving what it fetched to
+	// others, "no" if not, "" until asked.
+	IPFSSeed string `json:",omitempty"`
+	// IPFSVersion is the newest index a deploy used; older ones are refused.
+	IPFSVersion int64 `json:",omitempty"`
 }
 
 type SSL struct {
@@ -337,6 +345,9 @@ func (c *Config) Missing() []string {
 		if strings.Contains(p[1], "{{") || strings.Contains(p[1], "{%") || strings.Contains(p[1], "{#") {
 			out = append(out, p[0]+" can't contain {{, {% or {#")
 		}
+	}
+	if c.Sources.IPFS && c.Sources.IPFSSeed == "" {
+		out = append(out, "Server: whether to share what IPFS downloads")
 	}
 	if c.SSL.Mode == "custom" && (c.SSL.CertPath == "" || c.SSL.KeyPath == "") {
 		out = append(out, "Server: certificate and key paths")
