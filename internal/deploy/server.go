@@ -152,24 +152,29 @@ func ServerChecks(c *config.Config) []Finding {
 		add("Python", Pass, "%s", facts["python"])
 	}
 
+	needMem, needDisk := c.Estimate()
 	if mem, err := strconv.Atoi(facts["mem"]); err == nil {
 		switch {
 		case mem < 900:
 			add("Memory", Fail, "%d MB; at least 1 GB is needed, 2 GB recommended", mem)
+		case mem < needMem:
+			add("Memory", Warn, "%.1f GB; what you've turned on uses about %.1f GB, so add swap or memory, or turn something off", float64(mem)/1024, float64(needMem)/1024)
 		case mem < 1800:
 			add("Memory", Warn, "%d MB; 2 GB or more is recommended", mem)
 		default:
-			add("Memory", Pass, "%.1f GB", float64(mem)/1024)
+			add("Memory", Pass, "%.1f GB (about %.1f GB in use once deployed)", float64(mem)/1024, float64(needMem)/1024)
 		}
 	}
 	if disk, err := strconv.Atoi(facts["disk"]); err == nil {
 		switch {
 		case disk < 3000:
 			add("Disk space", Fail, "%.1f GB free on /; container images alone need several GB", float64(disk)/1024)
+		case disk < needDisk*1024:
+			add("Disk space", Warn, "%.1f GB free on /; the images and a start of data take about %d GB, and media grows from there", float64(disk)/1024, needDisk)
 		case disk < 10000:
 			add("Disk space", Warn, "%.1f GB free on /; 10 GB or more is recommended", float64(disk)/1024)
 		default:
-			add("Disk space", Pass, "%.0f GB free", float64(disk)/1024)
+			add("Disk space", Pass, "%.0f GB free (about %d GB taken once deployed, before media)", float64(disk)/1024, needDisk)
 		}
 	}
 

@@ -6,6 +6,7 @@
  │ ◆  Homeserver    Synapse                 │ 
  │ ⌂  Install on    this machine            │ 
  │ ▦  Components    4                       │ 
+ │ ≈  Needs about   1.4 GB RAM, 7 GB disk   │ 
  │ ◈  Certificates  Let's Encrypt           │ 
  │ ⇩  Images from   mechatok.g0th.ir/       │ 
  ╰──────────────────────────────────────────╯ 
@@ -31,7 +32,6 @@
      8448/tcp; 8448/udp                       
    Coturn (TURN for calls)                    
      3478, 5349/tcp; 3478, 5349, 49152-49172/ 
-                                              
                                               
                                               
                                               

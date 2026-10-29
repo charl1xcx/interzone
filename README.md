@@ -176,8 +176,10 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   # CentOS Stream, Fedora and Arch containers (needs Docker and Ansible)
   INTERZONE_CONTAINER_TESTS=1 go test ./internal/deploy -run PlayContainers -v -timeout 30m
   ```
-- **Checks before it touches anything.** The Review screen logs into the
-  server and checks root access, OS, CPU, Python, memory, disk and ports
+- **Checks before it touches anything.** The Review screen estimates the
+  memory and disk what you've turned on needs (rough numbers for a small
+  server, before media), logs into the server and checks root access, OS,
+  CPU, Python, memory and disk against that estimate, and ports
   80/443 (and 8448 for Synapse and Dendrite), then resolves every DNS record the setup needs and compares
   it with the server's addresses; `z` shows the records to create as
   zone-file lines to paste into your DNS provider. It also lists the ports a firewall in

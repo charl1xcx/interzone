@@ -5,6 +5,7 @@
  │ ◆  Homeserver    Synapse                   │ 
  │ ⌂  Install on    this machine              │ 
  │ ▦  Components    4                         │ 
+ │ ≈  Needs about   1.4 GB RAM, 7 GB disk     │ 
  │ ◈  Certificates  Let's Encrypt             │ 
  │ ⇩  Images from   mechatok.g0th.ir/         │ 
  ╰────────────────────────────────────────────╯ 
@@ -16,5 +17,4 @@
  Pre-deploy checks                              
  ⠋ checking the server and DNS…                 
                                                 
-   ○  Synapse                                   
     ‹ back       ≡ menu       deploy ›      ⋯  

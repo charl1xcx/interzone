@@ -157,6 +157,12 @@ func (s *reviewScreen) previewTitle() string {
 		sGood.Render(fmt.Sprintf("+%d", a)) + " " + sBad.Render(fmt.Sprintf("-%d", r))
 }
 
+// estimate is "2.4 GB RAM, 8 GB disk".
+func estimate(c *config.Config) string {
+	mem, disk := c.Estimate()
+	return fmt.Sprintf("%.1f GB RAM, %d GB disk", float64(mem)/1024, disk)
+}
+
 // zoneMsg carries the DNS records to show in the preview.
 type zoneMsg []string
 
@@ -251,6 +257,7 @@ func (s *reviewScreen) view(w, h int) string {
 		kv("◆", "Homeserver", homeserverName(c.Homeserver)),
 		kv("⌂", "Install on", where),
 		kv("▦", "Components", fmt.Sprint(n)),
+		kv("≈", "Needs about", estimate(c)),
 		kv("◈", "Certificates", sslLabels[indexOf(sslModes, c.SSL.Mode)]),
 		kv("⇩", "Images from", map[bool]string{true: c.Sources.RegistryPrefix, false: "upstream registries"}[c.Sources.UseRegistry]),
 	}
