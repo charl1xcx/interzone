@@ -113,6 +113,18 @@ func TestProfiles(t *testing.T) {
 	if n := len(Profiles()); n != 2 {
 		t.Errorf("%d profiles", n)
 	}
+	// An empty or path-like name must never reach config.json.
+	for _, bad := range []string{"", "../config", "servers/../../config"} {
+		if RemoveProfile(bad) == nil {
+			t.Errorf("RemoveProfile(%q) accepted", bad)
+		}
+		if SetActive(bad) == nil {
+			t.Errorf("SetActive(%q) accepted", bad)
+		}
+	}
+	if _, err := os.Stat(ProfilePath(DefaultProfile)); err != nil {
+		t.Errorf("config.json gone: %v", err)
+	}
 }
 
 func TestStripComment(t *testing.T) {

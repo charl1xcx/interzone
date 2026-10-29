@@ -44,6 +44,9 @@ func Active() string {
 
 // SetActive makes name the active profile.
 func SetActive(name string) error {
+	if err := ValidProfileName(name); err != nil {
+		return fmt.Errorf("no server called %q", name)
+	}
 	if err := os.MkdirAll(Dir(), 0o700); err != nil {
 		return err
 	}
@@ -64,6 +67,10 @@ func ProfilePath(name string) string {
 	}
 	return filepath.Join(Dir(), "servers", name+".json")
 }
+
+// BeforeRollbackPath is where a rollback keeps the active server's answers
+// it replaces, next to them.
+func BeforeRollbackPath() string { return ProfilePath(Active()) + ".before-rollback" }
 
 // DataDir is interzone's data directory: playbooks, backups, the venv.
 func DataDir() string {
@@ -138,6 +145,9 @@ func Profiles() []Profile {
 
 // RemoveProfile forgets a saved server. Nothing on the server is touched.
 func RemoveProfile(name string) error {
+	if err := ValidProfileName(name); err != nil {
+		return fmt.Errorf("no server called %q", name)
+	}
 	if name == DefaultProfile {
 		return fmt.Errorf("the first server can't be removed, only replaced")
 	}
