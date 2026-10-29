@@ -16,5 +16,5 @@
                                                 
  Pre-deploy checks                              
  ⠋ checking the server… 0s  c stop              
-   ▼ 60 more · ↑↓ scroll                        
+   ▼ 62 more · ↑↓ scroll                        
     ‹ back       ≡ menu       deploy ›      ⋯  

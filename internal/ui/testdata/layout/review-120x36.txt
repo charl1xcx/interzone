@@ -30,7 +30,7 @@
 │                        ││                                                                                            │
 │                        ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
 │ ◫ auto (wide)  ctrl+l  ││   │ vars.yml preview                                                                   │   │
-│ ◐ interzone  ctrl+y    ││     ▼ 42 more · ↑↓ scroll                                                                  │
+│ ◐ interzone  ctrl+y    ││     ▼ 44 more · ↑↓ scroll                                                                  │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  enter deploy · c stop checking · v details · z DNS records · ↑↓ scroll · s save files only · esc back · ? all keys     

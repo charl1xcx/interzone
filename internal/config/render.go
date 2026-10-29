@@ -255,6 +255,8 @@ tls:
 	case "synapse", "dendrite":
 		w.block("matrix_user_creator_users_additional", fmt.Sprintf("- username: %s\n  initial_password: %s\n  initial_type: admin",
 			Quote(c.AdminUser), Quote(c.AdminPassword)))
+		w.comment("Bridges and bots take it as their administrator; Meowlnir's management room needs one.")
+		w.raw("matrix_admin", Quote("@"+c.AdminUser+":{{ matrix_domain }}"))
 		if c.UsesMAS() {
 			if c.Signup {
 				w.comment("Anyone with the sign-up token can create an account; no email is asked")
