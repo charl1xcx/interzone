@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -100,12 +101,46 @@ func probe(ctx context.Context, c *config.Config) (map[string]string, error) {
 func ServerChecks(c *config.Config) []Finding {
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
+	return CheckServer(ctx, c, nil)
+}
 
+// CheckServer runs ServerChecks' checks until ctx ends. step, if set, is
+// told what's found so far each time a stage finishes, and which stage
+// runs next ("" once all have).
+func CheckServer(ctx context.Context, c *config.Config, step func(sofar []Finding, next string)) []Finding {
 	var out []Finding
 	add := func(name string, l Level, format string, a ...any) {
 		out = append(out, Finding{Group: "Server", Name: name, Level: l, Detail: fmt.Sprintf(format, a...)})
 	}
+	var ips []string
+	// The checks after the server's own, each its own stage: from here,
+	// as the internet sees it (UDP ports can't be told from silence).
+	rest := func() []Finding {
+		for _, st := range []struct {
+			name string
+			run  func() []Finding
+		}{
+			{"DNS", func() []Finding { return dnsChecks(ctx, c, ips) }},
+			{"ports", func() []Finding { return portChecks(ctx, c) }},
+			{"federation", func() []Finding { return federationChecks(ctx, c) }},
+			{"apps' view", func() []Finding { return clientChecks(ctx, c) }},
+		} {
+			if step != nil {
+				step(slices.Clone(out), st.name)
+			}
+			if c.Domain != "" || st.name == "DNS" {
+				out = append(out, st.run()...)
+			}
+		}
+		if step != nil {
+			step(slices.Clone(out), "")
+		}
+		return out
+	}
 
+	if step != nil {
+		step(nil, "the server")
+	}
 	facts, err := probe(ctx, c)
 	where := "this machine"
 	if c.Target.Mode == "ssh" {
@@ -113,7 +148,7 @@ func ServerChecks(c *config.Config) []Finding {
 	}
 	if err != nil {
 		add("Connect", Fail, "can't run commands on %s: %s", where, err)
-		return append(append(out, dnsChecks(ctx, c, nil)...), reachChecks(ctx, c)...)
+		return rest()
 	}
 	add("Connect", Pass, "%s", where)
 
@@ -207,8 +242,8 @@ func ServerChecks(c *config.Config) []Finding {
 	}
 
 	out = append(out, mirrorChecks(ctx, c, facts)...)
-	out = append(out, dnsChecks(ctx, c, strings.Fields(facts["ips"]))...)
-	return append(out, reachChecks(ctx, c)...)
+	ips = strings.Fields(facts["ips"])
+	return rest()
 }
 
 // mirrorChecks makes sure the blackout mirrors carry this server's distro

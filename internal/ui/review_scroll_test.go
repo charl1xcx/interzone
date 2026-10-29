@@ -58,3 +58,28 @@ func TestReviewConfirms(t *testing.T) {
 		t.Error("y didn't deploy")
 	}
 }
+
+// The checks show up stage by stage, and c stops them, keeping what's
+// found so far.
+func TestReviewChecksStream(t *testing.T) {
+	a := demoApp(t, 120, 45)
+	a.jump(a.index("Review"))
+	s := a.cur().(*reviewScreen)
+	if !s.checking {
+		t.Fatal("Review didn't start its checks")
+	}
+	ch := make(chan checksPartMsg, 4)
+	ch <- checksPartMsg{gen: s.gen, findings: []deploy.Finding{{Group: "Server", Name: "Connect", Level: deploy.Fail, Detail: "no"}}, next: "federation"}
+	s.update(checksPartMsg{gen: s.gen, next: "DNS", ch: ch})
+	if cmd := s.update(waitChecks(ch)()); cmd == nil || len(s.checks) != 1 || !strings.Contains(s.view(92, 40), "checking federation…") {
+		t.Fatalf("a stage didn't show:\n%s", s.view(92, 40))
+	}
+	s.update(runes("c"))
+	if s.checking || len(s.checks) != 1 || !strings.Contains(s.view(92, 40), "stopped") {
+		t.Errorf("c didn't stop the checks:\n%s", s.view(92, 40))
+	}
+	s.update(checksPartMsg{gen: s.gen - 1, next: ""}) // the stopped run, finishing late
+	if len(s.checks) != 1 {
+		t.Error("a stopped run's results replaced the ones kept")
+	}
+}

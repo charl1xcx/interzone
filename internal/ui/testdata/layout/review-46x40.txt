@@ -16,7 +16,7 @@
  ╰──────────────────────────────────────────╯ 
                                               
  Pre-deploy checks                            
- ⠋ checking the server and DNS…               
+ ⠋ checking the server… 0s  c stop            
                                               
    ○  Synapse                                 
       matrix.example.org                      

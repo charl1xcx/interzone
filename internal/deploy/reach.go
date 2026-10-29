@@ -18,17 +18,6 @@ import (
 	"interzone/internal/config"
 )
 
-// reachChecks looks at the server from here, as the internet would: whether
-// the TCP ports the components need get through (UDP can't be told from
-// silence), and whether other servers can federate with it.
-func reachChecks(ctx context.Context, c *config.Config) []Finding {
-	if c.Domain == "" {
-		return nil
-	}
-	out := append(portChecks(ctx, c), federationChecks(ctx, c)...)
-	return append(out, clientChecks(ctx, c)...)
-}
-
 // portChecks connects to every TCP port Ports lists, at the homeserver's
 // hostname. Refused means the port got through to a server with nothing
 // listening on it; no answer at all usually means a firewall drops it.

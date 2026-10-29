@@ -24,7 +24,25 @@ import (
 
 type startDeployMsg struct{ opts deploy.Options }
 
-type serverChecksMsg []deploy.Finding
+// checksPartMsg is what the checks found so far, and the stage running now
+// ("" when they're done).
+type checksPartMsg struct {
+	gen      int
+	findings []deploy.Finding
+	next     string
+	ch       chan checksPartMsg
+}
+
+func waitChecks(ch chan checksPartMsg) tea.Cmd {
+	return func() tea.Msg {
+		m, ok := <-ch
+		if !ok {
+			return nil
+		}
+		m.ch = ch
+		return m
+	}
+}
 
 type reviewScreen struct {
 	cfg      *config.Config
@@ -35,6 +53,10 @@ type reviewScreen struct {
 	yaml     string
 	checks   []deploy.Finding
 	checking bool
+	stage    string             // the checks' stage running now
+	since    time.Time          // when it started
+	stop     context.CancelFunc // c stops the checks
+	gen      int
 	verbose  bool // list passed checks too
 	confirm  bool // enter was pressed: y deploys
 	spin     spinner.Model
@@ -63,7 +85,11 @@ func (s *reviewScreen) keys() [][2]string {
 	if s.confirm {
 		return [][2]string{{"y", "deploy now"}, {"esc", "not yet"}}
 	}
-	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"z", map[bool]string{false: "DNS records", true: "vars.yml"}[s.zone != nil]}, {"↑↓", "scroll"}, {"s", "save files only"}}
+	again := "check again"
+	if s.checking {
+		again = "stop checking"
+	}
+	k := [][2]string{{"c", again}, {"v", "details"}, {"z", map[bool]string{false: "DNS records", true: "vars.yml"}[s.zone != nil]}, {"↑↓", "scroll"}, {"s", "save files only"}}
 	if s.comparable() {
 		k = append(k, [2]string{"x", map[bool]string{true: "whole vars.yml", false: "what changes"}[s.showDiff]})
 	}
@@ -176,18 +202,43 @@ func (s *reviewScreen) runChecks() tea.Cmd {
 		return nil
 	}
 	s.checking = true
-	cfg := *s.cfg
-	return tea.Batch(s.spin.Tick, func() tea.Msg { return serverChecksMsg(deploy.ServerChecks(&cfg)) })
+	s.gen++
+	cfg, gen := *s.cfg, s.gen
+	ctx, stop := context.WithTimeout(context.Background(), 40*time.Second)
+	s.stop = stop
+	s.stage, s.since = "the server", time.Now()
+	ch := make(chan checksPartMsg, 16) // more than the stages: a stopped run never blocks
+	return tea.Batch(s.spin.Tick, func() tea.Msg {
+		go func() {
+			defer close(ch)
+			deploy.CheckServer(ctx, &cfg, func(sofar []deploy.Finding, next string) {
+				ch <- checksPartMsg{gen: gen, findings: sofar, next: next}
+			})
+		}()
+		return waitChecks(ch)()
+	})
 }
 
 func (s *reviewScreen) leave(*config.Config) {}
 
 func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
-	case serverChecksMsg:
-		s.checking = false
-		s.checks = m
-		return nil
+	case checksPartMsg:
+		if m.gen != s.gen {
+			return nil
+		}
+		if m.next != s.stage {
+			s.stage, s.since = m.next, time.Now()
+		}
+		if m.findings != nil || m.next == "" {
+			s.checks = m.findings
+		}
+		if m.next == "" {
+			s.checking = false
+			s.stop()
+			return nil
+		}
+		return waitChecks(m.ch)
 	case zoneMsg:
 		s.zone, s.preview, s.toPrev = m, strings.Join(m, "\n"), true
 		return nil
@@ -217,6 +268,12 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 		case "s":
 			return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{deploy.Options{Action: deploy.ActionSaveOnly}} })
 		case "c":
+			if s.checking { // stop them: what's found so far stays
+				s.gen++
+				s.checking, s.stage = false, "stopped"
+				s.stop()
+				return nil
+			}
 			return s.runChecks()
 		case "v":
 			s.verbose = !s.verbose
@@ -274,7 +331,7 @@ func (s *reviewScreen) confirmLines(w int) []string {
 	if len(failed) > 0 {
 		lines = append(lines, sBad.Render(fmt.Sprintf("✗ %d check(s) failed: %s. The deploy may fail too.", len(failed), strings.Join(failed, ", "))))
 	}
-	if s.checking {
+	if s.checking || s.stage == "stopped" {
 		lines = append(lines, sWarn.Render("! The checks haven't finished."))
 	}
 	lines = append(lines, "", keyLink("y")+sMuted.Render(" deploy now   ")+keyLink("esc")+sMuted.Render(" not yet"))
@@ -370,12 +427,16 @@ func (s *reviewScreen) view(w, h int) string {
 // into one line unless details are on; problems are always spelled out.
 func (s *reviewScreen) checksView(w int) []string {
 	head := rule("Pre-deploy checks", min(w, 72))
+	if s.stage == "stopped" {
+		head = sSection.Render("Pre-deploy checks") + sWarn.Render("  stopped before the end; ") + keyLink("c") + sMuted.Render(" checks again")
+	}
 	if s.checking {
 		sep := "  "
 		if w < 60 {
 			sep = "\n"
 		}
-		head = sSection.Render("Pre-deploy checks") + sep + s.spin.View() + sMuted.Render(" checking the server and DNS…")
+		head = sSection.Render("Pre-deploy checks") + sep + s.spin.View() +
+			sMuted.Render(fmt.Sprintf(" checking %s… %ds  ", s.stage, int(time.Since(s.since).Seconds()))) + keyLink("c") + sMuted.Render(" stop")
 	}
 	lines := []string{head, ""}
 	on := s.cfg.HostServices()
