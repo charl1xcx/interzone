@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,6 +60,36 @@ var themes = []theme{
 		ac{Light: "#B58900", Dark: "#B58900"}, ac{Light: "#DC322F", Dark: "#DC322F"}, ac{Light: "#586E75", Dark: "#93A1A1"},
 		ac{Light: "#93A1A1", Dark: "#657B83"}, ac{Light: "#EEE8D5", Dark: "#073642"}, ac{Light: "#FDF6E3", Dark: "#002B36"},
 		ac{Light: "#FDF6E3", Dark: "#002B36"}},
+	{"tokyonight",
+		ac{Light: "#2E7DE9", Dark: "#7AA2F7"}, ac{Light: "#587539", Dark: "#9ECE6A"}, ac{Light: "#9854F1", Dark: "#BB9AF7"},
+		ac{Light: "#8C6C3E", Dark: "#E0AF68"}, ac{Light: "#F52A65", Dark: "#F7768E"}, ac{Light: "#3760BF", Dark: "#C0CAF5"},
+		ac{Light: "#6172B0", Dark: "#737AA2"}, ac{Light: "#C4C8DA", Dark: "#3B4261"}, ac{Light: "#E1E2E7", Dark: "#1A1B26"},
+		ac{Light: "#E1E2E7", Dark: "#1A1B26"}},
+	{"rose-pine",
+		ac{Light: "#907AA9", Dark: "#C4A7E7"}, ac{Light: "#56949F", Dark: "#9CCFD8"}, ac{Light: "#D7827E", Dark: "#EBBCBA"},
+		ac{Light: "#EA9D34", Dark: "#F6C177"}, ac{Light: "#B4637A", Dark: "#EB6F92"}, ac{Light: "#575279", Dark: "#E0DEF4"},
+		ac{Light: "#797593", Dark: "#908CAA"}, ac{Light: "#DFDAD9", Dark: "#403D52"}, ac{Light: "#FAF4ED", Dark: "#191724"},
+		ac{Light: "#FAF4ED", Dark: "#191724"}},
+	{"everforest",
+		ac{Light: "#8DA101", Dark: "#A7C080"}, ac{Light: "#35A77C", Dark: "#83C092"}, ac{Light: "#DF69BA", Dark: "#D699B6"},
+		ac{Light: "#DFA000", Dark: "#DBBC7F"}, ac{Light: "#F85552", Dark: "#E67E80"}, ac{Light: "#5C6A72", Dark: "#D3C6AA"},
+		ac{Light: "#939F91", Dark: "#859289"}, ac{Light: "#E6E2CC", Dark: "#475258"}, ac{Light: "#FDF6E3", Dark: "#2D353B"},
+		ac{Light: "#FDF6E3", Dark: "#2D353B"}},
+	{"kanagawa",
+		ac{Light: "#4D699B", Dark: "#7E9CD8"}, ac{Light: "#6F894E", Dark: "#98BB6C"}, ac{Light: "#B35B79", Dark: "#D27E99"},
+		ac{Light: "#77713F", Dark: "#E6C384"}, ac{Light: "#C84053", Dark: "#E46876"}, ac{Light: "#545464", Dark: "#DCD7BA"},
+		ac{Light: "#8A8980", Dark: "#727169"}, ac{Light: "#D5CEA3", Dark: "#363646"}, ac{Light: "#F2ECBC", Dark: "#1F1F28"},
+		ac{Light: "#F2ECBC", Dark: "#1F1F28"}},
+	{"onedark",
+		ac{Light: "#4078F2", Dark: "#61AFEF"}, ac{Light: "#50A14F", Dark: "#98C379"}, ac{Light: "#A626A4", Dark: "#C678DD"},
+		ac{Light: "#C18401", Dark: "#E5C07B"}, ac{Light: "#E45649", Dark: "#E06C75"}, ac{Light: "#383A42", Dark: "#ABB2BF"},
+		ac{Light: "#696C77", Dark: "#7F848E"}, ac{Light: "#D3D3D4", Dark: "#3E4451"}, ac{Light: "#FAFAFA", Dark: "#282C34"},
+		ac{Light: "#FAFAFA", Dark: "#282C34"}},
+	{"synthwave",
+		ac{Light: "#00838F", Dark: "#36F9F6"}, ac{Light: "#1B8A5A", Dark: "#72F1B8"}, ac{Light: "#C2185B", Dark: "#FF7EDB"},
+		ac{Light: "#9A6B00", Dark: "#FEDE5D"}, ac{Light: "#C62828", Dark: "#FE4450"}, ac{Light: "#241B2F", Dark: "#F4EEE4"},
+		ac{Light: "#6B6390", Dark: "#848BBD"}, ac{Light: "#D9D2EA", Dark: "#495495"}, ac{Light: "#F5F0FF", Dark: "#262335"},
+		ac{Light: "#F5F0FF", Dark: "#262335"}},
 	{"mono",
 		ac{Light: "#000000", Dark: "#FFFFFF"}, ac{Light: "#303030", Dark: "#D0D0D0"}, ac{Light: "#202020", Dark: "#E0E0E0"},
 		ac{Light: "#505050", Dark: "#B0B0B0"}, ac{Light: "#000000", Dark: "#FFFFFF"}, ac{Light: "#1A1A1A", Dark: "#E0E0E0"},
@@ -205,7 +236,11 @@ func gradient(s string) string {
 }
 
 // gradientLines colours a multi-line block column-wise so each line shares the ramp.
-func gradientLines(block string) string {
+func gradientLines(block string) string { return gradientLinesAt(block, 0) }
+
+// gradientLinesAt is gradientLines with the ramp moved along by shift: it
+// runs there and back, so any shift is a smooth step from the last.
+func gradientLinesAt(block string, shift float64) string {
 	stops := gradientStops()
 	lines := strings.Split(block, "\n")
 	width := 0
@@ -219,7 +254,10 @@ func gradientLines(block string) string {
 				b.WriteRune(r)
 				continue
 			}
-			t := float64(ci) / float64(max(1, width-1))
+			t := math.Mod(float64(ci)/float64(max(1, width-1))+shift, 2)
+			if t > 1 {
+				t = 2 - t
+			}
 			b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(ramp(stops, t))).Render(string(r)))
 		}
 		lines[li] = b.String()
