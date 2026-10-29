@@ -24,6 +24,9 @@ import (
 func newSpinner() spinner.Model {
 	sp := spinner.New()
 	sp.Spinner = spinner.MiniDot
+	if plain { // a redraw a second would have screen readers read it again
+		sp.Spinner = spinner.Spinner{Frames: []string{"…"}, FPS: time.Hour}
+	}
 	sp.Style = sAccent
 	return sp
 }

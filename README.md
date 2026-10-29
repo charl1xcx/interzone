@@ -365,6 +365,8 @@ link preview from them.
 ./interzone -no-mouse # leave the mouse to the terminal
 ./interzone -layout compact # phone layout, whatever the size (or wide, or auto)
 ./interzone -theme nord     # colours for one run (ctrl+y switches and remembers them)
+./interzone -plain          # no colours, ASCII boxes and bars, no animation: for screen
+                            # readers and logs (or INTERZONE_PLAIN=1)
 ```
 
 The wizard has four steps before the deploy: **Server** (where it runs,

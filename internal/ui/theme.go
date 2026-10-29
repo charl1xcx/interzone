@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/muesli/termenv"
 
 	"interzone/internal/config"
 )
@@ -232,6 +233,25 @@ func ramp(stops []string, t float64) string {
 	z, _ := colorful.Hex(stops[i+1])
 	return a.BlendLuv(z, seg-float64(i)).Clamped().Hex()
 }
+
+// plain is plain mode, for screen readers and logs: no colours, and the
+// box, bar and block characters drawn in ASCII.
+var plain bool
+
+// SetPlain turns plain mode on, before the app starts.
+func SetPlain() {
+	plain = true
+	lipgloss.SetColorProfile(termenv.Ascii)
+}
+
+// plainText swaps the drawing characters for ASCII ones of the same width;
+// sparklines become digits, 1 low to 8 full.
+var plainText = strings.NewReplacer(
+	"╭", "+", "╮", "+", "╰", "+", "╯", "+", "┌", "+", "┐", "+", "└", "+", "┘", "+", "├", "+", "┤", "+", "┬", "+", "┴", "+", "┼", "+",
+	"│", "|", "─", "-", "▌", ">", "░", ".", "▸", ">", "▾", "v", "›", ">", "●", "*", "○", "o",
+	"▁", "1", "▂", "2", "▃", "3", "▄", "4", "▅", "5", "▆", "6", "▇", "7", "█", "8",
+	"◢◤", "  ",
+)
 
 const logo = `
  ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀

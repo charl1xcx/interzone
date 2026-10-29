@@ -299,7 +299,10 @@ func (a *App) back() tea.Cmd {
 	return a.go_(-1)
 }
 
-func (a *App) View() string {
+func (a *App) View() (out string) {
+	if plain {
+		defer func() { out = plainText.Replace(out) }()
+	}
 	if a.w == 0 {
 		return ""
 	}

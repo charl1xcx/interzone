@@ -42,6 +42,7 @@ func main() {
 	theme := flag.String("theme", "", "the colours for this run: "+strings.Join(ui.ThemeNames(), ", ")+"; ctrl+y in the app switches and remembers them")
 	layout := flag.String("layout", "", "auto, compact (phones, narrow or portrait terminals) or wide; the default is the last one picked in the app, else auto")
 	noMouse := flag.Bool("no-mouse", false, "don't take the mouse, so the terminal can select text without shift")
+	plain := flag.Bool("plain", os.Getenv("INTERZONE_PLAIN") != "", "no colours, and ASCII instead of boxes, bars and an animated spinner: for screen readers and logs (also INTERZONE_PLAIN=1)")
 	flag.Usage = func() {
 		fmt.Fprintln(flag.CommandLine.Output(), cli.Usage+"\n\nOptions:")
 		flag.PrintDefaults()
@@ -66,6 +67,9 @@ func main() {
 	opts := []tea.ProgramOption{tea.WithAltScreen()}
 	if !*noMouse {
 		opts = append(opts, tea.WithMouseCellMotion())
+	}
+	if *plain {
+		ui.SetPlain() // before New: the screens' spinners are made there
 	}
 	app := ui.New(cfg, loaded)
 	if *layout != "" {
