@@ -8,7 +8,7 @@
  │ ↯  Restart all services               r  │ 
  │    press r again to run                  │ 
  ╰──────────────────────────────────────────╯ 
-   ±  See what an update brings          n    
+   ±  What's new                         n    
    ▣  Check container images             i    
    ⚑  Alerts                             A    
    ⏻  Start, stop or reinstall servic…   p    
@@ -21,7 +21,7 @@
                                               
  Data ─────────────────────────────────────── 
    ⇩  Back up the database               b    
-   ◷  Scheduled backups                  s    
+   ◷  Backups                            s    
    ↺  Restore a backup                   e    
    ↶  Roll back                          z    
    ◔  Disk space                         D    

@@ -7,11 +7,11 @@
 │ ▌ @ Users              ││   │ 4       │ │ 2       │ │ 1       │ │ 1       │ │ 31      │ │ 396 MB  │ │ 4          │   │
 │   # Rooms              ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
 │   ▦ Dashboard          ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
-│   ↻ Updates            ││    /  search    f  everyone    o  by last seen                                             │
+│   ↻ What's new         ││    /  search    f  everyone    o  by last seen                                             │
 │   ◷ Backups            ││                                                                                            │
 │   ⚑ Alerts             ││   ▌ ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
 │   ↺ Restore            ││     ●  Bob                        3d ago  │ ●  Alice Liddell   admin                   │   │
-│   ↶ Rollback           ││     ●  Carol                     45d ago  │    @alice:example.org                      │   │
+│   ↶ Roll back          ││     ●  Carol                     45d ago  │    @alice:example.org                      │   │
 │   ✎ Fine-tune          ││     ○  eve                         never  │                                            │   │
 │   ⚒ Maintenance        ││     ⊘  dave                  deactivated  │ Last seen  2h ago  0000-00-00 00:00        │   │
 │   ⇢ Move server        ││     ⇄  Telegram  3 accounts           ▸   │ Joined     0000-00-00  1y ago              │   │

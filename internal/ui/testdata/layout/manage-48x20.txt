@@ -7,7 +7,7 @@
  ╰────────────────────────────────────────────╯ 
    ✓  Check services                       c    
    ↯  Restart all services                 r    
-   ±  See what an update brings            n    
+   ±  What's new                           n    
    ▣  Check container images               i    
    ⚑  Alerts                               A    
    ⏻  Start, stop or reinstall services    p    

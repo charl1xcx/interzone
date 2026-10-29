@@ -25,7 +25,7 @@ type maintTask struct{ id, label, help string }
 
 var maintTasks = []maintTask{
 	{"services", "Services", "Start, stop or reinstall every service or one group of them. Reinstalling everything also removes the components you've turned off (setup-all), which a normal update leaves in place."},
-	{"disk", "Disk", "See what takes the server's disk space, remove Docker images nothing uses, or have Synapse delete media cached from other servers after a while. Media from other servers is usually what fills a small server's disk."},
+	{"disk", "Disk space", "See what takes the server's disk space, remove Docker images nothing uses, or have Synapse delete media cached from other servers after a while. Media from other servers is usually what fills a small server's disk."},
 	{"vacuum", "Vacuum", "Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting a lot, e.g. after compressing Synapse's state."},
 	{"pgupgrade", "Upgrade", "Move the database to the newest Postgres major version: it is dumped, a new empty server started and the dump restored. The old data directory is kept until you delete it."},
 	{"compress", "Compress", "Shrink Synapse's _state tables with rust-synapse-compress-state; the most effective way to reduce the database of a server in large rooms. Safe while Synapse runs, but back up first."},

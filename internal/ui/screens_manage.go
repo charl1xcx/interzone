@@ -196,13 +196,13 @@ func (s *manageScreen) actions() []manageAction {
 			desc: "List every room with its members and size; block one, delete it, or delete its old messages."},
 		manageAction{id: "dashboard", title: "Server dashboard",
 			desc: "Load, memory, disk space, certificate expiry and the state of every container."},
-		manageAction{id: "changes", title: "See what an update brings",
+		manageAction{id: "changes", title: "What's new",
 			desc: "Fetch the playbook without installing and list the new commits and component versions."},
 		manageAction{id: "images", title: "Check container images",
 			desc: "Make sure every image the install needs can be pulled from your registry mirror, for the server's CPU."},
 		manageAction{id: "backup", title: "Back up the database",
 			desc: "Dump the bundled Postgres database and copy it to " + deploy.BackupDir() + "."},
-		manageAction{id: "schedule", title: "Scheduled backups",
+		manageAction{id: "schedule", title: "Backups",
 			desc: "Have the server dump its database on a timer by itself, keeping the newest few."},
 		manageAction{id: "restore", title: "Restore a backup",
 			desc: "Replace the database with one of the dumps in " + deploy.BackupDir() + "."},
@@ -356,6 +356,10 @@ func (s *manageScreen) update(msg tea.Msg) tea.Cmd {
 	return nil
 }
 
+// actionScreens are the actions that open a screen of the Manage menu.
+var actionScreens = map[string]string{"alerts": "Alerts", "users": "Users", "rooms": "Rooms", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
+	"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}
+
 func run(opts deploy.Options) tea.Cmd { return func() tea.Msg { return runActionMsg{opts} } }
 
 func (s *manageScreen) choose(id string) tea.Cmd {
@@ -384,9 +388,7 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 	case "selfupdate":
 		return run(deploy.Options{Action: deploy.ActionSelfUpdate})
 	case "users", "rooms", "tokens", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate", "alerts":
-		screen := map[string]string{"alerts": "Alerts", "users": "Users", "rooms": "Rooms", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
-			"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}[id]
-		return func() tea.Msg { return gotoMsg(screen) }
+		return func() tea.Msg { return gotoMsg(actionScreens[id]) }
 	case "psql":
 		return databaseShell(s.cfg)
 	case "services", "disk", "vacuum", "pgupgrade", "compress", "tags", "uninstall":

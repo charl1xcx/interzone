@@ -111,7 +111,7 @@ func newUpdatesScreen() *updatesScreen {
 func (s *updatesScreen) tool()        {}
 func (s *updatesScreen) name() string { return "Updates" }
 func (s *updatesScreen) title() string {
-	return "What an update brings"
+	return "What's new in an update"
 }
 func (s *updatesScreen) typing() bool { return false }
 func (s *updatesScreen) keys() [][2]string {

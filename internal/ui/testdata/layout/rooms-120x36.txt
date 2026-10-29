@@ -7,11 +7,11 @@
 │   @ Users              ││                                                                                            │
 │ ▌ # Rooms              ││   ▌ #  Lounge                214 members  ╭────────────────────────────────────────────╮   │
 │   ▦ Dashboard          ││     #  Matrix HQ            9120 members  │ #  Lounge                                  │   │
-│   ↻ Updates            ││     #  Book club               7 members  │    #lounge:example.org                     │   │
+│   ↻ What's new         ││     #  Book club               7 members  │    #lounge:example.org                     │   │
 │   ◷ Backups            ││     ⊘  free crypto             3 members  │                                            │   │
 │   ⚑ Alerts             ││                                           │ Members    214  31 from here               │   │
 │   ↺ Restore            ││                                           │ Size       1840 state events               │   │
-│   ↶ Rollback           ││                                           │            public                          │   │
+│   ↶ Roll back          ││                                           │            public                          │   │
 │   ✎ Fine-tune          ││                                           │ Made by    @alice:example.org              │   │
 │   ⚒ Maintenance        ││                                           │ ID         !kQx:example.org                │   │
 │   ⇢ Move server        ││                                           │                                            │   │

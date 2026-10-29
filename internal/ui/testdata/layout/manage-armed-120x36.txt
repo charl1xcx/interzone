@@ -7,11 +7,11 @@
 │   @ Users              ││     ↻  Update the server                                                            u      │
 │   # Rooms              ││     ✓  Check services                                                               c      │
 │   ▦ Dashboard          ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
-│   ↻ Updates            ││   │ ↯  Restart all services                                                         r  │   │
+│   ↻ What's new         ││   │ ↯  Restart all services                                                         r  │   │
 │   ◷ Backups            ││   │    press r again to run                                                            │   │
 │   ⚑ Alerts             ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
-│   ↺ Restore            ││     ±  See what an update brings                                                    n      │
-│   ↶ Rollback           ││     ▣  Check container images                                                       i      │
+│   ↺ Restore            ││     ±  What's new                                                                   n      │
+│   ↶ Roll back          ││     ▣  Check container images                                                       i      │
 │   ✎ Fine-tune          ││     ⚑  Alerts                                                                       A      │
 │   ⚒ Maintenance        ││     ⏻  Start, stop or reinstall services                                            p      │
 │   ⇢ Move server        ││     ⇪  Update interzone                                                             U      │
@@ -23,7 +23,7 @@
 │                        ││                                                                                            │
 │ ▾ Servers              ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
 │   ● example.org        ││     ⇩  Back up the database                                                         b      │
-│                        ││     ◷  Scheduled backups                                                            s      │
+│                        ││     ◷  Backups                                                                      s      │
 │                        ││     ↺  Restore a backup                                                             e      │
 │                        ││     ↶  Roll back                                                                    z      │
 │                        ││     ◔  Disk space                                                                   D      │

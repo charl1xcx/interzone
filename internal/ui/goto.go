@@ -51,7 +51,7 @@ func (a *App) gotoEntries() []gotoEntry {
 		ms := a.screens[a.index("Manage")].(*manageScreen)
 		ms.cfg = a.cfg
 		for _, act := range ms.actions() {
-			if act.disabled == "" {
+			if act.disabled == "" && actionScreens[act.id] == "" { // those are listed above
 				es = append(es, gotoEntry{label: "Manage › " + act.title, act: act.id})
 			}
 		}

@@ -4,14 +4,14 @@
 │                        ││   Maintenance                                                                              │
 │ ▾ Manage example.org   ││                                                                                            │
 │   ⌂ Overview           ││   ▌  Task                                                                                  │
-│   @ Users              ││   ▌   ○ Services    ○ Disk    ◉ Vacuum    ○ Upgrade    ○ Compress    ○ Tags                │
+│   @ Users              ││   ▌   ○ Services    ○ Disk space    ◉ Vacuum    ○ Upgrade    ○ Compress    ○ Tags          │
 │   # Rooms              ││   ▌   ○ Uninstall                                                                          │
 │   ▦ Dashboard          ││   ▌  Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting      │
-│   ↻ Updates            ││   ▌  a lot, e.g. after compressing Synapse's state.                                        │
+│   ↻ What's new         ││   ▌  a lot, e.g. after compressing Synapse's state.                                        │
 │   ◷ Backups            ││                                                                                            │
 │   ⚑ Alerts             ││      Kind of vacuum                                                                        │
 │   ↺ Restore            ││       ◉ Complete (FULL, ANALYZE; services stop)    ○ Full (services stop)                  │
-│   ↶ Rollback           ││       ○ Plain (services keep running)    ○ Plain + ANALYZE (services keep running)         │
+│   ↶ Roll back          ││       ○ Plain (services keep running)    ○ Plain + ANALYZE (services keep running)         │
 │   ✎ Fine-tune          ││       ○ ANALYZE only (fastest)                                                             │
 │ ▌ ⚒ Maintenance        ││                                                                                            │
 │   ⇢ Move server        ││                                                                                            │

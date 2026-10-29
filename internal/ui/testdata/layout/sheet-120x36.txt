@@ -7,11 +7,11 @@
 │   @ Users              ││     ↑↓       select                            d        Server dashboard                   │
 │   # Rooms              ││     enter    run                               l        View logs                          │
 │   ▦ Dashboard          ││     a–z      shortcuts                         f        Fine-tune the roles                │
-│   ↻ Updates            ││     u        Update the server                 $        Database shell                     │
+│   ↻ What's new         ││     u        Update the server                 $        Database shell                     │
 │   ◷ Backups            ││     c        Check services                    x        Run playbook tags                  │
 │   ⚑ Alerts             ││     r        Restart all services              w        Change the setup                   │
-│   ↺ Restore            ││     n        See what an update brings         v        Move to another server             │
-│   ↶ Rollback           ││     i        Check container images            o        Other servers                      │
+│   ↺ Restore            ││     n        What's new                        v        Move to another server             │
+│   ↶ Roll back          ││     i        Check container images            o        Other servers                      │
 │   ✎ Fine-tune          ││     A        Alerts                            X        Uninstall everything               │
 │   ⚒ Maintenance        ││     p        Start, stop or reinstall serv…                                                │
 │   ⇢ Move server        ││     U        Update interzone                Anywhere                                      │
@@ -19,7 +19,7 @@
 │                        ││     m        Manage users                      ctrl+b   the menu                           │
 │ ▸ Mirrors              ││     R        Manage rooms                      esc      back                               │
 │                        ││     b        Back up the database              ?        these keys                         │
-│ ▸ Test                 ││     s        Scheduled backups                 ctrl+s   save answers                       │
+│ ▸ Test                 ││     s        Backups                           ctrl+s   save answers                       │
 │                        ││     e        Restore a backup                  ctrl+l   layout: auto (wide)                │
 │ ▾ Servers              ││     z        Roll back                         ctrl+y   theme: interzone                   │
 │   ● example.org        ││     D        Disk space                        q        quit, when not typing              │

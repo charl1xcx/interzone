@@ -7,11 +7,11 @@
 │   @ Users              ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
 │   # Rooms              ││   │ ↻  Update the server                                                            u  │   │
 │   ▦ Dashboard          ││   │    Pull the latest playbook and roles, then re-run the install with your saved     │   │
-│   ↻ Updates            ││   │    answers. Also applies any changes you made in the setup.                        │   │
+│   ↻ What's new         ││   │    answers. Also applies any changes you made in the setup.                        │   │
 │   ◷ Backups            ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │   ⚑ Alerts             ││     ✓  Check services                                                               c      │
 │   ↺ Restore            ││     ↯  Restart all services                                                         r      │
-│   ↶ Rollback           ││     ±  See what an update brings                                                    n      │
+│   ↶ Roll back          ││     ±  What's new                                                                   n      │
 │   ✎ Fine-tune          ││     ▣  Check container images                                                       i      │
 │   ⚒ Maintenance        ││     ⚑  Alerts                                                                       A      │
 │   ⇢ Move server        ││     ⏻  Start, stop or reinstall services                                            p      │
@@ -24,7 +24,7 @@
 │ ▾ Servers              ││                                                                                            │
 │   ● example.org        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
 │                        ││     ⇩  Back up the database                                                         b      │
-│                        ││     ◷  Scheduled backups                                                            s      │
+│                        ││     ◷  Backups                                                                      s      │
 │                        ││     ↺  Restore a backup                                                             e      │
 │                        ││     ↶  Roll back                                                                    z      │
 │                        ││     ◔  Disk space                                                                   D      │

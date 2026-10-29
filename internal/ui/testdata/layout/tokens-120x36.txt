@@ -6,13 +6,13 @@
 │   ⌂ Overview           ││   ● Sign-up is open to anyone with an active token.                                        │
 │   @ Users              ││                                                                                            │
 │   # Rooms              ││   ▌ ●  q7KzR2mWx9P…  interzone   14 used  ╭────────────────────────────────────────────╮   │
-│ ▌ ⚿ Tokens             ││     ●  book-club               4/10 used  │ ●  q7KzR2mWx9PtL4vNb8Hc                    │   │
+│ ▌ ⚿ Sign-up tokens     ││     ●  book-club               4/10 used  │ ●  q7KzR2mWx9PtL4vNb8Hc                    │   │
 │   ▦ Dashboard          ││     ⊘  family2025                used up  │    the token interzone made for sign-up    │   │
-│   ↻ Updates            ││     ⊘  old-link                  revoked  │                                            │   │
+│   ↻ What's new         ││     ⊘  old-link                  revoked  │                                            │   │
 │   ◷ Backups            ││                                           │ Used       14  no limit                    │   │
 │   ⚑ Alerts             ││                                           │ Last used  3h ago                          │   │
 │   ↺ Restore            ││                                           │ Made       0000-00-00  40d ago             │   │
-│   ↶ Rollback           ││                                           │ Expires    never                           │   │
+│   ↶ Roll back          ││                                           │ Expires    never                           │   │
 │   ✎ Fine-tune          ││                                           │                                            │   │
 │   ⚒ Maintenance        ││                                           │  x  revoke    n  new token                 │   │
 │   ⇢ Move server        ││                                           ╰────────────────────────────────────────────╯   │
