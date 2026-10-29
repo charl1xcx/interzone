@@ -179,7 +179,8 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
 - **Checks before it touches anything.** The Review screen logs into the
   server and checks root access, OS, CPU, Python, memory, disk and ports
   80/443 (and 8448 for Synapse and Dendrite), then resolves every DNS record the setup needs and compares
-  it with the server's addresses. It also lists the ports a firewall in
+  it with the server's addresses; `z` shows the records to create as
+  zone-file lines to paste into your DNS provider. It also lists the ports a firewall in
   front of the server (your provider's, or a router) has to let in for the
   components you've turned on: web and federation, Coturn, LiveKit for
   Element Call and Matrix RTC, Jitsi and Postmoogle, with the port numbers
@@ -421,6 +422,7 @@ interzone apply                # deploy with saved answers; runs the checks firs
 interzone apply --save-only    # only write the inventory
 interzone apply --config answers.json --force --quiet
 interzone check                # test mirrors, the server and DNS
+interzone dns                  # the DNS records to create, as zone-file lines
 interzone mirrors              # test every known in-country mirror and what it carries
 interzone apply --latest       # update a playbook held back by a rollback
 interzone changes              # what an update would bring

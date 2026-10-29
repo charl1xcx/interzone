@@ -42,6 +42,7 @@ const Usage = `Usage:
   interzone                 start the wizard
   interzone apply           deploy with the saved answers, no questions asked
   interzone check           test mirrors, the server and DNS
+  interzone dns             the DNS records to create, as zone-file lines
   interzone mirrors         test every known in-country mirror
   interzone bundle          pack the playbook, roles and Ansible for offline use
   interzone unbundle FILE   install an offline bundle on this machine

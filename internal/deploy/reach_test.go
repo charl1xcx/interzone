@@ -64,3 +64,18 @@ func TestClientChecks(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestZoneRecords(t *testing.T) {
+	c := config.Default()
+	c.Domain, c.Homeserver = "example.org", "synapse"
+	c.Components = map[string]bool{}
+	c.Target = config.Target{Mode: "ssh", Host: "203.0.113.7", User: "root"}
+	got := strings.Join(ZoneRecords(context.Background(), c), "\n")
+	if !strings.Contains(got, "matrix.example.org. 3600 IN A    203.0.113.7") || !strings.Contains(got, "/.well-known/matrix/server") {
+		t.Errorf("got\n%s", got)
+	}
+	c.Target.Mode = "local"
+	if got := strings.Join(ZoneRecords(context.Background(), c), "\n"); !strings.Contains(got, "IN A    SERVER_IP") {
+		t.Errorf("local:\n%s", got)
+	}
+}

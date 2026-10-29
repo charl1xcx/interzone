@@ -22,6 +22,19 @@ func init() {
 	Commands["status"] = Status
 	Commands["rollback"] = Rollback
 	Commands["restore"] = Restore
+	Commands["dns"] = DNS
+}
+
+// DNS prints the DNS records the setup needs, as zone-file lines.
+func DNS(args []string) error {
+	c, err := configFlag("dns", args)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := withTimeout(10 * time.Second)
+	defer cancel()
+	fmt.Println(strings.Join(deploy.ZoneRecords(ctx, c), "\n"))
+	return nil
 }
 
 func withTimeout(d time.Duration) (context.Context, context.CancelFunc) {

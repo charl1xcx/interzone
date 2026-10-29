@@ -43,6 +43,7 @@ type reviewScreen struct {
 	changes  []config.VarChange
 	defaults map[string]string // the playbook's, to tell which additions change nothing
 	showDiff bool
+	zone     []string // DNS records shown instead of vars.yml (z)
 }
 
 // comparable reports whether there's an earlier vars.yml to compare with.
@@ -56,7 +57,7 @@ func (s *reviewScreen) name() string  { return "Review" }
 func (s *reviewScreen) title() string { return "Everything look right?" }
 func (s *reviewScreen) typing() bool  { return false }
 func (s *reviewScreen) keys() [][2]string {
-	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"↑↓", "scroll vars.yml"}, {"s", "save files only"}}
+	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"z", map[bool]string{false: "DNS records", true: "vars.yml"}[s.zone != nil]}, {"↑↓", "scroll"}, {"s", "save files only"}}
 	if s.comparable() {
 		k = append(k, [2]string{"x", map[bool]string{true: "whole vars.yml", false: "what changes"}[s.showDiff]})
 	}
@@ -67,7 +68,7 @@ func (s *reviewScreen) keys() [][2]string {
 }
 
 func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
-	s.cfg = c
+	s.cfg, s.zone = c, nil
 	c.FillGenerated()
 	s.missing = c.Missing()
 	s.confirm = false
@@ -142,6 +143,9 @@ func changesView(cs []config.VarChange, defaults map[string]string) string {
 
 // previewTitle heads the vars.yml panel.
 func (s *reviewScreen) previewTitle() string {
+	if s.zone != nil {
+		return sMuted.Render("DNS records to create (also: interzone dns)")
+	}
 	if !s.showDiff {
 		return sMuted.Render("vars.yml preview")
 	}
@@ -152,6 +156,9 @@ func (s *reviewScreen) previewTitle() string {
 	return sMuted.Render("vars.yml since the deploy of "+s.last.Time.Local().Format("Jan 2 15:04")+"  ") +
 		sGood.Render(fmt.Sprintf("+%d", a)) + " " + sBad.Render(fmt.Sprintf("-%d", r))
 }
+
+// zoneMsg carries the DNS records to show in the preview.
+type zoneMsg []string
 
 func (s *reviewScreen) runChecks() tea.Cmd {
 	if s.checking || s.cfg.Domain == "" || (s.cfg.Target.Mode == "ssh" && s.cfg.Target.Host == "") {
@@ -169,6 +176,11 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 	case serverChecksMsg:
 		s.checking = false
 		s.checks = m
+		return nil
+	case zoneMsg:
+		s.zone = m
+		s.vp.SetContent(strings.Join(m, "\n"))
+		s.vp.GotoTop()
 		return nil
 	case spinner.TickMsg:
 		return spinning(s.checking, &s.spin, m)
@@ -196,10 +208,22 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 			return nil
 		case "x":
 			if s.comparable() {
-				s.showDiff = !s.showDiff
+				s.showDiff, s.zone = !s.showDiff, nil
 				s.setPreview()
 			}
 			return nil
+		case "z":
+			if s.zone != nil {
+				s.zone = nil
+				s.setPreview()
+				return nil
+			}
+			cfg := *s.cfg
+			return func() tea.Msg {
+				ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+				defer cancel()
+				return zoneMsg(deploy.ZoneRecords(ctx, &cfg))
+			}
 		}
 	}
 	var cmd tea.Cmd
