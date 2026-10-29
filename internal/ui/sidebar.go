@@ -3,6 +3,7 @@ package ui
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -184,7 +185,20 @@ func (a *App) sidebar(h int) string {
 		return sPanel.Padding(0).Width(sidebarRailW - 2).Height(h).Render(strings.Join(lines, "\n"))
 	}
 
-	lines := a.menuLines(sidebarW - 4)
+	lines, here := a.menuLines(sidebarW - 4)
+	// Taller than the window with many sections open: show the part
+	// around where you are (or the selection) rather than push the
+	// screen's header off the top.
+	if room, n := h-3, len(lines); n > room && room >= 3 {
+		top := max(0, min(here-room/2, n-room))
+		lines = slices.Clone(lines[top : top+room])
+		if top > 0 {
+			lines[0] = sFaint.Render("  ▲ more")
+		}
+		if top+room < n {
+			lines[room-1] = sFaint.Render("  ▼ more")
+		}
+	}
 	// The layout switch and the fold hint sit at the bottom.
 	body := strings.Join(lines, "\n")
 	if gap := h - lipgloss.Height(body) - 3; gap > 0 {
@@ -319,9 +333,10 @@ func (a *App) menuHead(m menuSection, w int) string {
 	return sFaint.Render(arrow) + sMuted.Render(title)
 }
 
-// menuLines are the sidebar's entries, inner columns wide.
-func (a *App) menuLines(inner int) []string {
-	var lines []string
+// menuLines are the sidebar's entries, inner columns wide, and the line
+// of the selection, else of where you are.
+func (a *App) menuLines(inner int) (lines []string, here int) {
+	here = -1
 	for i, m := range a.menu() {
 		if i > 0 {
 			lines = append(lines, "")
@@ -329,6 +344,7 @@ func (a *App) menuLines(inner int) []string {
 		head := a.menuHead(m, inner)
 		if id := "side:head:" + sectionNames[m.sec]; a.focused(id) {
 			head = menuMarker() + a.menuHead(m, inner-1)
+			here = len(lines)
 		}
 		lines = append(lines, mark("side:head:"+sectionNames[m.sec], head))
 		for _, it := range m.items {
@@ -337,8 +353,12 @@ func (a *App) menuLines(inner int) []string {
 			switch {
 			case a.focused(it.id):
 				line = menuMarker() + " " + it.icon + " " + sFocus.Render(label)
+				here = len(lines)
 			case it.on:
 				line = sAccent.Render("▌") + " " + it.icon + " " + sTitle.Render(label)
+				if here < 0 || !a.menuKeys {
+					here = len(lines)
+				}
 			}
 			lines = append(lines, markRow(it.id, line, inner))
 			if it.sub != "" {
@@ -346,7 +366,7 @@ func (a *App) menuLines(inner int) []string {
 			}
 		}
 	}
-	return lines
+	return lines, max(here, 0)
 }
 
 // menuTiles is the compact layout's menu: each heading a full-width row

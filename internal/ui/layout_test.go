@@ -295,3 +295,17 @@ func golden(t *testing.T, name, got string) {
 		t.Errorf("%s changed; if that's intended, rerun with -update.\n--- want\n%s\n--- got\n%s", path, want, got)
 	}
 }
+
+// With every menu section open in a short window, the sidebar scrolls to
+// where you are instead of pushing the header off the screen.
+func TestSidebarFits(t *testing.T) {
+	a := demoApp(t, 120, 24)
+	a.jump(a.index("Manage"))
+	for sec := range sectionNames {
+		a.sideOpen[sec] = true
+	}
+	lines := strings.Split(ansi.Strip(a.View()), "\n")
+	if len(lines) != 24 || !strings.Contains(lines[0], "interzone") || !strings.Contains(a.View(), "Overview") {
+		t.Errorf("%d lines, the first %q:\n%s", len(lines), lines[0], strings.Join(lines, "\n"))
+	}
+}
