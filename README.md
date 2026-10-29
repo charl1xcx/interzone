@@ -38,7 +38,8 @@ interzone writes the inventory and runs the playbook for you, with a live
 progress view.
 
 It is built to keep working during a **country-wide internet blackout**:
-every download can come from mirrors inside the country.
+every download can come from mirrors inside the country, or from other
+interzone servers over IPFS.
 
 <p align="center"><a href="docs/screenshots/welcome.png"><img src="docs/screenshots/welcome.png" alt="interzone's welcome screen" width="600"></a></p>
 
@@ -136,6 +137,30 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   against the server's release. Wherever the chosen mirror falls short,
   interzone switches to the first known mirror that has everything, says so
   in the log and saves it on the Server step.
+
+  **IPFS: from interzone's swarm.** The third network situation on the
+  Server step fetches everything (playbook, roles, OS and Docker packages,
+  PyPI and every container image) from other servers in interzone's
+  private IPFS swarm, so a server can be set up or upgraded while the
+  mirrors above are unreachable, as long as it can reach one peer that has
+  the files. Before the deploy, interzone installs the IPFS daemon (kubo)
+  on the server as the `interzone-ipfs` service, joins the swarm, finds
+  the newest publish and checks its signature, then serves its images as
+  a local registry on the server. Everything the run downloads goes through
+  the server's own IPFS gateway (an SSH forward reaches it from your
+  computer), and the playbook is held at the publish's commit, so the roles
+  match the images.
+
+  The Server step asks whether to **share** what the server downloaded with
+  other servers, with no answer preselected. Sharing keeps the daemon
+  running after the deploy and listening on TCP 4001 (open it in your
+  firewall), and lets the swarm's members see that the server holds Matrix
+  software. Without sharing, the daemon stops after each run.
+
+  The swarm is private: its key ships with interzone, which keeps the
+  public IPFS network out but isn't a secret. Its entry node is at
+  infamous.g0th.ir (TCP 4001, or WebSocket on yeule.g0th.ir:443). The
+  IPFS daemon comes from interzone's mirror, GitHub or an offline bundle.
 
   The defaults point at infamous.g0th.ir, an
   [interzone-mirror](https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)
@@ -525,7 +550,9 @@ tar xzf interzone-bundle.tar.gz
 
 Deploys then use the bundled playbook and roles when the git mirror is
 unreachable, and install Ansible from the bundled packages. Container images
-are not included: point interzone at a registry mirror inside your network.
+are not included: point interzone at a registry mirror inside your network,
+or pick IPFS on the Server step (a bundle made with IPFS on carries the IPFS
+daemon for both x86 and ARM servers).
 
 Files:
 

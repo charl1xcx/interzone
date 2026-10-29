@@ -337,8 +337,8 @@ func Unbundle(src, playbookDir string, log func(string)) (*BundleInfo, error) {
 		}
 		log("Python packages installed in " + dst)
 	}
-	if d := filepath.Join(root, "ipfs"); exists(d) {
-		if err := copyTree(d, filepath.Join(dataDirFor(playbookDir), "ipfs")); err != nil {
+	if d := filepath.Join(root, "ipfs"); exists(d) { // kuboBinary's cache, shared by every server
+		if err := copyTree(d, filepath.Join(dataDir(), "ipfs")); err != nil {
 			return nil, err
 		}
 		log("IPFS daemon kept for the IPFS source")
