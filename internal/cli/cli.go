@@ -185,7 +185,7 @@ func Check(args []string) error {
 	fmt.Println()
 	fmt.Println(head.Render("==> Ports to open in a firewall in front of the server"))
 	for _, p := range c.Ports() {
-		fmt.Printf("  %-40s %s\n", p.String(), muted.Render(p.For))
+		fmt.Printf("  %-40s %s\n", p.For, muted.Render(p.String()))
 	}
 	if max(worst, deploy.Worst(fs2)) == deploy.Fail {
 		return ErrFailed
