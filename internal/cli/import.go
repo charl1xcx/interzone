@@ -31,7 +31,7 @@ already saved updates that server's answers (the old ones are kept as
 Options:`)
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	if fs.NArg() != 1 {
 		fs.Usage()
 		return ErrFailed

@@ -49,7 +49,7 @@ func Servers(args []string) error {
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "Usage: interzone servers [use NAME | rm NAME]\n\nLists the servers interzone has answers for. 'use' makes one the active server\nfor the wizard and every command; INTERZONE_SERVER=NAME picks one for a single run.\n'rm' forgets a server's answers; nothing on the server changes.")
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	switch fs.Arg(0) {
 	case "":
 		list := config.Profiles()
@@ -67,7 +67,7 @@ func Servers(args []string) error {
 		return nil
 	case "use":
 		name := fs.Arg(1)
-		if _, err := os.Stat(config.ProfilePath(name)); name == "" || err != nil {
+		if _, err := os.Stat(config.ProfilePath(name)); config.ValidProfileName(name) != nil || err != nil {
 			return fmt.Errorf("no server called %q; 'interzone servers' lists them", name)
 		}
 		if err := config.SetActive(name); err != nil {
@@ -77,6 +77,10 @@ func Servers(args []string) error {
 		return nil
 	case "rm":
 		name := fs.Arg(1)
+		if name == "" {
+			fs.Usage()
+			return ErrFailed
+		}
 		if name == config.Active() {
 			return fmt.Errorf("%s is the active server; switch to another first", name)
 		}
@@ -98,7 +102,7 @@ func SelfUpdate(args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: interzone self-update [options]\n\nReplaces this binary with the newest release.\n\nOptions:")
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	c, ok := config.Load()
 	if !ok {
 		c = config.Default()
@@ -275,10 +279,10 @@ func Rollback(args []string) error {
 	list := fs.Bool("list", false, "list the recorded deploys")
 	quiet := fs.Bool("quiet", false, "print task names and errors only")
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "Usage: interzone rollback [--list | N]\n\nReinstalls deploy N from the list (1 is the latest) with the playbook commit\nand answers it used. The database is backed up first; today's answers are\nkept in config.before-rollback.json.\n\nOptions:")
+		fmt.Fprintln(fs.Output(), "Usage: interzone rollback [--list | N]\n\nReinstalls deploy N from the list (1 is the latest) with the playbook commit\nand answers it used. The database is backed up first; today's answers are\nkept next to them, in <server>.json.before-rollback.\n\nOptions:")
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	hist := deploy.History()
 	if *list || fs.NArg() == 0 {
 		if len(hist) == 0 {
@@ -294,6 +298,10 @@ func Rollback(args []string) error {
 	if len(hist) == 0 {
 		return fmt.Errorf("no deploys recorded yet; each successful install from now on is recorded, and can be rolled back to")
 	}
+	if fs.NArg() > 1 {
+		fs.Usage()
+		return ErrFailed
+	}
 	n, err := strconv.Atoi(fs.Arg(0))
 	if err != nil || n < 1 || n > len(hist) {
 		return fmt.Errorf("pick a deploy between 1 and %d; 'interzone rollback --list' shows them", len(hist))
@@ -306,7 +314,7 @@ func Rollback(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := cur.SaveFile(filepath.Join(config.Dir(), "config.before-rollback.json")); err != nil {
+	if err := cur.SaveFile(config.BeforeRollbackPath()); err != nil {
 		return err
 	}
 	if err := rc.Save(); err != nil {
@@ -319,6 +327,9 @@ func Rollback(args []string) error {
 	fmt.Println(good.Render("✓ Rolled back to "+hist[n-1].Time.Local().Format("2006-01-02 15:04")) +
 		muted.Render("; the playbook stays at "+hist[n-1].Commit[:min(10, len(hist[n-1].Commit))]+" until 'apply --latest'"))
 	printSelfCheck(res)
+	if res != nil && len(res.Problems) > 0 {
+		return ErrFailed
+	}
 	return nil
 }
 
@@ -332,7 +343,7 @@ func Restore(args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: interzone restore [options] [FILE]\n\nWithout FILE, lists the backups on this computer. With FILE, stops every service,\ndumps the current database first, then replaces it with FILE.\n\nOptions:")
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	c, _, err := loadConfig(*file)
 	if err != nil {
 		return err
@@ -346,6 +357,10 @@ func Restore(args []string) error {
 			fmt.Printf("  %s  %8s  %s\n", b.Time.Local().Format("2006-01-02 15:04"), deploy.HumanSize(b.Size), b.Path)
 		}
 		return nil
+	}
+	if fs.NArg() > 1 {
+		fs.Usage()
+		return ErrFailed
 	}
 	path, err := filepath.Abs(fs.Arg(0))
 	if err != nil {

@@ -51,7 +51,7 @@ const Usage = `Usage:
   interzone status          the server's load, disks, certificates, containers
   interzone restore [FILE]  list backups, or restore the database from one
   interzone rollback [N]    list earlier deploys, or go back to one
-  interzone servers         list servers; 'servers use NAME' switches
+  interzone servers         list servers; 'servers use NAME' switches, 'rm NAME' forgets
   interzone import PATH     take over a server set up with the playbook by hand
   interzone self-update     install the newest interzone release
 
@@ -63,6 +63,27 @@ Run 'interzone COMMAND -h' for a command's options.`
 // the details have already been printed.
 var ErrFailed = errors.New("failed")
 
+// parse is fs.Parse that also takes flags after the positional arguments,
+// so 'restore dump.sql --yes' works like 'restore --yes dump.sql'. A "--"
+// still ends the flags.
+func parse(fs *flag.FlagSet, args []string) {
+	var pos []string
+	for {
+		_ = fs.Parse(args)
+		rest := fs.Args()
+		if len(rest) == 0 {
+			break
+		}
+		if n := len(args) - len(rest); n > 0 && args[n-1] == "--" {
+			pos = append(pos, rest...)
+			break
+		}
+		pos = append(pos, rest[0])
+		args = rest[1:]
+	}
+	_ = fs.Parse(append([]string{"--"}, pos...))
+}
+
 // configFlag parses a command whose only flag is --config, and loads it.
 func configFlag(name string, args []string) (*config.Config, error) {
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
@@ -71,7 +92,7 @@ func configFlag(name string, args []string) (*config.Config, error) {
 		fmt.Fprintf(fs.Output(), "Usage: interzone %s [options]\n\nRun 'interzone help' for what it does.\n\nOptions:\n", name)
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	c, _, err := loadConfig(*file)
 	return c, err
 }
@@ -105,7 +126,7 @@ func Apply(args []string) error {
 		fmt.Fprintln(fs.Output(), "Usage: interzone apply [options]\n\nDeploys with saved answers. Secrets that are still missing are generated and saved back.\n\nOptions:")
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 
 	c, path, err := loadConfig(*file)
 	if err != nil {
@@ -211,7 +232,7 @@ func Mirrors(args []string) error {
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "Usage: interzone mirrors\n\nTests every known mirror in Iran for OS packages, Docker Engine and PyPI, and\nshows which distros each one carries. OS mirrors count for a distro only\nif its security or update indexes are fresh; PyPI mirrors must list\nansible-core.")
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	fmt.Println(muted.Render("Testing " + fmt.Sprint(len(config.KnownMirrors)) + " mirrors…"))
 	titles := map[config.MirrorKind]string{
 		config.MirrorOS: "OS packages", config.MirrorDocker: "Docker Engine packages", config.MirrorPyPI: "PyPI",
@@ -256,7 +277,7 @@ Python version.
 Options:`)
 		fs.PrintDefaults()
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	c := config.Default()
 	if *file != "" || fileExists(config.Path()) {
 		var err error
@@ -279,7 +300,7 @@ func Unbundle(args []string) error {
 	fs.Usage = func() {
 		fmt.Fprintln(fs.Output(), "Usage: interzone unbundle FILE|DIR\n\nInstalls an offline bundle (the .tar.gz or its extracted directory). An existing inventory is kept.")
 	}
-	_ = fs.Parse(args)
+	parse(fs, args)
 	if fs.NArg() != 1 {
 		fs.Usage()
 		return ErrFailed
