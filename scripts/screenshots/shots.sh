@@ -54,7 +54,7 @@ start() {
 JSON
 	tmux kill-session -t shot 2>/dev/null || true
 	tmux new-session -d -s shot -x "${size%x*}" -y "${size#*x}" -c "$work" \
-		"env -u XDG_CONFIG_HOME XDG_CONFIG_HOME=rel XDG_DATA_HOME='~/.local/share' INTERZONE_HEALTH=off COLORTERM=truecolor ./iz 2>iz.err"
+		"env -u XDG_CONFIG_HOME XDG_CONFIG_HOME=rel XDG_DATA_HOME='~/.local/share' INTERZONE_HEALTH=off INTERZONE_MOTION=off COLORTERM=truecolor ./iz 2>iz.err"
 	echo "running in tmux session shot ($size); attach with: tmux attach -t shot"
 }
 

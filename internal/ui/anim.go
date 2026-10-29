@@ -2,6 +2,7 @@ package ui
 
 import (
 	"math"
+	"os"
 	"strings"
 	"time"
 
@@ -14,8 +15,9 @@ import (
 //
 // A few things move: Welcome's logo flows through the theme's colours and
 // the deploy bar shimmers while it runs. Frames tick only while the screen
-// showing asks for them, and never in plain mode. Frame 0 is the still
-// picture, which the layout tests draw.
+// showing asks for them, and never in plain mode or with
+// INTERZONE_MOTION=off (for slow links, and screenshots that don't depend on
+// the moment). Frame 0 is the still picture, which the layout tests draw.
 
 var animFrame int
 
@@ -30,7 +32,7 @@ type animator interface{ animating() bool }
 // is on its way already.
 func (a *App) animate() tea.Cmd {
 	an, ok := a.cur().(animator)
-	if a.animOn || plain || !ok || !an.animating() {
+	if a.animOn || plain || !ok || !an.animating() || os.Getenv("INTERZONE_MOTION") == "off" {
 		return nil
 	}
 	a.animOn = true

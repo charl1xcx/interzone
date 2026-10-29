@@ -18,6 +18,11 @@ func TestAnimTicksOnlyWhereSomethingMoves(t *testing.T) {
 		t.Error("a second tick while one is on its way")
 	}
 	a.animOn = false
+	t.Setenv("INTERZONE_MOTION", "off")
+	if a.animate() != nil {
+		t.Error("INTERZONE_MOTION=off still ticks")
+	}
+	t.Setenv("INTERZONE_MOTION", "")
 	a.step = a.index("Manage")
 	if a.animate() != nil {
 		t.Error("Manage doesn't move, yet it ticks")
