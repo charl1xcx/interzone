@@ -136,7 +136,8 @@ func (r *Runner) archive(ctx context.Context) error {
 		rel = filepath.ToSlash(rel)
 		// Never ship the inventory: it holds this server's secrets.
 		return rel == "inventory/hosts" || strings.HasPrefix(rel, "inventory/host_vars") ||
-			strings.HasPrefix(rel, "inventory/interzone-") || rel == bundleMarker
+			strings.HasPrefix(rel, "inventory/interzone-") || strings.HasPrefix(rel, "inventory/.interzone-") ||
+			rel == bundleMarker
 	}
 	if err := addTree(ctx, tw, r.cfg.PlaybookDir, bundleRoot+"/playbook", skip); err != nil {
 		return err
@@ -318,6 +319,8 @@ func dataDirFor(playbookDir string) string {
 func exists(p string) bool { _, err := os.Stat(p); return err == nil }
 
 // extract unpacks a .tar.gz into dst, refusing entries that escape it.
+// The writes go through an os.Root, so a link an earlier entry made can't
+// carry a later one out of dst either.
 func extract(src, dst string) error {
 	f, err := os.Open(src)
 	if err != nil {
@@ -328,6 +331,14 @@ func extract(src, dst string) error {
 	if err != nil {
 		return err
 	}
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		return err
+	}
+	root, err := os.OpenRoot(dst)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
 	tr := tar.NewReader(gz)
 	for {
 		h, err := tr.Next()
@@ -337,13 +348,13 @@ func extract(src, dst string) error {
 		if err != nil {
 			return err
 		}
-		path, ok := within(dst, h.Name)
-		if !ok {
+		if _, ok := within(dst, h.Name); !ok {
 			return fmt.Errorf("unsafe path in bundle: %s", h.Name)
 		}
+		name := filepath.Clean(h.Name)
 		switch h.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(path, 0o755); err != nil {
+			if err := root.MkdirAll(name, 0o755); err != nil {
 				return err
 			}
 		case tar.TypeSymlink:
@@ -354,18 +365,20 @@ func extract(src, dst string) error {
 			if _, ok := within(dst, filepath.Join(filepath.Dir(h.Name), h.Linkname)); !ok {
 				return fmt.Errorf("unsafe link in bundle: %s", h.Name)
 			}
-			_ = os.MkdirAll(filepath.Dir(path), 0o755)
-			if err := os.Symlink(h.Linkname, path); err != nil {
+			_ = root.MkdirAll(filepath.Dir(name), 0o755)
+			if err := root.Symlink(h.Linkname, name); err != nil {
 				return err
 			}
 		case tar.TypeReg:
-			_ = os.MkdirAll(filepath.Dir(path), 0o755)
-			out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fs.FileMode(h.Mode).Perm())
+			_ = root.MkdirAll(filepath.Dir(name), 0o755)
+			out, err := root.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fs.FileMode(h.Mode).Perm())
 			if err != nil {
 				return err
 			}
 			_, err = io.Copy(out, tr)
-			out.Close()
+			if cerr := out.Close(); err == nil {
+				err = cerr
+			}
 			if err != nil {
 				return err
 			}
