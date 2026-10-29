@@ -179,8 +179,13 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   it with the server's addresses. It also lists the ports a firewall in
   front of the server (your provider's, or a router) has to let in for the
   components you've turned on: web and federation, Coturn, LiveKit for
-  Element Call and Matrix RTC, Jitsi and Postmoogle (`interzone check`
-  prints them too). Once you've deployed, it shows what
+  Element Call and Matrix RTC, Jitsi and Postmoogle, with the port numbers
+  your settings and extra vars give (`interzone check` prints them too).
+  It then connects to every TCP port from where interzone runs and says
+  which get through and which a firewall seems to drop (UDP can't be
+  tested this way), and once the server is installed it checks federation
+  the way a federation tester does: `/.well-known/matrix/server`, then the
+  server's signing keys over a trusted certificate. Once you've deployed, it shows what
   changes in `vars.yml` since the last successful deploy (`x` switches to
   the whole file).
 - **Checks after deploying.** The playbook's self-check runs at the end and

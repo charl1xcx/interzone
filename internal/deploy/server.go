@@ -25,9 +25,9 @@ const (
 
 // Finding is the outcome of one pre-deploy check.
 type Finding struct {
-	Group   string // "Server" or "DNS"
+	Group   string // "Server", "DNS", "Ports" or "Federation"
 	Name    string
-	Service string // DNS: what the hostname serves
+	Service string // DNS: what the hostname serves; Ports: what the port is for
 	Level   Level
 	Detail  string
 }
@@ -98,7 +98,7 @@ func probe(ctx context.Context, c *config.Config) (map[string]string, error) {
 // ServerChecks logs into the target and checks it can run the playbook,
 // then checks every DNS record points at it.
 func ServerChecks(c *config.Config) []Finding {
-	ctx, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
 
 	var out []Finding
@@ -113,7 +113,7 @@ func ServerChecks(c *config.Config) []Finding {
 	}
 	if err != nil {
 		add("Connect", Fail, "can't run commands on %s: %s", where, err)
-		return append(out, dnsChecks(ctx, c, nil)...)
+		return append(append(out, dnsChecks(ctx, c, nil)...), reachChecks(ctx, c)...)
 	}
 	add("Connect", Pass, "%s", where)
 
@@ -202,7 +202,8 @@ func ServerChecks(c *config.Config) []Finding {
 	}
 
 	out = append(out, mirrorChecks(ctx, c, facts)...)
-	return append(out, dnsChecks(ctx, c, strings.Fields(facts["ips"]))...)
+	out = append(out, dnsChecks(ctx, c, strings.Fields(facts["ips"]))...)
+	return append(out, reachChecks(ctx, c)...)
 }
 
 // mirrorChecks makes sure the blackout mirrors carry this server's distro

@@ -23,9 +23,9 @@
 │                        ││     ○  Cinny        cinny.example.org                                                      │
 │                        ││                                                                                            │
 │                        ││   Ports a firewall in front must let in ──────────────────────────────────                 │
-│                        ││     80/tcp, 443/tcp+udp                  Web (HTTPS, certificates)                         │
-│                        ││     8448/tcp+udp                         Federation                                        │
-│                        ││     3478, 5349/tcp+udp; 49152-49172/udp  Coturn (TURN for calls)                           │
+│                        ││     Web (HTTPS, certificates)  80, 443/tcp; 443/udp                                        │
+│                        ││     Federation                 8448/tcp; 8448/udp                                          │
+│                        ││     Coturn (TURN for calls)    3478, 5349/tcp; 3478, 5349, 49152-49172/udp                 │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
@@ -131,7 +132,12 @@ func (r hostResolver) value(name string, depth int) string {
 	}
 	var s string
 	if v, ok := r.vars[name]; ok {
-		s, _ = v.(string)
+		switch v := v.(type) {
+		case string:
+			s = v
+		case int:
+			s = fmt.Sprint(v) // a port number
+		}
 	} else if d, ok := r.defaults[name]; ok {
 		s = strings.Trim(strings.TrimSpace(d), `"'`)
 	}

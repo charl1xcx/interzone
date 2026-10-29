@@ -320,16 +320,20 @@ func (s *reviewScreen) checksView(w int) []string {
 			dnsW = max(dnsW, min(34, len(f.Name)+2))
 		}
 	}
-	for _, g := range []string{"Server", "DNS"} {
+	collapsed := map[string]string{"Server": "%d server checks passed", "Ports": "%d ports get through", "Federation": "%d federation checks passed"}
+	for _, g := range []string{"Server", "DNS", "Ports", "Federation"} {
 		passed := 0
 		var rows []string
 		for _, f := range s.checks {
 			if f.Group != g {
 				continue
 			}
-			if f.Level == deploy.Pass && !s.verbose && g == "Server" {
+			if f.Level == deploy.Pass && !s.verbose && collapsed[g] != "" {
 				passed++
 				continue
+			}
+			if f.Service != "" && g == "Ports" {
+				f.Detail = f.Service + ": " + f.Detail
 			}
 			icon, style := sGood.Render("✓"), sMuted
 			switch f.Level {
@@ -364,7 +368,7 @@ func (s *reviewScreen) checksView(w int) []string {
 			rows = append(rows, "  "+icon+"  "+name+detail)
 		}
 		if passed > 0 {
-			rows = append([]string{"  " + sGood.Render("✓") + "  " + sMuted.Render(fmt.Sprintf("%d server checks passed", passed)) + sFaint.Render("  (v for details)")}, rows...)
+			rows = append([]string{"  " + sGood.Render("✓") + "  " + sMuted.Render(fmt.Sprintf(collapsed[g], passed)) + sFaint.Render("  (v for details)")}, rows...)
 		}
 		lines = append(lines, rows...)
 	}
@@ -376,16 +380,16 @@ func (s *reviewScreen) checksView(w int) []string {
 func portsView(c *config.Config, w int) []string {
 	lines := []string{rule("Ports a firewall in front must let in", min(w, 72))}
 	ports := c.Ports()
-	pw := 0
+	fw, pw := 0, 0
 	for _, p := range ports {
-		pw = max(pw, len(p.Port)+2)
+		fw, pw = max(fw, len(p.For)+2), max(pw, len(p.String()))
 	}
 	for _, p := range ports {
-		if w < 60 || pw > w/2 { // the ports go under the name
-			lines = append(lines, "  "+sTitle.Render(p.For), "    "+sMuted.Render(p.Port))
+		if w < 60 || 2+fw+pw > w { // the ports go under the name
+			lines = append(lines, "  "+sTitle.Render(p.For), "    "+sMuted.Render(p.String()))
 			continue
 		}
-		lines = append(lines, "  "+lipgloss.NewStyle().Width(pw).Render(sMuted.Render(p.Port))+sTitle.Render(truncate(p.For, max(8, w-pw-2))))
+		lines = append(lines, "  "+lipgloss.NewStyle().Width(fw).Render(sTitle.Render(p.For))+sMuted.Render(p.String()))
 	}
 	return lines
 }
