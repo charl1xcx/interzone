@@ -17,6 +17,7 @@
  People ───────────────────────────────────── 
    +  Add a user                         a    
    @  Manage users                       m    
+   #  Manage rooms                            
                                               
  Data ─────────────────────────────────────── 
    ⇩  Back up the database               b    
@@ -35,6 +36,5 @@
    $  Database shell                          
    #  Run playbook tags                  x    
                                               
- Change things ────────────────────────────── 
    ▼ more below                               
     ‹ back       ≡ menu       run ›       ⋯  

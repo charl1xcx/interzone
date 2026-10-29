@@ -98,6 +98,7 @@ func TestLayout(t *testing.T) {
 		{"mirrors", openMirrors},
 		{"users", openUsers},
 		{"tokens", openTokens},
+		{"rooms", openRooms},
 		{"maintenance", func(a *App) { deliver(a, maintainMsg("vacuum")) }},
 		{"users-bridge", func(a *App) {
 			openUsers(a)
@@ -156,6 +157,18 @@ func openTokens(a *App) {
 		{Token: "book-club", UsageLimit: &ten, TimesUsed: 4, CreatedAt: *at(-9 * 24 * time.Hour), ExpiresAt: at(21 * 24 * time.Hour)},
 		{Token: "family2025", UsageLimit: &five, TimesUsed: 5, CreatedAt: *at(-200 * 24 * time.Hour)},
 		{Token: "old-link", TimesUsed: 2, CreatedAt: *at(-300 * 24 * time.Hour), RevokedAt: at(-100 * 24 * time.Hour)},
+	}
+}
+
+func openRooms(a *App) {
+	a.jump(a.index("Rooms"))
+	rs := a.cur().(*roomsScreen)
+	rs.busy, rs.loaded = false, true
+	rs.list = []deploy.Room{
+		{ID: "!kQx:example.org", Name: "Lounge", Alias: "#lounge:example.org", Creator: "@alice:example.org", Members: 214, Local: 31, Events: 1840, Public: true, Federated: true},
+		{ID: "!Hw2:matrix.org", Name: "Matrix HQ", Alias: "#matrix:matrix.org", Members: 9120, Local: 2, Events: 960, Public: true, Federated: true},
+		{ID: "!p0d:example.org", Name: "Book club", Members: 7, Local: 7, Events: 42, Encrypted: true},
+		{ID: "!sp4m:spam.example", Name: "free crypto", Members: 3, Local: 1, Events: 12, Federated: true, Blocked: true},
 	}
 }
 

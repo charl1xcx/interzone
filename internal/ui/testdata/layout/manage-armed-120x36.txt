@@ -5,20 +5,21 @@
 │ ▾ Manage example.org   ││                                                                                            │
 │ ▌ ⌂ Overview           ││   Keep it running ──────────────────────────────────────────────────────────────────────   │
 │   @ Users              ││     ↻  Update the server                                                            u      │
-│   ▦ Dashboard          ││     ✓  Check services                                                               c      │
-│   ↻ Updates            ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
-│   ◷ Backups            ││   │ ↯  Restart all services                                                         r  │   │
-│   ⚑ Alerts             ││   │    press r again to run                                                            │   │
-│   ↺ Restore            ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
-│   ↶ Rollback           ││     ±  See what an update brings                                                    n      │
-│   ✎ Fine-tune          ││     ▣  Check container images                                                       i      │
-│   ⚒ Maintenance        ││     ⚑  Alerts                                                                              │
-│   ⇢ Move server        ││     ⏻  Start, stop or reinstall services                                            p      │
-│   ▤ Servers            ││     ⇪  Update interzone                                                                    │
-│                        ││                                                                                            │
-│ ▸ Mirrors              ││   People ───────────────────────────────────────────────────────────────────────────────   │
-│                        ││     +  Add a user                                                                   a      │
-│ ▾ Servers              ││     @  Manage users                                                                 m      │
+│   # Rooms              ││     ✓  Check services                                                               c      │
+│   ▦ Dashboard          ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
+│   ↻ Updates            ││   │ ↯  Restart all services                                                         r  │   │
+│   ◷ Backups            ││   │    press r again to run                                                            │   │
+│   ⚑ Alerts             ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
+│   ↺ Restore            ││     ±  See what an update brings                                                    n      │
+│   ↶ Rollback           ││     ▣  Check container images                                                       i      │
+│   ✎ Fine-tune          ││     ⚑  Alerts                                                                              │
+│   ⚒ Maintenance        ││     ⏻  Start, stop or reinstall services                                            p      │
+│   ⇢ Move server        ││     ⇪  Update interzone                                                                    │
+│   ▤ Servers            ││                                                                                            │
+│                        ││   People ───────────────────────────────────────────────────────────────────────────────   │
+│ ▸ Mirrors              ││     +  Add a user                                                                   a      │
+│                        ││     @  Manage users                                                                 m      │
+│ ▾ Servers              ││     #  Manage rooms                                                                        │
 │   ● example.org        ││                                                                                            │
 │                        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
 │                        ││     ⇩  Back up the database                                                         b      │
@@ -28,8 +29,7 @@
 │                        ││     ◔  Disk space                                                                          │
 │                        ││     ⌫  Vacuum the database                                                                 │
 │                        ││     ⇡  Upgrade Postgres                                                                    │
-│                        ││     ⇲  Compress Synapse's state                                                            │
-│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││     ⇲  Compress Synapse's state                                                            │
 │ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯

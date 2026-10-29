@@ -5,22 +5,22 @@
 │ ▾ Manage example.org   ││                                                                                            │
 │   ⌂ Overview           ││   ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭────────────╮   │
 │ ▌ @ Users              ││   │ 4       │ │ 2       │ │ 1       │ │ 1       │ │ 31      │ │ 396 MB  │ │ 4          │   │
-│   ▦ Dashboard          ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
-│   ↻ Updates            ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
-│   ◷ Backups            ││    /  search    f  everyone    o  by last seen                                             │
-│   ⚑ Alerts             ││                                                                                            │
-│   ↺ Restore            ││   ▌ ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
-│   ↶ Rollback           ││     ●  Bob                        3d ago  │ ●  Alice Liddell   admin                   │   │
-│   ✎ Fine-tune          ││     ●  Carol                     45d ago  │    @alice:example.org                      │   │
-│   ⚒ Maintenance        ││     ○  eve                         never  │                                            │   │
-│   ⇢ Move server        ││     ⊘  dave                  deactivated  │ Last seen  2h ago  0000-00-00 00:00        │   │
-│   ▤ Servers            ││     ⇄  Telegram  3 accounts           ▸   │ Joined     0000-00-00  1y ago              │   │
-│                        ││     ⇄  WhatsApp  1 account            ▸   │ Sessions   3 devices                       │   │
-│ ▸ Mirrors              ││                                           │ Rooms      27                              │   │
-│                        ││                                           │ Media      380 MB  142 files               │   │
-│ ▾ Servers              ││                                           │ Email      alice@example.org               │   │
-│   ● example.org        ││                                           │ Picture    set                             │   │
-│                        ││                                           │                                            │   │
+│   # Rooms              ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
+│   ▦ Dashboard          ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
+│   ↻ Updates            ││    /  search    f  everyone    o  by last seen                                             │
+│   ◷ Backups            ││                                                                                            │
+│   ⚑ Alerts             ││   ▌ ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
+│   ↺ Restore            ││     ●  Bob                        3d ago  │ ●  Alice Liddell   admin                   │   │
+│   ↶ Rollback           ││     ●  Carol                     45d ago  │    @alice:example.org                      │   │
+│   ✎ Fine-tune          ││     ○  eve                         never  │                                            │   │
+│   ⚒ Maintenance        ││     ⊘  dave                  deactivated  │ Last seen  2h ago  0000-00-00 00:00        │   │
+│   ⇢ Move server        ││     ⇄  Telegram  3 accounts           ▸   │ Joined     0000-00-00  1y ago              │   │
+│   ▤ Servers            ││     ⇄  WhatsApp  1 account            ▸   │ Sessions   3 devices                       │   │
+│                        ││                                           │ Rooms      27                              │   │
+│ ▸ Mirrors              ││                                           │ Media      380 MB  142 files               │   │
+│                        ││                                           │ Email      alice@example.org               │   │
+│ ▾ Servers              ││                                           │ Picture    set                             │   │
+│   ● example.org        ││                                           │                                            │   │
 │                        ││                                           │  p  new password    a  remove admin        │   │
 │                        ││                                           │  s  sign out everywhere    d  deactivate   │   │
 │                        ││                                           ╰────────────────────────────────────────────╯   │

@@ -1,0 +1,40 @@
+ ◢◤ ◆ Manage › Rooms                          
+ Rooms on example.org                         
+                                              
+ 4 rooms, biggest first                       
+                                              
+ ╭──────────────────────────────────────────╮ 
+ │ #  Lounge                                │ 
+ │    #lounge:example.org                   │ 
+ │                                          │ 
+ │ Members    214  31 from here             │ 
+ │ Size       1840 state events             │ 
+ │            public                        │ 
+ │ Made by    @alice:example.org            │ 
+ │ ID         !kQx:example.org              │ 
+ │                                          │ 
+ │  b  block    h  old history    x  delete │ 
+ ╰──────────────────────────────────────────╯ 
+   #  Matrix HQ                  9120 members 
+   #  Book club                     7 members 
+   ⊘  free crypto                   3 members 
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+                                              
+       ‹ back             ≡ menu          ⋯  

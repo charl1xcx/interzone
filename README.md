@@ -261,6 +261,13 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     With MAS (Matrix Authentication Service), accounts are changed with
     `mas-cli` in its container instead, and signing in needs only the
     admin's username: MAS issues the session.
+  - **Rooms** (Synapse): every room the server knows of, biggest first,
+    with its members (and how many are from this server), size, alias and
+    creator. `b` blocks a room so nobody here can join it (or unblocks
+    it), `h` deletes its messages older than so many days from this
+    server's database, keeping those sent from here, and `x` deletes the
+    room: everyone here is made to leave, it's purged and blocked. It
+    signs in with the same admin account as Users.
   - **Dashboard:** tiles for CPU, memory, disk and containers; the OS,
     kernel, Docker version and uptime; load, swap, every disk and the
     backup timer; the containers using the most; certificate expiry for

@@ -51,7 +51,7 @@ var manageGroups = []string{"Keep it running", "People", "Data", "Look closer", 
 
 var actionGroup = map[string]int{
 	"update": 0, "check": 0, "alerts": 0, "restart": 0, "services": 0, "changes": 0, "images": 0, "selfupdate": 0,
-	"user": 1, "registration": 1, "users": 1, "tokens": 1,
+	"user": 1, "registration": 1, "users": 1, "rooms": 1, "tokens": 1,
 	"backup": 2, "schedule": 2, "restore": 2, "rollback": 2, "disk": 2, "vacuum": 2, "pgupgrade": 2, "compress": 2,
 	"dashboard": 3, "logs": 3, "tuning": 3, "psql": 3, "tags": 3,
 	"setup": 4, "migrate": 4, "servers": 4, "uninstall": 4,
@@ -59,7 +59,7 @@ var actionGroup = map[string]int{
 
 var actionIcons = map[string]string{
 	"update": "↻", "check": "✓", "alerts": "⚑", "restart": "↯", "changes": "±", "images": "▣", "selfupdate": "⇪",
-	"user": "+", "registration": "⊕", "users": "@", "tokens": "⚿",
+	"user": "+", "registration": "⊕", "users": "@", "rooms": "#", "tokens": "⚿",
 	"backup": "⇩", "schedule": "◷", "restore": "↺", "rollback": "↶",
 	"dashboard": "▦", "logs": "≡", "tuning": "✎",
 	"setup": "◇", "migrate": "⇢", "servers": "▤",
@@ -174,6 +174,8 @@ func (s *manageScreen) actions() []manageAction {
 	acts = append(acts,
 		manageAction{id: "users", title: "Manage users",
 			desc: "List every account; reset passwords, grant or remove admin rights, deactivate or reactivate."},
+		manageAction{id: "rooms", title: "Manage rooms",
+			desc: "List every room with its members and size; block one, delete it, or delete its old messages."},
 		manageAction{id: "dashboard", title: "Server dashboard",
 			desc: "Load, memory, disk space, certificate expiry and the state of every container."},
 		manageAction{id: "changes", title: "See what an update brings",
@@ -227,7 +229,7 @@ func (s *manageScreen) actions() []manageAction {
 		switch {
 		case acts[i].id == "user" && c.Homeserver != "synapse" && c.Homeserver != "dendrite":
 			acts[i].disabled = "Only Synapse and Dendrite can register users from Ansible; use a registration token or open registration instead."
-		case acts[i].id == "users" && c.Homeserver != "synapse":
+		case (acts[i].id == "users" || acts[i].id == "rooms") && c.Homeserver != "synapse":
 			acts[i].disabled = "Needs Synapse's admin API; " + homeserverName(c.Homeserver) + " doesn't have one."
 		case acts[i].id == "tokens" && c.Components["external-postgres"]:
 			acts[i].disabled = "MAS's tokens are read from the bundled Postgres; you use an external one."
@@ -363,8 +365,8 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 		return run(deploy.Options{Action: deploy.ActionImages})
 	case "selfupdate":
 		return run(deploy.Options{Action: deploy.ActionSelfUpdate})
-	case "users", "tokens", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate", "alerts":
-		screen := map[string]string{"alerts": "Alerts", "users": "Users", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
+	case "users", "rooms", "tokens", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate", "alerts":
+		screen := map[string]string{"alerts": "Alerts", "users": "Users", "rooms": "Rooms", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
 			"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}[id]
 		return func() tea.Msg { return gotoMsg(screen) }
 	case "psql":

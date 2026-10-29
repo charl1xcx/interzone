@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Rooms on example.org                                                                     │
+│ ▾ Manage example.org   ││                                                                                            │
+│   ⌂ Overview           ││   4 rooms, biggest first                                                                   │
+│   @ Users              ││                                                                                            │
+│ ▌ # Rooms              ││   ▌ #  Lounge                214 members  ╭────────────────────────────────────────────╮   │
+│   ▦ Dashboard          ││     #  Matrix HQ            9120 members  │ #  Lounge                                  │   │
+│   ↻ Updates            ││     #  Book club               7 members  │    #lounge:example.org                     │   │
+│   ◷ Backups            ││     ⊘  free crypto             3 members  │                                            │   │
+│   ⚑ Alerts             ││                                           │ Members    214  31 from here               │   │
+│   ↺ Restore            ││                                           │ Size       1840 state events               │   │
+│   ↶ Rollback           ││                                           │            public                          │   │
+│   ✎ Fine-tune          ││                                           │ Made by    @alice:example.org              │   │
+│   ⚒ Maintenance        ││                                           │ ID         !kQx:example.org                │   │
+│   ⇢ Move server        ││                                           │                                            │   │
+│   ▤ Servers            ││                                           │  b  block    h  old history    x  delete   │   │
+│                        ││                                           ╰────────────────────────────────────────────╯   │
+│ ▸ Mirrors              ││                                                                                            │
+│                        ││                                                                                            │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ ↑↓ select   ·   b block   ·   h delete old history   ·   x delete room   ·   r reload   ·   esc back   ·   ctrl+c quit 

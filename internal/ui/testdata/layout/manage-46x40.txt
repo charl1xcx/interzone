@@ -20,6 +20,7 @@
  People ───────────────────────────────────── 
    +  Add a user                         a    
    @  Manage users                       m    
+   #  Manage rooms                            
                                               
  Data ─────────────────────────────────────── 
    ⇩  Back up the database               b    
@@ -35,6 +36,5 @@
    ▦  Server dashboard                   d    
    ≡  View logs                          l    
    ✎  Fine-tune the roles                f    
-   $  Database shell                          
    ▼ more below                               
     ‹ back       ≡ menu       run ›       ⋯  

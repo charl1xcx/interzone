@@ -15,6 +15,6 @@
  People ─────────────────────────────────────── 
    +  Add a user                           a    
    @  Manage users                         m    
- Data ───────────────────────────────────────── 
+   #  Manage rooms                              
    ▼ more below                                 
     ‹ back       ≡ menu        run ›        ⋯  

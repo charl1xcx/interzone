@@ -166,10 +166,10 @@ func TestMenuKeys(t *testing.T) {
 		t.Errorf("→ selected %q, want the tile beside Overview", a.menuSel)
 	}
 	key(a, tea.KeyDown)
-	if a.menuSel != "side:manage:Updates" {
+	if a.menuSel != "side:manage:Dashboard" {
 		t.Errorf("↓ selected %q, want the tile under Users", a.menuSel)
 	}
-	if v := ansi.Strip(a.View()); !strings.Contains(v, "›  Updates") {
+	if v := ansi.Strip(a.View()); !strings.Contains(v, "›  Dashboard") {
 		t.Errorf("the selected tile isn't marked:\n%s", v)
 	}
 }

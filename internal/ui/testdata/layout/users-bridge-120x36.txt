@@ -5,22 +5,22 @@
 │ ▾ Manage example.org   ││                                                                                            │
 │   ⌂ Overview           ││   ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭─────────╮ ╭────────────╮   │
 │ ▌ @ Users              ││   │ 4       │ │ 2       │ │ 1       │ │ 1       │ │ 31      │ │ 396 MB  │ │ 4          │   │
-│   ▦ Dashboard          ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
-│   ↻ Updates            ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
-│   ◷ Backups            ││    /  search    f  everyone    o  by last seen                                             │
-│   ⚑ Alerts             ││                                                                                            │
-│   ↺ Restore            ││     ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
-│   ↶ Rollback           ││     ●  Bob                        3d ago  │ ⇄  Telegram  bridge                        │   │
-│   ✎ Fine-tune          ││     ●  Carol                     45d ago  │                                            │   │
-│   ⚒ Maintenance        ││     ○  eve                         never  │ Accounts   3  1 active this month          │   │
-│   ⇢ Move server        ││     ⊘  dave                  deactivated  │ Bot        @telegrambot:example.org        │   │
-│   ▤ Servers            ││   ▌ ⇄  Telegram  3 accounts           ▾   │ Media      4.0 MB                          │   │
-│                        ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
-│ ▸ Mirrors              ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
-│                        ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
-│ ▾ Servers              ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
+│   # Rooms              ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
+│   ▦ Dashboard          ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
+│   ↻ Updates            ││    /  search    f  everyone    o  by last seen                                             │
+│   ◷ Backups            ││                                                                                            │
+│   ⚑ Alerts             ││     ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
+│   ↺ Restore            ││     ●  Bob                        3d ago  │ ⇄  Telegram  bridge                        │   │
+│   ↶ Rollback           ││     ●  Carol                     45d ago  │                                            │   │
+│   ✎ Fine-tune          ││     ○  eve                         never  │ Accounts   3  1 active this month          │   │
+│   ⚒ Maintenance        ││     ⊘  dave                  deactivated  │ Bot        @telegrambot:example.org        │   │
+│   ⇢ Move server        ││   ▌ ⇄  Telegram  3 accounts           ▾   │ Media      4.0 MB                          │   │
+│   ▤ Servers            ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
+│                        ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
+│ ▸ Mirrors              ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
+│                        ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
+│ ▾ Servers              ││                                                                                            │
 │   ● example.org        ││                                                                                            │
-│                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

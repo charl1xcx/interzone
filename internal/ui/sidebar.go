@@ -88,6 +88,7 @@ func (a *App) toggleSection(sec sideSection) {
 var manageMenu = []struct{ screen, label, icon string }{
 	{"Manage", "Overview", "⌂"},
 	{"Users", "Users", "@"},
+	{"Rooms", "Rooms", "#"},
 	{"Tokens", "Tokens", "⚿"},
 	{"Dashboard", "Dashboard", "▦"},
 	{"Updates", "Updates", "↻"},
@@ -237,7 +238,7 @@ func (a *App) menu() []menuSection {
 			cur = a.manageCurrent()
 		}
 		for _, m := range manageMenu {
-			if m.screen == "Users" && a.cfg.Homeserver != "synapse" || m.screen == "Tokens" && !a.cfg.UsesMAS() {
+			if (m.screen == "Users" || m.screen == "Rooms") && a.cfg.Homeserver != "synapse" || m.screen == "Tokens" && !a.cfg.UsesMAS() {
 				continue
 			}
 			it := menuItem{id: "side:manage:" + m.screen, icon: sMuted.Render(m.icon), label: m.label, on: m.screen == cur}

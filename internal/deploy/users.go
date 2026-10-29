@@ -162,6 +162,23 @@ def run(tok):
         if devices:
             call("POST", path + "/delete_devices", {"devices": devices}, token=tok)
         return {"ok": True, "count": len(devices)}
+    if req["op"] == "rooms":
+        rooms, frm = [], 0
+        while frm is not None:
+            page = call("GET", "/_synapse/admin/v1/rooms?order_by=size&limit=500&from=%d" % frm, token=tok)
+            rooms += page.get("rooms", [])
+            frm = page.get("next_batch")
+        def blocked(r):
+            try:
+                r["blocked"] = call("GET", "/_synapse/admin/v1/rooms/%s/block" % urllib.parse.quote(r["room_id"]), token=tok).get("block", False)
+            except Failed:
+                pass
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(8) as pool:
+            list(pool.map(blocked, rooms[:300]))
+        return {"rooms": rooms}
+    if req["op"] == "call":
+        return {"result": call(req["method"], req["path"], req.get("body"), token=tok)}
     call("PUT", "/_synapse/admin/v2/users/" + urllib.parse.quote(req["user"]), req["body"], token=tok)
     return {"ok": True}
 try:

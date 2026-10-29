@@ -90,6 +90,7 @@ func New(cfg *config.Config, loaded bool) *App {
 		newBackupsScreen(),
 		newAlertsScreen(),
 		newUsersScreen(),
+		newRoomsScreen(),
 		newTokensScreen(),
 		newDashboardScreen(),
 		newServersScreen(),
