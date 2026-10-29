@@ -212,7 +212,10 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   ones your enabled services need listed apart from the rest. `m` on
   Welcome opens it.
 - **Manage an existing server:** update, run the self-check, restart, add
-  users (Synapse/Dendrite), open or close registration (Conduit,
+  users (Synapse/Dendrite), or many at once from a CSV file
+  (`username[,password][,admin]` a line; missing passwords are generated
+  and all are saved beside it as `…-passwords.csv`, owner-only), open or
+  close registration (Conduit,
   Continuwuity, Tuwunel, and Synapse with MAS, where anyone with the
   sign-up token can join without an email address), back up the Postgres database to this computer, and follow any
   service's log live. Every action has a one-letter shortcut on Manage

@@ -86,6 +86,7 @@ type manageScreen struct {
 	mode     manageMode
 
 	userForm *form
+	userErr  string // what's wrong with the CSV file
 
 	loading  bool
 	units    []string
@@ -104,7 +105,7 @@ func (s *manageScreen) name() string { return "Manage" }
 func (s *manageScreen) title() string {
 	switch s.mode {
 	case modeUser:
-		return "Add a user"
+		return "Add users"
 	case modeServices:
 		return "Which service's logs?"
 	case modeLogs:
@@ -374,11 +375,17 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 	case "services", "disk", "vacuum", "pgupgrade", "compress", "tags", "uninstall":
 		return func() tea.Msg { return maintainMsg(id) }
 	case "user":
+		how := choiceField("how", "Add", []string{"one", "csv"}, []string{"One user", "Many, from a CSV file"}, "one", "")
 		u := textField("name", "Username", "", "alice", "Just the name, not @alice:"+s.cfg.Domain+".")
-		u.required = true
 		pw := secretField("pass", "Password", config.RandomPassword(16), "Generated for you. Press ctrl+r to see it; it's shown again when the user is created.")
-		pw.required = true
-		s.userForm = newForm(u, pw, toggleField("admin", "Make this user a server administrator", false, ""))
+		csvf := textField("csv", "CSV file", "", "~/people.csv",
+			"One user a line: username, then optionally a password and \"admin\". Missing passwords are generated, and all of them are saved beside it as …-passwords.csv. Existing accounts are left as they are.")
+		u.required, pw.required, csvf.required = true, true, true
+		s.userForm, s.userErr = newForm(how, u, pw, toggleField("admin", "Make this user a server administrator", false, ""), csvf), ""
+		one := func() bool { return s.userForm.value("how") == "one" }
+		many := func() bool { return !one() }
+		s.userForm.get("name").hidden, s.userForm.get("pass").hidden, s.userForm.get("admin").hidden = many, many, many
+		s.userForm.get("csv").hidden = one
 		s.mode = modeUser
 		return nil
 	case "logs":
@@ -405,6 +412,19 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 
 func (s *manageScreen) register() tea.Cmd {
 	f := s.userForm
+	if f.value("how") == "csv" {
+		path := config.ExpandHome(f.value("csv"))
+		users, err := deploy.ReadUsersCSV(path)
+		if err == nil {
+			path, err = deploy.WritePasswords(path, s.cfg.Domain, users)
+		}
+		if err != nil {
+			s.userErr = err.Error()
+			return nil
+		}
+		s.mode = modeList
+		return run(deploy.Options{Action: deploy.ActionBulkUsers, Users: users, Output: path})
+	}
 	name := strings.TrimPrefix(strings.SplitN(f.value("name"), ":", 2)[0], "@")
 	if name == "" || f.value("pass") == "" {
 		return nil
@@ -418,6 +438,9 @@ func (s *manageScreen) register() tea.Cmd {
 func (s *manageScreen) view(w, h int) string {
 	switch s.mode {
 	case modeUser:
+		if s.userErr != "" {
+			return sBad.Render("✗ "+s.userErr) + "\n\n" + s.userForm.View(w, h-2)
+		}
 		return s.userForm.View(w, h)
 	case modeServices:
 		return s.servicesView(w, h)

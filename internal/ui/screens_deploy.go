@@ -564,6 +564,7 @@ var actionTitles = map[deploy.Action][3]string{ // running, done, failed
 	deploy.ActionSelfCheck:    {"Checking services…", "Self-check finished", "Self-check couldn't run"},
 	deploy.ActionRestart:      {"Restarting services…", "Services restarted", "Restart failed"},
 	deploy.ActionRegister:     {"Registering the user…", "User registered", "Couldn't register the user"},
+	deploy.ActionBulkUsers:    {"Creating the users…", "Users created", "Couldn't create the users"},
 	deploy.ActionBackup:       {"Backing up…", "Backup saved", "Backup failed"},
 	deploy.ActionLogs:         {"Fetching logs…", "Logs", "Couldn't fetch logs"},
 	deploy.ActionImages:       {"Checking container images…", "Image check finished", "Couldn't check the images"},
@@ -948,6 +949,11 @@ func (s *deployScreen) resultView(w int) string {
 		return panel(cMint,
 			sGood.Render("✓ Registered ")+sTitle.Render("@"+s.opts.User.Name+":"+c.Domain),
 			sMuted.Render("Password  ")+sTitle.Render(s.opts.User.Password)+sMuted.Render("   (shown once; it isn't saved)"))
+	case deploy.ActionBulkUsers:
+		return panel(cMint,
+			sGood.Render(fmt.Sprintf("✓ %d users created on %s", len(s.opts.Users), c.Domain)),
+			sMuted.Render("Their passwords are in ")+sTitle.Render(s.opts.Output)+sMuted.Render("; hand them out, then delete it."),
+			sMuted.Render("Accounts that already existed kept their own passwords."))
 	case deploy.ActionBackup:
 		return panel(cMint,
 			sGood.Render("✓ Database dump saved to ")+sTitle.Render(res.File),

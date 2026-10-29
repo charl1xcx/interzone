@@ -52,6 +52,7 @@ const (
 	StepAlerts
 	StepDryPlaybook
 	StepDryRun
+	StepBulkUsers
 )
 
 var stepNames = map[Step]string{
@@ -82,6 +83,7 @@ var stepNames = map[Step]string{
 	StepAlerts:       "Set up alerts",
 	StepDryPlaybook:  "Get the newest playbook, beside yours",
 	StepDryRun:       "Run it without changing anything",
+	StepBulkUsers:    "Create the users",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -110,6 +112,7 @@ const (
 	ActionDisk      // what takes the server's disk space
 	ActionAlerts    // the server's own checks and alerts (Config.Alerts)
 	ActionDryRun    // an update in check mode, in a copy of the playbook
+	ActionBulkUsers // create Options.Users
 )
 
 // Plan lists the steps an action runs, in order.
@@ -151,6 +154,8 @@ func Plan(a Action) []Step {
 		return []Step{StepAnsible, StepInventory, StepAlerts}
 	case ActionDryRun:
 		return []Step{StepAnsible, StepDryPlaybook, StepInventory, StepRoles, StepDryRun}
+	case ActionBulkUsers:
+		return []Step{StepAnsible, StepInventory, StepBulkUsers}
 	case ActionMigrate:
 		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepStopOld, StepCopyData, StepMirrors, StepInstall, StepSelfCheck}
 	}
@@ -196,10 +201,11 @@ type NewUser struct {
 
 type Options struct {
 	Action  Action
-	User    NewUser // ActionRegister
-	Service string  // ActionLogs: systemd unit, e.g. matrix-synapse
-	Output  string  // ActionBundle: archive path
-	Backup  string  // ActionRestore: local dump file
+	User    NewUser   // ActionRegister
+	Users   []NewUser // ActionBulkUsers; Output is where their passwords were saved
+	Service string    // ActionLogs: systemd unit, e.g. matrix-synapse
+	Output  string    // ActionBundle: archive path
+	Backup  string    // ActionRestore: local dump file
 	// ActionMigrate: the server to move to. The run works on a copy of the
 	// config; the caller switches its own Target when the Moved event comes.
 	NewTarget config.Target
@@ -332,6 +338,7 @@ func (r *Runner) run(ctx context.Context) error {
 		StepAlerts:       r.alerts,
 		StepDryPlaybook:  r.dryPlaybook,
 		StepDryRun:       r.dryRun,
+		StepBulkUsers:    r.bulkUsers,
 	}
 	plan := Plan(r.opts.Action)
 	r.emit(Event{Plan: plan})
