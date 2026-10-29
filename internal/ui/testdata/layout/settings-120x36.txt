@@ -12,10 +12,10 @@
 │                        ││      Admin password                         │    │                                         │
 │ ▸ Mirrors              ││      › ••••••••••••••••••••                 │                                              │
 │                        ││                                             │                                              │
+│ ▸ Test                 ││                                             │                                              │
+│                        ││   ◆ Coturn TURN server ──────────────────── │                                              │
 │ ▾ Servers              ││                                             │                                              │
-│   ● example.org        ││   ◆ Coturn TURN server ──────────────────── │                                              │
-│                        ││                                             │                                              │
-│                        ││      Public IP address(es)                  │                                              │
+│   ● example.org        ││      Public IP address(es)                  │                                              │
 │                        ││      › comma, separated, values             │                                              │
 │                        ││                                             │                                              │
 │                        ││                                             │                                              │

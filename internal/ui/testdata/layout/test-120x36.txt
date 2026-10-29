@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Test Matrix servers                                                                      │
+│ ▸ Manage example.org   ││                                                                                            │
+│                        ││   ▌  Servers to test                                                                       │
+│ ▸ Mirrors              ││   ▌  › example.org, matrix.org                                                             │
+│                        ││   ▌  One or more, split by spaces or commas: a server name, a user ID like                 │
+│ ▾ Test                 ││   ▌  @alice:example.org, or a URL.                                                         │
+│ ▌ · Test servers       ││                                                                                            │
+│   ✗ example.org        ││   ✗ example.org  1 failed, 1 warning                                                       │
+│   · matrix.org         ││     Federation                                                                             │
+│                        ││     ✓  Delegation        /.well-known/matrix/server sends servers to                       │
+│ ▾ Servers              ││                          matrix.example.org:443                                            │
+│   ● example.org        ││     ✓  Federation API    matrix.example.org:443 answers as example.org, with a trusted     │
+│                        ││                          certificate                                                       │
+│                        ││     ✓  Software          Synapse 1.140.0                                                   │
+│                        ││     Clients                                                                                │
+│                        ││     !  Well-known        https://example.org/.well-known/matrix/client sends apps to       │
+│                        ││                          https://matrix.example.org, but without the CORS header web       │
+│                        ││                          apps need                                                         │
+│                        ││     ✓  Client API        https://matrix.example.org answers, spec up to v1.12              │
+│                        ││     ✗  Element X sync    the homeserver doesn't offer sliding sync, which Element X        │
+│                        ││                          needs                                                             │
+│                        ││                                                                                            │
+│                        ││   ⠋ matrix.org  testing…                                                                   │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ enter test   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                                                            

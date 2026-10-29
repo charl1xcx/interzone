@@ -19,10 +19,10 @@
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││   People ───────────────────────────────────────────────────────────────────────────────   │
 │                        ││     +  Add a user                                                                   a      │
-│ ▾ Servers              ││     @  Manage users                                                                 m      │
-│   ● example.org        ││     #  Manage rooms                                                                        │
-│                        ││                                                                                            │
-│                        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
+│ ▸ Test                 ││     @  Manage users                                                                 m      │
+│                        ││     #  Manage rooms                                                                        │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
 │                        ││     ⇩  Back up the database                                                         b      │
 │                        ││     ◷  Scheduled backups                                                            s      │
 │                        ││     ↺  Restore a backup                                                             e      │

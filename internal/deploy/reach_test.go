@@ -59,7 +59,7 @@ func TestClientChecks(t *testing.T) {
 	for _, f := range clientChecks(context.Background(), c) {
 		got[f.Name] = f.Level
 	}
-	want := map[string]Level{"Well-known": Warn, "Client API": Pass, "Element X sync": Fail, "Element X login": Warn, "Element X calls": Fail}
+	want := map[string]Level{"Well-known": Warn, "Client API": Pass, "Logins": Warn, "Element X sync": Fail, "Element X login": Warn, "Element X calls": Fail}
 	if !maps.Equal(got, want) {
 		t.Errorf("got %v", got)
 	}
@@ -77,5 +77,57 @@ func TestZoneRecords(t *testing.T) {
 	c.Target.Mode = "local"
 	if got := strings.Join(ZoneRecords(context.Background(), c), "\n"); !strings.Contains(got, "IN A    SERVER_IP") {
 		t.Errorf("local:\n%s", got)
+	}
+}
+
+// A server is probed as others see it: its keys and software through
+// federation, its well-known and client API as apps do.
+func TestProbeServer(t *testing.T) {
+	var srv *httptest.Server
+	srv = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		switch r.URL.Path {
+		case "/_matrix/key/v2/server":
+			fmt.Fprintf(w, `{"server_name": %q, "valid_until_ts": 99999999999999, "verify_keys": {"ed25519:a": {"key": "k"}}}`, r.Host)
+		case "/_matrix/federation/v1/version":
+			fmt.Fprint(w, `{"server": {"name": "Synapse", "version": "1.140.0"}}`)
+		case "/.well-known/matrix/client":
+			fmt.Fprintf(w, `{"m.homeserver": {"base_url": %q}, "org.matrix.msc4143.rtc_foci": [{}]}`, srv.URL)
+		case "/_matrix/client/versions":
+			fmt.Fprint(w, `{"versions": ["v1.11", "v1.12"], "unstable_features": {"org.matrix.simplified_msc3575": true}}`)
+		case "/_matrix/client/v3/login":
+			fmt.Fprint(w, `{"flows": [{"type": "m.login.password"}, {"type": "m.login.sso"}]}`)
+		case "/_matrix/client/v1/auth_metadata":
+			fmt.Fprint(w, `{}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	rootCAs = srv.Client().Transport.(*http.Transport).TLSClientConfig.RootCAs
+	defer func() { rootCAs = nil }()
+
+	name := ServerName("@alice:" + strings.TrimPrefix(srv.URL, "https://"))
+	got := ProbeServer(context.Background(), name)
+	var lines []string
+	for _, f := range got {
+		lines = append(lines, fmt.Sprintf("%d %s: %s", f.Level, f.Name, f.Detail))
+	}
+	all := strings.Join(lines, "\n")
+	for _, want := range []string{"0 Delegation: the name has a port", "0 Federation API: " + name + " answers as " + name,
+		"0 Software: Synapse 1.140.0", "0 Well-known: sends apps to " + srv.URL, "spec up to v1.12", "0 Logins: password, sso",
+		"0 Element X sync", "0 Element X login", "0 Element X calls", "0 Support: no /.well-known/matrix/support"} {
+		if !strings.Contains(all, want) {
+			t.Errorf("no %q in\n%s", want, all)
+		}
+	}
+}
+
+func TestServerName(t *testing.T) {
+	for in, want := range map[string]string{"@a:Example.org": "example.org", "https://example.org/x": "example.org",
+		" example.org:8448 ": "example.org:8448", "#room:matrix.org": "matrix.org"} {
+		if got := ServerName(in); got != want {
+			t.Errorf("%q: %q", in, got)
+		}
 	}
 }

@@ -12,10 +12,10 @@
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││      sudo password                                                                         │
 │                        ││      ›                                                                                     │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││                                                                                            │
-│                        ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
+│ ▸ Test                 ││                                                                                            │
 │                        ││                                                                                            │
+│ ▾ Servers              ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
+│   ● example.org        ││                                                                                            │
 │                        ││      Network situation                                                                     │
 │                        ││        Normal internet      Blackout: in-country mirrors only                              │
 │                        ││                                                                                            │

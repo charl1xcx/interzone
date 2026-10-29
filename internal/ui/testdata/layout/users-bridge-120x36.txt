@@ -19,10 +19,10 @@
 │                        ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
 │ ▸ Mirrors              ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
 │                        ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
+│ ▸ Test                 ││                                                                                            │
+│                        ││                                                                                            │
 │ ▾ Servers              ││                                                                                            │
 │   ● example.org        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

@@ -288,6 +288,8 @@ func (a *App) sideClick(id string) tea.Cmd {
 			return nil
 		}
 		return a.switchServer(switchServerMsg{name: arg, cfg: c})
+	case "test":
+		return a.jump(a.index("Test"))
 	case "mirrors":
 		n, _ := strconv.Atoi(arg)
 		a.screens[a.index("Mirrors")].(*mirrorsScreen).show(n)
@@ -312,6 +314,8 @@ func (a *App) sideClick(id string) tea.Cmd {
 			return a.sideClick("side:manage:Manage")
 		case "mirrors":
 			return a.jump(a.index("Mirrors"))
+		case "test":
+			return a.jump(a.index("Test"))
 		case "servers":
 			return a.jump(a.index("Servers"))
 		}

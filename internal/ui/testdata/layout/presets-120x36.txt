@@ -12,10 +12,10 @@
 │                        ││     │ Core   • Coturn TURN server                                                    │     │
 │ ▸ Mirrors              ││     │ Apps   • Element Web                                                           │     │
 │                        ││     │        • Sable                                                                 │     │
-│ ▾ Servers              ││     │ Login  • Matrix Authentication Service                                         │     │
-│   ● example.org        ││     │        • Ketesa admin panel                                                    │     │
-│                        ││     │ Calls  • Element Call                                                          │     │
-│                        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
+│ ▸ Test                 ││     │ Login  • Matrix Authentication Service                                         │     │
+│                        ││     │        • Ketesa admin panel                                                    │     │
+│ ▾ Servers              ││     │ Calls  • Element Call                                                          │     │
+│   ● example.org        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││     Bridge hub        Synapse · 11 components                                              │
 │                        ││     Public community  Synapse · 9 components                                               │
 │                        ││     Lightweight       Tuwunel · 3 components                                               │

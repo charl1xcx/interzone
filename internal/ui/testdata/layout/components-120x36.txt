@@ -12,10 +12,10 @@
 │                        ││   │    docs/configuring-playbook-turn.md                                               │   │
 │ ▸ Mirrors              ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │                        ││                                                                                            │
-│ ▾ Servers              ││     ○  Exim email relay    needs settings                                                  │
-│   ● example.org        ││        Lets services send email (password resets, notifications).                          │
-│                        ││                                                                                            │
-│                        ││     ○  Serve the base domain                                                               │
+│ ▸ Test                 ││     ○  Exim email relay    needs settings                                                  │
+│                        ││        Lets services send email (password resets, notifications).                          │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││     ○  Serve the base domain                                                               │
 │                        ││        Host a simple page and .well-known files on <domain> itself (only if nothing els…   │
 │                        ││                                                                                            │
 │                        ││     ○  Dynamic DNS (ddclient)    needs settings                                            │

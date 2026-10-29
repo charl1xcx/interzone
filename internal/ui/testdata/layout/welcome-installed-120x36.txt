@@ -6,10 +6,10 @@
 │                        ││                   ▀█▀ █▄ █ ▀█▀ █▀▀ █▀█ ▀▀█ █▀█ █▄ █ █▀▀                                    │
 │ ▸ Mirrors              ││                    █  █ ▀█  █  ██▄ █▀▄ ▄▀  █▄█ █ ▀█ ██▄                                    │
 │                        ││                                                                                            │
-│ ▾ Servers              ││    Your own Matrix server, set up with matrix-docker-ansible-deploy,                       │
-│   ● example.org        ││                   without editing a single YAML file.                                      │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
+│ ▸ Test                 ││    Your own Matrix server, set up with matrix-docker-ansible-deploy,                       │
+│                        ││                   without editing a single YAML file.                                      │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││                                                                                            │
 │                        ││    ╭─────────────────────────╮ ╭─────────────────────────╮ ╭──────────────────────────╮    │
 │                        ││    │ ◆  Pick any homeserver  │ │ ⊕  Opt into anything    │ │ ⇅  Works in a blackout   │    │
 │                        ││    │                         │ │                         │ │                          │    │

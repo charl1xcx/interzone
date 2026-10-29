@@ -12,10 +12,10 @@
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││   Or only the homeserver, and pick the components yourself                                 │
 │                        ││                                                                                            │
-│ ▾ Servers              ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
-│   ● example.org        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
-│                        ││   │                                                                                  │     │
-│                        ││   │     Most complete and best supported implementation. Every component in this     │     │
+│ ▸ Test                 ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
+│                        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
+│ ▾ Servers              ││   │                                                                                  │     │
+│   ● example.org        ││   │     Most complete and best supported implementation. Every component in this     │     │
 │                        ││   │     tool works with it.                                                          │     │
 │                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││      ○  Continuwuity   lightweight Rust server                                             │

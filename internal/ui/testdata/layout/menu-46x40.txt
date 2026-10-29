@@ -24,13 +24,13 @@
  ╰───────────────────╯                        
                                               
  ⇅  Mirrors                                 ▸ 
+ ⌖  Test                                    ▸ 
  ▤  Servers                                 ▾ 
  ╭───────────────────╮                        
  │ ●  example.org    │                        
  ╰───────────────────╯                        
                                               
  ◫ auto (compact)     ◐ interzone             
-                                              
                                               
                                               
                                               

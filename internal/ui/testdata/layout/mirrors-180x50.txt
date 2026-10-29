@@ -9,10 +9,10 @@
 │   ✓ Mirrors            ││   │ █████████████████████████████░░░░░░░░░░░░░░░ │ │ ████████████████████████████████████████████ │ │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   │
 │   · Images             ││   ╰──────────────────────────────────────────────╯ ╰──────────────────────────────────────────────╯ ╰──────────────────────────────────────────────╯   │
 │                        ││   checked just now · r checks again                                                                                                                    │
-│ ▾ Servers              ││   The playbook, and the roles it pins at their versions from https://itsjustadream.g0th.ir/                                                            │
-│   ● example.org        ││                                                                                                                                                        │
-│                        ││   ✗ cinny                     has no v4.12.8-0 yet; the mirror may be behind  https://itsjustadream.g0th.ir/moth…self-hosting/ansible-role-cinny.git   │
-│                        ││   ✓ playbook                  HEAD 1a2b3c4d5e                                 https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy    │
+│ ▸ Test                 ││   The playbook, and the roles it pins at their versions from https://itsjustadream.g0th.ir/                                                            │
+│                        ││                                                                                                                                                        │
+│ ▾ Servers              ││   ✗ cinny                     has no v4.12.8-0 yet; the mirror may be behind  https://itsjustadream.g0th.ir/moth…self-hosting/ansible-role-cinny.git   │
+│   ● example.org        ││   ✓ playbook                  HEAD 1a2b3c4d5e                                 https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy    │
 │                        ││   ✓ auxiliary                 v2.0.0-0                                        https://itsjustadream.g0th.ir/moth…l-self-hosting/ansible-role-aux.git   │
 │                        ││                                                                                                                                                        │
 │                        ││                                                                                                                                                        │

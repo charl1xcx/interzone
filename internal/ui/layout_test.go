@@ -100,6 +100,7 @@ func TestLayout(t *testing.T) {
 		{"users", openUsers},
 		{"tokens", openTokens},
 		{"rooms", openRooms},
+		{"test", openTest},
 		{"maintenance", func(a *App) { deliver(a, maintainMsg("vacuum")) }},
 		{"users-bridge", func(a *App) {
 			openUsers(a)
@@ -178,6 +179,20 @@ func openRooms(a *App) {
 		{ID: "!p0d:example.org", Name: "Book club", Members: 7, Local: 7, Events: 42, Encrypted: true},
 		{ID: "!sp4m:spam.example", Name: "free crypto", Members: 3, Local: 1, Events: 12, Federated: true, Blocked: true},
 	}
+}
+
+func openTest(a *App) {
+	a.jump(a.index("Test"))
+	ps := a.cur().(*probeScreen)
+	ps.form.get("servers").input.SetValue("example.org, matrix.org")
+	ps.results = []probeResult{{name: "example.org", done: true, findings: []deploy.Finding{
+		{Group: "Federation", Name: "Delegation", Detail: "/.well-known/matrix/server sends servers to matrix.example.org:443"},
+		{Group: "Federation", Name: "Federation API", Detail: "matrix.example.org:443 answers as example.org, with a trusted certificate"},
+		{Group: "Federation", Name: "Software", Detail: "Synapse 1.140.0"},
+		{Group: "Clients", Name: "Well-known", Level: deploy.Warn, Detail: "https://example.org/.well-known/matrix/client sends apps to https://matrix.example.org, but without the CORS header web apps need"},
+		{Group: "Clients", Name: "Client API", Detail: "https://matrix.example.org answers, spec up to v1.12"},
+		{Group: "Clients", Name: "Element X sync", Level: deploy.Fail, Detail: "the homeserver doesn't offer sliding sync, which Element X needs"},
+	}}, {name: "matrix.org"}}
 }
 
 func openUsers(a *App) {

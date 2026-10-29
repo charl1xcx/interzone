@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"interzone/internal/config"
+	"interzone/internal/deploy"
 )
 
 // ── Sidebar ────────────────────────────────────────────────────────
@@ -33,10 +34,11 @@ const (
 	sideSetup
 	sideManage
 	sideMirrors
+	sideTest
 	sideServers
 )
 
-var sectionNames = map[sideSection]string{sideSetup: "setup", sideManage: "manage", sideMirrors: "mirrors", sideServers: "servers"}
+var sectionNames = map[sideSection]string{sideSetup: "setup", sideManage: "manage", sideMirrors: "mirrors", sideTest: "test", sideServers: "servers"}
 
 func sideOpenFile() string { return filepath.Join(config.Dir(), "sidebar-open") }
 
@@ -60,7 +62,7 @@ func loadSideOpen() map[sideSection]bool {
 
 func (a *App) saveSideOpen() {
 	var names []string
-	for _, sec := range []sideSection{sideSetup, sideManage, sideMirrors, sideServers} {
+	for _, sec := range []sideSection{sideSetup, sideManage, sideMirrors, sideTest, sideServers} {
 		if a.sideOpen[sec] {
 			names = append(names, sectionNames[sec])
 		}
@@ -139,6 +141,8 @@ func (a *App) section() sideSection {
 		return sideServers
 	case name == "Mirrors":
 		return sideMirrors
+	case name == "Test":
+		return sideTest
 	case name == "Manage", a.isTool(a.step):
 		return sideManage
 	case name == "Deploy":
@@ -170,7 +174,8 @@ func (a *App) sidebar(h int) string {
 			return sFaint.Render(" " + glyph)
 		}
 		lines := []string{mark("side:head:setup", icon(sideSetup, "◇")), "", mark("side:head:manage", icon(sideManage, "◆")), "",
-			mark("side:head:mirrors", icon(sideMirrors, "⇅")), "", mark("side:head:servers", icon(sideServers, "▤"))}
+			mark("side:head:mirrors", icon(sideMirrors, "⇅")), "", mark("side:head:test", icon(sideTest, "⌖")), "",
+			mark("side:head:servers", icon(sideServers, "▤"))}
 		if !a.sideCollapsed {
 			lines = append(lines, "", "", sFaint.Render(" ⋯")) // too narrow; ctrl+b does nothing here
 		} else {
@@ -267,6 +272,19 @@ func (a *App) menu() []menuSection {
 		}
 	}
 
+	test := menuSection{sec: sideTest, icon: "⌖", title: "Test"}
+	if a.sideOpen[sideTest] {
+		ps := a.screens[a.index("Test")].(*probeScreen)
+		test.items = append(test.items, menuItem{id: "side:test:", icon: sFaint.Render("·"), label: "Test servers", on: sec == sideTest})
+		for _, r := range ps.results {
+			it := menuItem{id: "side:test:" + r.name, icon: sFaint.Render("·"), label: r.name}
+			if lv, done := r.tally(); done {
+				it.icon = map[deploy.Level]string{deploy.Pass: sGood.Render("✓"), deploy.Warn: sWarn.Render("!"), deploy.Fail: sBad.Render("✗")}[lv]
+			}
+			test.items = append(test.items, it)
+		}
+	}
+
 	servers := menuSection{sec: sideServers, icon: "▤", title: "Servers"}
 	if a.sideOpen[sideServers] {
 		profiles := config.Profiles()
@@ -285,7 +303,7 @@ func (a *App) menu() []menuSection {
 			servers.items = append(servers.items, it)
 		}
 	}
-	return []menuSection{setup, manage, mirrors, servers}
+	return []menuSection{setup, manage, mirrors, test, servers}
 }
 
 // menuHead is a section's heading: an arrow showing whether it's open.

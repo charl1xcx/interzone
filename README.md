@@ -211,6 +211,14 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   deploy, for the server's architecture (once it's installed), with the
   ones your enabled services need listed apart from the rest. `m` on
   Welcome opens it.
+- **Test:** another section of the menu tests any Matrix servers, yours
+  or not: type one or more names (or user IDs, or URLs) and each is
+  looked at from this computer as other servers and apps see it:
+  `/.well-known/matrix/server` and `/client` (and its CORS header), SRV
+  records, the signing keys and which homeserver software and version
+  answer, the client API and its spec versions, ways to log in,
+  `/.well-known/matrix/support`, and what Element X needs (sliding sync,
+  OAuth 2.0 logins, a call server).
 - **Manage an existing server:** update, run the self-check, restart, add
   users (Synapse/Dendrite), or many at once from a CSV file
   (`username[,password][,admin]` a line; missing passwords are generated

@@ -19,10 +19,10 @@
 │                        ││                                                             │ Rooms      27                                                                        │   │
 │ ▸ Mirrors              ││                                                             │ Media      380 MB  142 files                                                         │   │
 │                        ││                                                             │ Email      alice@example.org                                                         │   │
-│ ▾ Servers              ││                                                             │ Picture    set                                                                       │   │
-│   ● example.org        ││                                                             │                                                                                      │   │
-│                        ││                                                             │  p  new password    a  remove admin    s  sign out everywhere    d  deactivate       │   │
-│                        ││                                                             ╰──────────────────────────────────────────────────────────────────────────────────────╯   │
+│ ▸ Test                 ││                                                             │ Picture    set                                                                       │   │
+│                        ││                                                             │                                                                                      │   │
+│ ▾ Servers              ││                                                             │  p  new password    a  remove admin    s  sign out everywhere    d  deactivate       │   │
+│   ● example.org        ││                                                             ╰──────────────────────────────────────────────────────────────────────────────────────╯   │
 │                        ││                                                                                                                                                        │
 │                        ││                                                                                                                                                        │
 │                        ││                                                                                                                                                        │

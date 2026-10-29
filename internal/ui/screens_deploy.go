@@ -366,13 +366,6 @@ func (s *reviewScreen) checksView(w int) []string {
 			if f.Service != "" && g == "Ports" {
 				f.Detail = f.Service + ": " + f.Detail
 			}
-			icon, style := sGood.Render("✓"), sMuted
-			switch f.Level {
-			case deploy.Warn:
-				icon, style = sWarn.Render("!"), sWarn
-			case deploy.Fail:
-				icon, style = sBad.Render("✗"), sBad
-			}
 			nw := nameW
 			if g == "DNS" {
 				nw = dnsW
@@ -380,23 +373,11 @@ func (s *reviewScreen) checksView(w int) []string {
 			name := lipgloss.NewStyle().Width(nw).Render(sTitle.Render(truncate(f.Name, nw-2)))
 			if w < 60 { // the detail goes under the name
 				name = sTitle.Render(f.Name)
-				if g == "DNS" {
-					name = service(f.Name) + name
-				}
-				detail := style.Width(max(16, w-5)).Render(f.Detail)
-				rows = append(rows, "  "+icon+"  "+name+"\n     "+strings.ReplaceAll(detail, "\n", "\n     "))
-				continue
 			}
 			if g == "DNS" {
 				name = service(f.Name) + name
 			}
-			pad := 5 + lipgloss.Width(name)
-			detail := style.Width(max(16, w-pad)).Render(f.Detail)
-			if f.Level == deploy.Pass {
-				detail = style.Render(truncate(f.Detail, max(8, w-pad)))
-			}
-			detail = strings.ReplaceAll(detail, "\n", "\n"+strings.Repeat(" ", pad))
-			rows = append(rows, "  "+icon+"  "+name+detail)
+			rows = append(rows, findingRow(f, name, w, false))
 		}
 		if passed > 0 {
 			rows = append([]string{"  " + sGood.Render("✓") + "  " + sMuted.Render(fmt.Sprintf(collapsed[g], passed)) + sFaint.Render("  (v for details)")}, rows...)
@@ -404,6 +385,29 @@ func (s *reviewScreen) checksView(w int) []string {
 		lines = append(lines, rows...)
 	}
 	return lines
+}
+
+// findingRow is a check's line: its icon, its name as the caller laid it
+// out, and its detail, beside the name or, below 60 columns, under it.
+// Passed checks get one line unless full.
+func findingRow(f deploy.Finding, name string, w int, full bool) string {
+	icon, style := sGood.Render("✓"), sMuted
+	switch f.Level {
+	case deploy.Warn:
+		icon, style = sWarn.Render("!"), sWarn
+	case deploy.Fail:
+		icon, style = sBad.Render("✗"), sBad
+	}
+	if w < 60 {
+		detail := style.Width(max(16, w-5)).Render(f.Detail)
+		return "  " + icon + "  " + name + "\n     " + strings.ReplaceAll(detail, "\n", "\n     ")
+	}
+	pad := 5 + lipgloss.Width(name)
+	detail := style.Width(max(16, w-pad)).Render(f.Detail)
+	if f.Level == deploy.Pass && !full {
+		detail = style.Render(truncate(f.Detail, max(8, w-pad)))
+	}
+	return "  " + icon + "  " + name + strings.ReplaceAll(detail, "\n", "\n"+strings.Repeat(" ", pad))
 }
 
 // dryRunLines list what an update would change on the server.

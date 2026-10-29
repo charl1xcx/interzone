@@ -97,6 +97,7 @@ func New(cfg *config.Config, loaded bool) *App {
 		newServersScreen(),
 		newMigrateScreen(),
 		newMirrorsScreen(), // its own sidebar section
+		newProbeScreen(),   // so is this
 	}
 	a.deployBack = a.index("Review")
 	if cfg.Installed() {
