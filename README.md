@@ -275,7 +275,11 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     kernel, Docker version and uptime; load, swap, every disk and the
     backup timer; the containers using the most; certificate expiry for
     every hostname; and each container's state, health check, restarts,
-    CPU, memory and network traffic. Wide terminals get the cards side by
+    CPU, memory and network traffic. A history card draws load, memory
+    and disk over the last 30 days as sparklines, and says when the disk
+    fills up at the rate it grew this week: a small `interzone-stats` timer,
+    installed the first time the Dashboard opens, notes them on the server
+    every 10 minutes. Wide terminals get the cards side by
     side, the compact layout stacks them. While it's open it refreshes
     itself every 5 seconds (certificates every 5 minutes, or on `r`).
     The Dashboard, Users and the logs' service list open with what they

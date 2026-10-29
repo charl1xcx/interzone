@@ -30,7 +30,7 @@
 │                        ││   │ synapse                                             ██████████████    7.6%   4.10% │   │
 │                        ││   │ postgres                                            █████░░░░░░░░░    2.7%   0.80% │   │
 │ ◫ auto (wide)  ctrl+l  ││   │ traefik                                             █░░░░░░░░░░░░░    0.7%   0.20% │   │
-│ ◐ interzone  ctrl+y    ││     ↓ 14 more lines · ↑↓ scroll                                                            │
+│ ◐ interzone  ctrl+y    ││     ↓ 20 more lines · ↑↓ scroll                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  r refresh   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                                                             

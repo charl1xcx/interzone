@@ -3,6 +3,8 @@ package ui
 import (
 	"context"
 	"fmt"
+	"math"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -126,7 +128,7 @@ func (s *dashboardScreen) update(msg tea.Msg) tea.Cmd {
 			if m.certs {
 				s.certsAt = m.st.Taken
 			} else if s.st != nil {
-				m.st.Certs = s.st.Certs
+				m.st.Certs, m.st.History = s.st.Certs, s.st.History
 			}
 			s.st = m.st
 			saveCache("status", *m.st)
@@ -256,6 +258,9 @@ func (s *dashboardScreen) view(w, h int) string {
 		if w >= 44 {
 			blocks = append(blocks, s.topCard(w, 0))
 		}
+	}
+	if len(st.History) >= 2 && w >= 44 {
+		blocks = append(blocks, s.historyCard(w))
 	}
 	if len(st.Certs) > 0 {
 		blocks = append(blocks, s.certCard(w))
@@ -475,6 +480,65 @@ func (s *dashboardScreen) systemCard(w, h int) string {
 		lines = append(lines, kv("Next backup", sFaint.Render("not scheduled")))
 	}
 	return card("System", lines, w, h, cFaint)
+}
+
+// historyCard draws load, memory and disk over the days the server has
+// noted them, and when the disk fills up at the rate it's growing.
+func (s *dashboardScreen) historyCard(w int) string {
+	h := s.st.History
+	inner := w - 4
+	kw := 9
+	sw := max(6, inner-kw-24)
+	row := func(k string, f func(deploy.Sample) float64, note string) string {
+		vals := make([]float64, len(h))
+		for i, x := range h {
+			vals[i] = f(x)
+		}
+		last := vals[len(vals)-1]
+		return lipgloss.NewStyle().Width(kw).Render(sMuted.Render(k)) + lipgloss.NewStyle().Foreground(usageColor(slices.Max(vals))).Render(sparkline(vals, sw)) +
+			" " + sTitle.Render(fmt.Sprintf("%4s", pct(last))) + sFaint.Render(note)
+	}
+	frac := func(a, b int64) float64 {
+		if b == 0 {
+			return 0
+		}
+		return float64(a) / float64(b)
+	}
+	peak := func(f func(deploy.Sample) float64) string {
+		m := 0.0
+		for _, x := range h {
+			m = max(m, f(x))
+		}
+		return "  peak " + pct(m)
+	}
+	load := func(x deploy.Sample) float64 { return x.Load }
+	mem := func(x deploy.Sample) float64 { return frac(x.MemUsed, x.MemTotal) }
+	disk := func(x deploy.Sample) float64 { return frac(x.DiskUsed, x.DiskTotal) }
+	full := "  not growing"
+	if t := s.st.DiskFull(); !t.IsZero() {
+		full = fmt.Sprintf("  full in ~%d days", max(1, int(time.Until(t).Hours()/24)))
+	}
+	days := max(1, int(math.Round(h[len(h)-1].At.Sub(h[0].At).Hours()/24)))
+	title := fmt.Sprintf("Last %d days", days)
+	if days == 1 {
+		title = "Last day"
+	}
+	lines := []string{row("Load", load, peak(load)), row("Memory", mem, peak(mem)), row("Disk", disk, full)}
+	return card(title, lines, w, 0, cFaint)
+}
+
+// sparkline draws values from 0 to 1 in w columns, each the highest of
+// the values it covers.
+func sparkline(vals []float64, w int) string {
+	const ticks = "▁▂▃▄▅▆▇█"
+	n := min(w, len(vals))
+	var b strings.Builder
+	for i := range n {
+		m := slices.Max(vals[i*len(vals)/n : max(i*len(vals)/n+1, (i+1)*len(vals)/n)])
+		t := int(math.Round(min(1, max(0, m)) * 7))
+		b.WriteString(string([]rune(ticks)[t]))
+	}
+	return b.String()
 }
 
 // topCard lists what uses the most CPU and memory.

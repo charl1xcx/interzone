@@ -37,7 +37,41 @@ type ServerStatus struct {
 	Hosts      []string            // what Traefik serves for Matrix
 	Served     map[string][]string // host: the containers serving it
 	Timer      string              // next scheduled backup, if any
+	History    []Sample            // the last 30 days, every 30 minutes
 	Taken      time.Time
+}
+
+// Sample is the server at one time, as interzone-stats notes it every 10
+// minutes.
+type Sample struct {
+	At                  time.Time
+	Load                float64 // per CPU
+	MemUsed, MemTotal   int64   // bytes
+	DiskUsed, DiskTotal int64   // bytes, of /matrix
+}
+
+// DiskFull says when the disk fills up if it keeps growing as it did over
+// the last week: zero if it doesn't grow, or there's under a day of history.
+func (st *ServerStatus) DiskFull() time.Time {
+	h := st.History
+	if len(h) < 2 {
+		return time.Time{}
+	}
+	last := h[len(h)-1]
+	first := h[0]
+	for _, s := range h {
+		if last.At.Sub(s.At) <= 7*24*time.Hour {
+			first = s
+			break
+		}
+	}
+	span := last.At.Sub(first.At)
+	grew := last.DiskUsed - first.DiskUsed
+	if span < 24*time.Hour || grew <= 0 {
+		return time.Time{}
+	}
+	left := float64(last.DiskTotal-last.DiskUsed) / float64(grew)
+	return last.At.Add(time.Duration(left * float64(span)))
 }
 
 type Disk struct {
@@ -93,6 +127,24 @@ const statusPlay = `- name: interzone status
         all=$(docker ps -aq --filter name=^matrix-)
         if [ -n "$all" ]; then docker inspect --format 'inspect={{.Name}} {{.RestartCount}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' $all; fi
         docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Names}} {{.Labels}}'
+        if [ ! -x /usr/local/bin/interzone-stats ]; then
+          cat > /usr/local/bin/interzone-stats <<'EOF'
+        #!/bin/sh
+        # Written by interzone: notes load, memory and disk for its dashboard's history.
+        f=/var/lib/interzone-stats
+        echo "$(date +%s) $(cut -d' ' -f1 /proc/loadavg) $(nproc) $(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{print t-a, t}' /proc/meminfo) $( (df -Pk /matrix || df -Pk /) 2>/dev/null | awk 'NR==2{print $3, $2}')" >> $f
+        tail -n 4320 $f > $f.new && mv $f.new $f
+        EOF
+          chmod 755 /usr/local/bin/interzone-stats
+          printf '[Unit]\nDescription=Note load, memory and disk (interzone)\n\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/interzone-stats\n' > /etc/systemd/system/interzone-stats.service
+          printf '[Unit]\nDescription=Note load, memory and disk (interzone)\n\n[Timer]\nOnCalendar=*:0/10\n\n[Install]\nWantedBy=timers.target\n' > /etc/systemd/system/interzone-stats.timer
+          systemctl daemon-reload && systemctl enable --now interzone-stats.timer
+        fi >/dev/null 2>&1
+        if [ "$IZ_HISTORY" = true ] && [ -f /var/lib/interzone-stats ]; then
+          awk '{l = $0} NR % 3 == 0 {print "hist=" $0} END {if (NR % 3) print "hist=" l}' /var/lib/interzone-stats
+        fi
+      environment:
+        IZ_HISTORY: "{{ interzone_history | default(false) }}"
       changed_when: false
 `
 
@@ -103,7 +155,8 @@ const statusPlay = `- name: interzone status
 // are; before anything runs behind Traefik, the usual ones are guessed.
 func Status(ctx context.Context, c *config.Config, certs bool) (*ServerStatus, error) {
 	st := &ServerStatus{Taken: time.Now()}
-	res, err := runPlayJSON(ctx, c, "status", statusPlay, nil)
+	// The history is read with the certificates, every few minutes.
+	res, err := runPlayJSON(ctx, c, "status", statusPlay, map[string]any{"interzone_history": certs})
 	if err == nil {
 		parseStatus(st, res["interzone status"].String("stdout"))
 	}
@@ -211,6 +264,17 @@ func parseStatus(st *ServerStatus, out string) {
 			}
 		case "timer":
 			st.Timer = strings.TrimSpace(v)
+		case "hist":
+			if len(f) == 7 {
+				var n [7]float64
+				for i := range f {
+					n[i], _ = strconv.ParseFloat(f[i], 64)
+				}
+				if n[2] > 0 {
+					st.History = append(st.History, Sample{At: time.Unix(int64(n[0]), 0), Load: n[1] / n[2],
+						MemUsed: int64(n[3]) * 1024, MemTotal: int64(n[4]) * 1024, DiskUsed: int64(n[5]) * 1024, DiskTotal: int64(n[6]) * 1024})
+				}
+			}
 		case "labels":
 			st.served(v)
 		case "ps":

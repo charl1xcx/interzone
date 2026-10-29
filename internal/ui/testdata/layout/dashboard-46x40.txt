@@ -32,9 +32,9 @@
  │ traefik       █░░░░░░░░░    0.7%   0.20% │ 
  ╰──────────────────────────────────────────╯ 
  ╭──────────────────────────────────────────╮ 
- │ Certificates                             │ 
- │ ✓ matrix.example.org                     │ 
- │   Synapse  60 days                       │ 
- │ ! element.example.org                    │ 
-   ↓ 18 more lines · ↑↓ scroll                
+ │ Last 14 days                             │ 
+ │ Load     ▅▅▅▅▅▅▅  27%  peak 50%          │ 
+ │ Memory   ▆▆▆▆▆▆▆  54%  peak 65%          │ 
+ │ Disk     ▆▆▆▆▆▆▆  78%  full in ~52 days  │ 
+   ↓ 24 more lines · ↑↓ scroll                
        ‹ back             ≡ menu          ⋯  

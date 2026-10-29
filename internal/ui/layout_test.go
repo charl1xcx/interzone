@@ -3,6 +3,7 @@ package ui
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -142,6 +143,13 @@ func openDashboard(a *App) {
 			{Name: "matrix-traefik", State: "running", Status: "Up 3 days", Image: "traefik:v3.2.1",
 				CPU: "0.20%", Mem: "60MiB / 7.8GiB", MemPerc: 0.7, Net: "2.1GB / 2.0GB"},
 		}}
+	// Two weeks every 30 minutes: a daily rhythm, the disk growing 2.4 GB a week.
+	for i := range 14 * 48 {
+		day := math.Sin(float64(i) / 48 * 2 * math.Pi)
+		st.History = append(st.History, deploy.Sample{At: time.Now().Add(-time.Duration(14*48-1-i) * 30 * time.Minute),
+			Load: 0.3 + 0.2*day, MemUsed: int64((0.55 + 0.1*day) * (8 << 30)), MemTotal: 8 << 30,
+			DiskUsed: (62 << 30) - int64(float64(14*48-1-i)/(7*48)*2.4*(1<<30)), DiskTotal: 80 << 30})
+	}
 	ds.st, ds.loading = st, false
 }
 
