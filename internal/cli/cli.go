@@ -36,6 +36,8 @@ var Commands = map[string]func(args []string) error{
 	"bundle":   Bundle,
 	"unbundle": Unbundle,
 	"mirrors":  Mirrors,
+
+	"serve-registry": ServeRegistry,
 }
 
 const Usage = `Usage:
