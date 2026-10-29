@@ -31,6 +31,8 @@ type servicesMsg struct {
 	err   error
 }
 
+func (servicesMsg) owner() string { return "Manage" }
+
 type manageMode int
 
 const (

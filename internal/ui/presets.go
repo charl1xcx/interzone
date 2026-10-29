@@ -32,6 +32,9 @@ type homeserverScreen struct {
 // noteMsg puts a line on the status bar.
 type noteMsg string
 
+// failNoteMsg puts a line on the status bar that says something failed.
+type failNoteMsg string
+
 func (s *homeserverScreen) name() string { return "Homeserver" }
 func (s *homeserverScreen) title() string {
 	if s.saver != nil {

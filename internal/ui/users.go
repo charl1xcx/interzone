@@ -43,6 +43,8 @@ type userOpMsg struct {
 	err      error
 }
 
+func (userOpMsg) owner() string { return "Users" }
+
 type userMode int
 
 const (

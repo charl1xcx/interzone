@@ -143,6 +143,8 @@ func (s *welcomeScreen) view(w, h int) string {
 
 type checksMsg []deploy.Check
 
+func (checksMsg) owner() string { return "Server" }
+
 type serverScreen struct {
 	cfg      *config.Config
 	form     *form

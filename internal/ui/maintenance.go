@@ -246,7 +246,7 @@ func (s *maintenanceScreen) keepDays() (int, error) {
 func databaseShell(c *config.Config) tea.Cmd {
 	return tea.ExecProcess(deploy.DatabaseShell(c), func(err error) tea.Msg {
 		if err != nil {
-			return noteMsg("The database shell ended: " + err.Error())
+			return failNoteMsg("The database shell ended: " + err.Error())
 		}
 		return nil
 	})

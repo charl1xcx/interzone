@@ -32,6 +32,8 @@ type checksPartMsg struct {
 	ch       chan checksPartMsg
 }
 
+func (checksPartMsg) owner() string { return "Review" }
+
 func waitChecks(ch chan checksPartMsg) tea.Cmd {
 	return func() tea.Msg {
 		m, ok := <-ch

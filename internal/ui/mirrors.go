@@ -52,6 +52,8 @@ type mirrorsMsg struct {
 	res    mirrorsResult
 }
 
+func (mirrorsMsg) owner() string { return "Mirrors" }
+
 type mirrorsScreen struct {
 	cfg     *config.Config
 	server  string

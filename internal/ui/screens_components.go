@@ -123,14 +123,14 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	items := s.items()
 	switch k.String() {
-	case "up", "ctrl+k":
+	case "up": // not ctrl+k: that's Go-to, everywhere
 		s.cursor = max(0, s.cursor-1)
 		return nil
 	case "down", "ctrl+j":
-		s.cursor = min(len(items)-1, s.cursor+1)
+		s.cursor = max(0, min(len(items)-1, s.cursor+1))
 		return nil
 	case " ", "ctrl+@":
-		if s.cursor < len(items) {
+		if s.cursor >= 0 && s.cursor < len(items) {
 			it := items[s.cursor]
 			if s.toggles(it) {
 				s.selected[it.ID] = !s.selected[it.ID]
@@ -169,7 +169,7 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 	case "k":
 		s.cursor = max(0, s.cursor-1)
 	case "j":
-		s.cursor = min(len(items)-1, s.cursor+1)
+		s.cursor = max(0, min(len(items)-1, s.cursor+1))
 	case "p":
 		s.leave(s.cfg)
 		p, ok := currentPreset(s.cfg)

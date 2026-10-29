@@ -27,12 +27,16 @@ type importReadMsg struct {
 	err error
 }
 
+func (importReadMsg) owner() string { return "Servers" }
+
 type importSavedMsg struct {
 	name   string
 	cfg    *config.Config
 	update bool
 	err    error
 }
+
+func (importSavedMsg) owner() string { return "Servers" }
 
 type importState struct {
 	form   *form

@@ -31,6 +31,8 @@ type defaultsMsg struct {
 	err error
 }
 
+func (defaultsMsg) owner() string { return "Tuning" }
+
 // tuneRole is a role as the screen lists it.
 type tuneRole struct {
 	config.Role

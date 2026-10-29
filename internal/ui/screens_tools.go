@@ -102,6 +102,8 @@ type changesMsg struct {
 	err error
 }
 
+func (changesMsg) owner() string { return "Updates" }
+
 type updatesScreen struct {
 	cfg     *config.Config
 	loading bool
@@ -604,10 +606,12 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	if s.confirm {
 		if confirmKey(k.String(), &s.cursor, &s.confirm, len(s.list)) || k.String() == "x" {
-			if err := config.RemoveProfile(s.list[s.cursor].Name); err != nil {
+			err := config.RemoveProfile(s.list[s.cursor].Name)
+			cmd := s.enter(s.cfg) // clears s.err
+			if err != nil {
 				s.err = err.Error()
 			}
-			return s.enter(s.cfg)
+			return cmd
 		}
 		return nil
 	}

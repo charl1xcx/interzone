@@ -98,9 +98,8 @@ var themes = []theme{
 }
 
 var (
-	themeName                                                          string
-	cPurple, cMint, cPink, cAmber, cRed, cText, cMuted, cFaint, cPanel ac
-	cOnAccent                                                          ac
+	themeName                                                             string
+	cPurple, cMint, cPink, cAmber, cRed, cText, cMuted, cFaint, cOnAccent ac
 
 	sTitle, sSub, sMuted, sFaint, sAccent, sGood, sWarn, sBad, sPink, sKey, sSection lipgloss.Style
 	sPanel, sPanelFocus, sBadge                                                      lipgloss.Style
@@ -111,7 +110,7 @@ func init() { applyTheme(themes[0]) }
 func applyTheme(t theme) {
 	themeName = t.name
 	cPurple, cMint, cPink, cAmber, cRed = t.accent, t.good, t.pink, t.amber, t.red
-	cText, cMuted, cFaint, cPanel, cOnAccent = t.text, t.muted, t.faint, t.panel, t.onAccent
+	cText, cMuted, cFaint, cOnAccent = t.text, t.muted, t.faint, t.onAccent
 
 	sTitle = lipgloss.NewStyle().Foreground(cText).Bold(true)
 	sSub = lipgloss.NewStyle().Foreground(cMuted)
@@ -235,11 +234,9 @@ func gradient(s string) string {
 	return b.String()
 }
 
-// gradientLines colours a multi-line block column-wise so each line shares the ramp.
-func gradientLines(block string) string { return gradientLinesAt(block, 0) }
-
-// gradientLinesAt is gradientLines with the ramp moved along by shift: it
-// runs there and back, so any shift is a smooth step from the last.
+// gradientLinesAt colours a multi-line block column-wise so each line
+// shares the ramp, moved along by shift: it runs there and back, so any
+// shift is a smooth step from the last.
 func gradientLinesAt(block string, shift float64) string {
 	stops := gradientStops()
 	lines := strings.Split(block, "\n")

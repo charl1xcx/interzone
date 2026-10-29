@@ -209,6 +209,9 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case noteMsg:
 		a.status = sGood.Render(string(m))
 		return a, nil
+	case failNoteMsg:
+		a.status = sBad.Render(string(m))
+		return a, nil
 	case autoBackMsg:
 		if _, ok := a.cur().(*deployScreen); ok {
 			a.status = sGood.Render("✓ " + m.text)
@@ -275,6 +278,11 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, a.go_(1)
 			}
 		case "ctrl+p", "pgup":
+			// Past the wizard, pgup scrolls the screen (the deploy log,
+			// Fine-tune's lists), as pgdown does; ctrl+p still goes back.
+			if m.String() == "pgup" && a.step > a.index("Review") {
+				break
+			}
 			if !(deploying && ds.running) {
 				return a, a.back()
 			}

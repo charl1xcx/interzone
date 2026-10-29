@@ -21,6 +21,32 @@ func TestResultReachesItsScreen(t *testing.T) {
 	}
 }
 
+// The same for the other screens that wait on the server: a user's new
+// password, shown only once, isn't lost by looking elsewhere meanwhile.
+func TestMoreResultsReachTheirScreens(t *testing.T) {
+	a := demoApp(t, 120, 36)
+	openUsers(a)
+	us := a.cur().(*usersScreen)
+	us.busy = true
+	openDashboard(a)
+	if a.cur() == us {
+		t.Fatal("still on Users")
+	}
+	a.Update(userOpMsg{op: &userOp{user: "@bob:example.org"}, info: "new password", password: "s3cret"})
+	if us.busy || us.password != "s3cret" {
+		t.Errorf("users missed its answer: busy %v, password %q", us.busy, us.password)
+	}
+
+	ms := a.screens[a.index("Mirrors")].(*mirrorsScreen)
+	ms.loading = [3]bool{true, true, true}
+	for part := range ms.loading {
+		a.Update(mirrorsMsg{server: ms.server, part: part})
+	}
+	if ms.loading != [3]bool{} {
+		t.Errorf("mirrors still loading: %v", ms.loading)
+	}
+}
+
 func TestDashboardRefreshesItself(t *testing.T) {
 	a := demoApp(t, 120, 36)
 	openDashboard(a)
