@@ -195,7 +195,9 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   server as apps do too: `/.well-known/matrix/client` (with the CORS
   header web apps need) and the client API it points to, and whether
   Element X will work: sliding sync, OAuth 2.0 logins through MAS, and a
-  call server in the well-known when Matrix RTC is on. Once you've deployed, it shows what
+  call server in the well-known when Matrix RTC is on. Each stage's results
+  show up as it finishes, with the stage running and for how long; `c`
+  stops them. Once you've deployed, it shows what
   changes in `vars.yml` since the last successful deploy (`x` switches to
   the whole file).
 - **Checks after deploying.** The playbook's self-check runs at the end and
@@ -227,8 +229,9 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   Continuwuity, Tuwunel, and Synapse with MAS, where anyone with the
   sign-up token can join without an email address), back up the Postgres database to this computer, and follow any
   service's log live. Every action has a one-letter shortcut on Manage
-  (`u` update, `r` restart, `d` dashboard, `l` logs, `b` back up …); the
-  ones that change the server right away want the letter twice. Also:
+  (`u` update, `r` restart, `d` dashboard, `l` logs, `b` back up …; `?`
+  lists them all); the ones that change the server right away want the
+  letter twice. Also:
   - **Sign-up tokens** (Synapse with MAS, `t`): every registration token
     with how many accounts it has made, when it was last used and when it
     runs out. Make new ones limited to some uses or days, and revoke or
@@ -284,7 +287,8 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     creator. `b` blocks a room so nobody here can join it (or unblocks
     it), `h` deletes its messages older than so many days from this
     server's database, keeping those sent from here, and `x` deletes the
-    room: everyone here is made to leave, it's purged and blocked. It
+    room: everyone here is made to leave, it's purged and blocked. That
+    can't be undone, so it asks for the word `delete` to be typed. It
     signs in with the same admin account as Users.
   - **Dashboard:** tiles for CPU, memory, disk and containers; the OS,
     kernel, Docker version and uptime; load, swap, every disk and the
@@ -313,7 +317,7 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     *Services* starts, stops or reinstalls every service or one group of
     them (`start-all`, `stop-group`, `install-SERVICE`); reinstalling
     everything runs `setup-all`, which also removes the components you've
-    turned off, where a normal update leaves them installed. *Disk* shows
+    turned off, where a normal update leaves them installed. *Disk space* shows
     what takes the server's disk (free space, the largest directories in
     `/matrix`, Synapse's local and cached remote media, Docker's images),
     removes Docker data nothing uses (`run-docker-prune`), and on Synapse
@@ -437,6 +441,8 @@ and a dark variant that follows the terminal's background.
 | `ctrl+b` | go to the menu: `↑↓` `←→` to move and fold, `enter` to open, `esc` to go back (compact layout: open the menu, like `≡ menu`) |
 | `ctrl+l` | next layout: auto, compact, wide |
 | `ctrl+y` | next theme |
+| `ctrl+k` | go to: type part of a screen's or Manage action's name, `enter` goes there |
+| `?` | every key of the screen you're on, and the ones that work anywhere (not while typing) |
 | `esc` | back |
 
 Everything also works with the mouse: click a menu entry, a field, an option,
@@ -447,14 +453,18 @@ While interzone has the mouse, hold `shift` to select text in most terminals, or
 `-no-mouse`.
 
 Anything that asks before acting (rolling back, restoring, deactivating a
-user) is confirmed by pressing the same key, or clicking the same row,
-again; moving away cancels. After a quick action from Manage (update,
+user) shows what it will do in an amber box, and is confirmed with `y`,
+`enter`, the same key again or a click on the same row; `esc` or moving
+away cancels. What can't be undone (uninstalling, deleting a room) asks
+for a word to be typed instead. After a quick action from Manage (update,
 check, restart, image check, scheduled backups) succeeds, interzone returns
 to Manage by itself a few seconds later; press any key to stay on the
 result.
 
-On the Review screen, `enter` deploys and `s` only writes the files and prints
-the `ansible-playbook` command to run later.
+On the Review screen, `enter` shows what the deploy will do (install or
+update, how long it may take, what changes in `vars.yml`, which checks
+failed) and `y` then deploys; `s` only writes the files and prints the
+`ansible-playbook` command to run later. The page scrolls as a whole with `↑↓`.
 
 ### Without the wizard
 
