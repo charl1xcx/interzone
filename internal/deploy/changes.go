@@ -7,12 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 
+	"interzone/internal/catalog"
 	"interzone/internal/config"
 )
 
@@ -23,6 +25,14 @@ type Changes struct {
 	Total    int // commits; Commits holds the newest of them
 	Commits  []Commit
 	Versions []VersionChange
+	Notices  []Notice // CHANGELOG.md entries the update adds, newest first
+}
+
+// Notice is a CHANGELOG.md entry: the playbook's word on breaking changes
+// and what to do about them.
+type Notice struct {
+	Date, Title, Body string
+	Yours             []string // what it mentions that this server runs
 }
 
 type Commit struct {
@@ -82,11 +92,12 @@ func PreviewUpdate(ctx context.Context, c *config.Config) (*Changes, error) {
 		}
 	}
 
-	files, _ := git("diff", "--name-only", ch.From, ch.To, "--", "requirements.yml", "roles/custom")
 	show := func(rev, file string) string {
 		out, _ := git("show", rev+":"+file)
 		return out
 	}
+	ch.Notices = newNotices(show(ch.From, "CHANGELOG.md"), show(ch.To, "CHANGELOG.md"), c)
+	files, _ := git("diff", "--name-only", ch.From, ch.To, "--", "requirements.yml", "roles/custom")
 	for _, f := range strings.Split(files, "\n") {
 		switch {
 		case f == "requirements.yml":
@@ -97,6 +108,72 @@ func PreviewUpdate(ctx context.Context, c *config.Config) (*Changes, error) {
 	}
 	sort.Slice(ch.Versions, func(i, j int) bool { return ch.Versions[i].Name < ch.Versions[j].Name })
 	return ch, nil
+}
+
+var mdLink = regexp.MustCompile(`\[([^\]]*)\]\([^)]*\)`)
+
+// newNotices are the entries of the new changelog that the old one hasn't,
+// marked with what each mentions of this server: its homeserver in the
+// title, or an enabled component's doc page.
+func newNotices(old, cur string, c *config.Config) []Notice {
+	if old == "" {
+		return nil // no changelog before: everything would look new
+	}
+	seen := map[string]bool{}
+	for _, l := range strings.Split(old, "\n") {
+		if t, ok := strings.CutPrefix(l, "## "); ok {
+			seen[strings.TrimSpace(t)] = true
+		}
+	}
+	var out []Notice
+	date := ""
+	for _, l := range strings.Split(cur, "\n") {
+		switch {
+		case strings.HasPrefix(l, "# "):
+			date = strings.TrimSpace(l[2:])
+		case strings.HasPrefix(l, "## "):
+			t := strings.TrimSpace(l[3:])
+			if seen[t] {
+				return markYours(out, c)
+			}
+			out = append(out, Notice{Date: date, Title: mdLink.ReplaceAllString(t, "$1")})
+		case len(out) > 0:
+			out[len(out)-1].Body += l + "\n"
+		}
+	}
+	return markYours(out, c)
+}
+
+// mentions are words that tie a notice to a component besides its doc
+// page: Element Call and Matrix RTC run LiveKit.
+var mentions = map[string][]string{"matrix-rtc": {"livekit"}, "element-call": {"livekit", "matrix rtc"}}
+
+func markYours(ns []Notice, c *config.Config) []Notice {
+	for i := range ns {
+		n := &ns[i]
+		n.Body = strings.TrimSpace(n.Body)
+		text := strings.ToLower(n.Title + "\n" + n.Body)
+		for _, h := range catalog.Homeservers {
+			// by title: nearly every entry mentions Synapse in passing
+			if h.ID == c.Homeserver && strings.Contains(strings.ToLower(n.Title), strings.ToLower(h.Name)) {
+				n.Yours = append(n.Yours, h.Name)
+			}
+		}
+		for _, comp := range catalog.Components {
+			if !c.Enabled(comp) {
+				continue
+			}
+			hit := comp.Doc != "" && strings.Contains(text, strings.ToLower(comp.Doc))
+			for _, w := range mentions[comp.ID] {
+				hit = hit || strings.Contains(text, w)
+			}
+			if hit {
+				n.Yours = append(n.Yours, comp.Name)
+			}
+		}
+		n.Body = mdLink.ReplaceAllString(n.Body, "$1")
+	}
+	return ns
 }
 
 // roleVersions reads requirements.yml: role name → version.

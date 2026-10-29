@@ -212,8 +212,10 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     with how many accounts it has made, when it was last used and when it
     runs out. Make new ones limited to some uses or days, and revoke or
     restore them.
-  - **Update preview:** the new playbook commits and the component
-    versions they change, before installing anything.
+  - **Update preview:** the playbook's new `CHANGELOG.md` entries, the
+    new commits and the component versions they change, before installing
+    anything. Entries about your homeserver or a component you've turned
+    on come first, marked, with their first paragraph.
   - **Rollback:** every successful install records its playbook commit and
     answers (the last 10). Rolling back backs up the database, checks
     that commit out and reinstalls; the playbook stays held there until

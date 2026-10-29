@@ -179,6 +179,9 @@ func (s *updatesScreen) content() string {
 	}
 	lines = append(lines, sTitle.Render(fmt.Sprintf("%d new playbook commit(s)", ch.Total))+
 		sFaint.Render(fmt.Sprintf("  %s → %s", ch.From[:10], ch.To[:10])), "")
+	if len(ch.Notices) > 0 {
+		lines = append(append(lines, sectionHeading("From the playbook's changelog", 60), ""), noticeLines(ch.Notices)...)
+	}
 	if len(ch.Versions) > 0 {
 		lines = append(lines, sectionHeading("Version changes", 60), "")
 		nameW := 18
@@ -206,6 +209,33 @@ func (s *updatesScreen) content() string {
 		lines = append(lines, sFaint.Render(fmt.Sprintf("  …and %d older", ch.Total-len(ch.Commits))))
 	}
 	return strings.Join(lines, "\n")
+}
+
+// noticeLines lists the changelog entries an update brings: the ones about
+// what this server runs first, with their first paragraph, then the rest
+// by title.
+func noticeLines(ns []deploy.Notice) []string {
+	var yours, rest []string
+	for _, n := range ns {
+		head := sFaint.Render(n.Date) + "  " + sTitle.Render(n.Title)
+		if len(n.Yours) == 0 {
+			rest = append(rest, "  "+sFaint.Render("·")+" "+head)
+			continue
+		}
+		para, _, _ := strings.Cut(n.Body, "\n\n")
+		body := lipgloss.NewStyle().Width(68).Render(strings.Join(strings.Fields(para), " "))
+		yours = append(yours, "  "+sWarn.Render("!")+" "+head+sWarn.Render("  ("+strings.Join(n.Yours, ", ")+")"),
+			"    "+sMuted.Render(strings.ReplaceAll(body, "\n", "\n    ")), "")
+	}
+	out := yours
+	if len(yours) > 0 {
+		out = append([]string{sWarn.Render("! These are about what your server runs; read them before updating."), ""}, out...)
+	}
+	if len(rest) > 0 {
+		out = append(out, rest...)
+		out = append(out, "")
+	}
+	return append(out, sFaint.Render("  The whole changelog: CHANGELOG.md in the playbook."), "")
 }
 
 func (s *updatesScreen) view(w, h int) string {

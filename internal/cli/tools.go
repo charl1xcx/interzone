@@ -118,6 +118,18 @@ func Changes(args []string) error {
 		return nil
 	}
 	fmt.Println(head.Render(fmt.Sprintf("==> %d new commit(s), %s → %s", ch.Total, ch.From[:10], ch.To[:10])))
+	for _, n := range ch.Notices {
+		if len(n.Yours) == 0 {
+			fmt.Printf("  · %s  %s\n", muted.Render(n.Date), n.Title)
+			continue
+		}
+		para, _, _ := strings.Cut(n.Body, "\n\n")
+		fmt.Printf("  %s %s  %s %s\n    %s\n", warn.Render("!"), muted.Render(n.Date), n.Title,
+			warn.Render("("+strings.Join(n.Yours, ", ")+")"), muted.Render(strings.Join(strings.Fields(para), " ")))
+	}
+	if len(ch.Notices) > 0 {
+		fmt.Println()
+	}
 	for _, v := range ch.Versions {
 		switch {
 		case v.Old == "":
