@@ -308,6 +308,7 @@ const maxFormWidth = 96
 // View renders the form inside height lines, scrolled so the focused field stays visible.
 func (f *form) View(width, height int) string {
 	width = min(width, maxFormWidth)
+	height = max(height, 3) // callers pass what's left, which a tiny window makes negative
 	f.width = width
 	var lines []string
 	focusStart, focusEnd := 0, 0

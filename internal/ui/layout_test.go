@@ -309,3 +309,38 @@ func TestSidebarFits(t *testing.T) {
 		t.Errorf("%d lines, the first %q:\n%s", len(lines), lines[0], strings.Join(lines, "\n"))
 	}
 }
+
+// Every screen draws in tiny windows without crashing or growing taller
+// than the window.
+func TestTinyWindows(t *testing.T) {
+	for _, sz := range [][2]int{{20, 6}, {30, 10}, {40, 15}, {60, 12}, {80, 24}, {120, 36}, {70, 50}} {
+		for _, layout := range []string{"auto", "compact", "wide"} {
+			a := demoApp(t, sz[0], sz[1])
+			a.layout = layout
+			for i := range a.screens {
+				if a.screens[i].name() == "Deploy" {
+					continue
+				}
+				a.step = i
+				a.cur().enter(a.cfg)
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							t.Errorf("%s at %dx%d (%s): %v", a.screens[i].name(), sz[0], sz[1], layout, r)
+						}
+					}()
+					lines := strings.Split(a.View(), "\n")
+					if len(lines) > sz[1] {
+						t.Errorf("%s at %dx%d (%s) is %d lines tall", a.screens[i].name(), sz[0], sz[1], layout, len(lines))
+					}
+					for _, l := range lines {
+						if w := ansi.StringWidth(l); w > sz[0] {
+							t.Errorf("%s at %dx%d (%s) has a line %d wide: %q", a.screens[i].name(), sz[0], sz[1], layout, w, ansi.Strip(l))
+							break
+						}
+					}
+				}()
+			}
+		}
+	}
+}

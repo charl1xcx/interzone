@@ -58,6 +58,9 @@ func (a *App) cycleLayout() {
 }
 
 func (a *App) compact() bool {
+	if a.w > 0 && (a.w < 60 || a.h < 17) {
+		return true // the wide layout's menu and panels don't fit, whatever was picked
+	}
 	switch a.layout {
 	case "compact":
 		return true
