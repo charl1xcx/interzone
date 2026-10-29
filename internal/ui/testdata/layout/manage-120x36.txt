@@ -25,11 +25,11 @@
 │                        ││     ◷  Scheduled backups                                                            s      │
 │                        ││     ↺  Restore a backup                                                             e      │
 │                        ││     ↶  Roll back                                                                    z      │
+│                        ││     ◔  Disk space                                                                          │
 │                        ││     ⌫  Vacuum the database                                                                 │
 │                        ││     ⇡  Upgrade Postgres                                                                    │
 │                        ││     ⇲  Compress Synapse's state                                                            │
-│                        ││                                                                                            │
-│ ◫ auto (wide)  ctrl+l  ││   Look closer ──────────────────────────────────────────────────────────────────────────   │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
 │ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯

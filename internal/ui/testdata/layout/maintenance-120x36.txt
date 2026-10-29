@@ -4,16 +4,16 @@
 │                        ││   Maintenance                                                                              │
 │ ▾ Manage example.org   ││                                                                                            │
 │   ⌂ Overview           ││   ▌  Task                                                                                  │
-│   @ Users              ││   ▌    Services      Vacuum      Upgrade      Compress      Tags      Uninstall            │
-│   ▦ Dashboard          ││   ▌  Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting      │
-│   ↻ Updates            ││   ▌  a lot, e.g. after compressing Synapse's state.                                        │
-│   ◷ Backups            ││                                                                                            │
-│   ↺ Restore            ││      Kind of vacuum                                                                        │
-│   ↶ Rollback           ││        Complete (FULL, ANALYZE; services stop)                                             │
-│   ✎ Fine-tune          ││        Full (services stop)                                                                │
-│ ▌ ⚒ Maintenance        ││        Plain (services keep running)                                                       │
-│   ⇢ Move server        ││        Plain + ANALYZE (services keep running)                                             │
-│   ▤ Servers            ││        ANALYZE only (fastest)                                                              │
+│   @ Users              ││   ▌    Services      Disk      Vacuum      Upgrade      Compress      Tags                 │
+│   ▦ Dashboard          ││   ▌    Uninstall                                                                           │
+│   ↻ Updates            ││   ▌  Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting      │
+│   ◷ Backups            ││   ▌  a lot, e.g. after compressing Synapse's state.                                        │
+│   ↺ Restore            ││                                                                                            │
+│   ↶ Rollback           ││      Kind of vacuum                                                                        │
+│   ✎ Fine-tune          ││        Complete (FULL, ANALYZE; services stop)      Full (services stop)                   │
+│ ▌ ⚒ Maintenance        ││        Plain (services keep running)      Plain + ANALYZE (services keep running)          │
+│   ⇢ Move server        ││        ANALYZE only (fastest)                                                              │
+│   ▤ Servers            ││                                                                                            │
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││                                                                                            │
 │                        ││                                                                                            │

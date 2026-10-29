@@ -48,12 +48,48 @@ const uninstallPlay = `- name: Remove everything the playbook installed
 // (docs/uninstalling.md): every matrix-* service, the Docker images and
 // /matrix go. Docker itself stays.
 func (r *Runner) uninstall(ctx context.Context) error {
-	r.begin(StepUninstall)
-	play := filepath.Join(r.cfg.PlaybookDir, "inventory", "interzone-uninstall.yml")
-	if err := os.WriteFile(play, []byte(uninstallPlay), 0o644); err != nil {
+	return r.play(ctx, StepUninstall, "uninstall", uninstallPlay)
+}
+
+const diskPlay = `- name: Measure the disk
+  hosts: matrix_servers
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Measure
+      ansible.builtin.shell: |
+        df -h / /matrix 2>/dev/null | awk '!seen[$0]++'
+        echo
+        echo "Largest under /matrix:"
+        du -xsh /matrix/* 2>/dev/null | sort -rh | head -12
+        if [ -d /matrix/synapse/storage/media-store ]; then
+          echo
+          echo "Synapse media (remote_* is media cached from other servers):"
+          du -xsh /matrix/synapse/storage/media-store/* 2>/dev/null | sort -rh
+        fi
+        echo
+        docker system df 2>/dev/null
+      register: interzone_disk
+      changed_when: false
+    - name: Disk usage
+      ansible.builtin.debug:
+        var: interzone_disk.stdout_lines
+`
+
+// disk shows what takes the server's disk space: free space, the largest
+// directories under /matrix, Synapse's media and Docker's images.
+func (r *Runner) disk(ctx context.Context) error {
+	return r.play(ctx, StepDisk, "disk", diskPlay)
+}
+
+// play runs one of interzone's own plays against the server.
+func (r *Runner) play(ctx context.Context, step Step, name, play string) error {
+	r.begin(step)
+	path := filepath.Join(r.cfg.PlaybookDir, "inventory", "interzone-"+name+".yml")
+	if err := os.WriteFile(path, []byte(play), 0o644); err != nil {
 		return err
 	}
-	return r.exec(ctx, StepUninstall, r.cfg.PlaybookDir, "ansible-playbook", "-i", "inventory/hosts", play)
+	return r.exec(ctx, step, r.cfg.PlaybookDir, "ansible-playbook", "-i", "inventory/hosts", path)
 }
 
 // ServiceGroups are the service groups the playbook can start, stop or

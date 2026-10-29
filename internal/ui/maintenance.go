@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"slices"
 	"strconv"
 	"strings"
@@ -24,6 +25,7 @@ type maintTask struct{ id, label, help string }
 
 var maintTasks = []maintTask{
 	{"services", "Services", "Start, stop or reinstall every service or one group of them. Reinstalling everything also removes the components you've turned off (setup-all), which a normal update leaves in place."},
+	{"disk", "Disk", "See what takes the server's disk space, remove Docker images nothing uses, or have Synapse delete media cached from other servers after a while. Media from other servers is usually what fills a small server's disk."},
 	{"vacuum", "Vacuum", "Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting a lot, e.g. after compressing Synapse's state."},
 	{"pgupgrade", "Upgrade", "Move the database to the newest Postgres major version: it is dumped, a new empty server started and the dump restored. The old data directory is kept until you delete it."},
 	{"compress", "Compress", "Shrink Synapse's _state tables with rust-synapse-compress-state; the most effective way to reduce the database of a server in large rooms. Safe while Synapse runs, but back up first."},
@@ -37,6 +39,9 @@ var vacuumLabels = []string{
 	"Complete (FULL, ANALYZE; services stop)", "Full (services stop)", "Plain (services keep running)",
 	"Plain + ANALYZE (services keep running)", "ANALYZE only (fastest)",
 }
+
+// remoteMediaVar is how long Synapse keeps media cached from other servers.
+const remoteMediaVar = "matrix_synapse_media_retention_remote_media_lifetime"
 
 const pgUpgradeBackup = "/matrix/postgres/data-auto-upgrade-backup"
 
@@ -78,6 +83,10 @@ func (s *maintenanceScreen) available() []maintTask {
 
 func (s *maintenanceScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg, s.err = c, ""
+	diskIDs, diskLabels := []string{"usage", "prune"}, []string{"Show what uses the disk", "Remove unused Docker data"}
+	if c.Homeserver == "synapse" {
+		diskIDs, diskLabels = append(diskIDs, "retention"), append(diskLabels, "Delete old media from other servers")
+	}
 	var ids, labels []string
 	for _, t := range s.available() {
 		ids, labels = append(ids, t.id), append(labels, t.label)
@@ -90,6 +99,9 @@ func (s *maintenanceScreen) enter(c *config.Config) tea.Cmd {
 		textField("group", "Service group", "", "everything",
 			"Empty for every service, or one group: synapse, postgres, traefik, element, mautrix-telegram, bots, bridges…"),
 		choiceField("do", "Do", []string{"start", "stop", "reinstall"}, []string{"Start or restart", "Stop", "Reinstall"}, "start", ""),
+		choiceField("disk", "Do", diskIDs, diskLabels, diskIDs[0], ""),
+		textField("keep", "Keep media from other servers for (days)", strings.TrimSuffix(c.Overrides[remoteMediaVar], "d"), "forever",
+			"Empty keeps it forever. Synapse fetches it again if someone opens it later; your own users' uploads are never deleted."),
 		choiceField("preset", "Kind of vacuum", vacuumPresets, vacuumLabels, vacuumPresets[0],
 			"The FULL kinds need about as much free disk space as the database takes, and stop every service while they run."),
 		textField("backup", "Keep the old data in", pgUpgradeBackup, pgUpgradeBackup, "Stays until you delete it."),
@@ -102,6 +114,8 @@ func (s *maintenanceScreen) enter(c *config.Config) tea.Cmd {
 		return func() bool { return !slices.Contains(ids, f.value("task")) }
 	}
 	f.get("group").hidden, f.get("do").hidden = on("services"), on("services")
+	f.get("disk").hidden = on("disk")
+	f.get("keep").hidden = func() bool { return f.value("task") != "disk" || f.value("disk") != "retention" }
 	f.get("preset").hidden = on("vacuum")
 	f.get("backup").hidden = on("pgupgrade")
 	f.get("min").hidden = on("compress")
@@ -165,6 +179,19 @@ func (s *maintenanceScreen) options() (deploy.Options, string) {
 		o.Vars = map[string]string{"group": g}
 		o.Tags = map[string]string{"start": "start-group", "stop": "stop-group", "reinstall": "install-" + g + ",start-group"}[do]
 		o.Title = map[string]string{"start": "Restart ", "stop": "Stop ", "reinstall": "Reinstall "}[do] + g
+	case "disk":
+		switch f.value("disk") {
+		case "usage":
+			o.Action = deploy.ActionDisk
+		case "prune":
+			o.Tags, o.Title = "run-docker-prune", "Remove unused Docker data"
+		case "retention":
+			if _, err := s.keepDays(); err != nil {
+				return o, err.Error()
+			}
+			o.Tags, o.Title = "install-synapse,start-group", "Apply Synapse's media retention"
+			o.Vars = map[string]string{"group": "synapse"}
+		}
 	case "vacuum":
 		o.Tags, o.Title = "run-postgres-vacuum", "Vacuum the database"
 		o.Vars = map[string]string{"postgres_vacuum_preset": f.value("preset")}
@@ -202,6 +229,19 @@ func (s *maintenanceScreen) options() (deploy.Options, string) {
 	return o, ""
 }
 
+// keepDays is the retention typed in, 0 for forever.
+func (s *maintenanceScreen) keepDays() (int, error) {
+	v := strings.TrimSpace(s.form.value("keep"))
+	if v == "" || v == "forever" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 1 {
+		return 0, errors.New("The days to keep media for must be a whole number, or empty for forever.")
+	}
+	return n, nil
+}
+
 // databaseShell runs psql on the server in this terminal, the TUI paused.
 func databaseShell(c *config.Config) tea.Cmd {
 	return tea.ExecProcess(deploy.DatabaseShell(c), func(err error) tea.Msg {
@@ -219,6 +259,15 @@ func (s *maintenanceScreen) run() tea.Cmd {
 	}
 	if o.Action == deploy.ActionUninstall {
 		s.form.get("confirm").input.SetValue("")
+	}
+	if s.form.value("task") == "disk" && s.form.value("disk") == "retention" {
+		// Saved like a Tuning change, so later deploys keep it.
+		if days, _ := s.keepDays(); days == 0 {
+			delete(s.cfg.Overrides, remoteMediaVar)
+		} else {
+			s.cfg.Overrides[remoteMediaVar] = strconv.Itoa(days) + "d"
+		}
+		_ = s.cfg.Save()
 	}
 	return run(o)
 }

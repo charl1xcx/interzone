@@ -259,7 +259,12 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     *Services* starts, stops or reinstalls every service or one group of
     them (`start-all`, `stop-group`, `install-SERVICE`); reinstalling
     everything runs `setup-all`, which also removes the components you've
-    turned off, where a normal update leaves them installed. *Vacuum* runs
+    turned off, where a normal update leaves them installed. *Disk* shows
+    what takes the server's disk (free space, the largest directories in
+    `/matrix`, Synapse's local and cached remote media, Docker's images),
+    removes Docker data nothing uses (`run-docker-prune`), and on Synapse
+    sets how many days media cached from other servers is kept
+    (`media_retention`), saved so later updates keep it. *Vacuum* runs
     one of the five Postgres `VACUUM` presets, *Upgrade* moves Postgres to
     its newest major version (keeping the old data), *Compress* runs
     rust-synapse-compress-state, *Tags* runs any playbook tags with extra

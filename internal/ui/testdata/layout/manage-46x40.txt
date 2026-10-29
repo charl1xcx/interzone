@@ -25,6 +25,7 @@
    ◷  Scheduled backups                  s    
    ↺  Restore a backup                   e    
    ↶  Roll back                          z    
+   ◔  Disk space                              
    ⌫  Vacuum the database                     
    ⇡  Upgrade Postgres                        
    ⇲  Compress Synapse's state                
@@ -35,6 +36,5 @@
    ✎  Fine-tune the roles                f    
    $  Database shell                          
    #  Run playbook tags                  x    
-                                              
    ▼ more below                               
     ‹ back       ≡ menu       run ›       ⋯  

@@ -22,6 +22,7 @@
    ◷  Scheduled backups                  s    
    ↺  Restore a backup                   e    
    ↶  Roll back                          z    
+   ◔  Disk space                              
    ⌫  Vacuum the database                     
    ⇡  Upgrade Postgres                        
    ⇲  Compress Synapse's state                
@@ -35,6 +36,5 @@
                                               
  Change things ────────────────────────────── 
    ◇  Change the setup                   w    
-   ⇢  Move to another server             v    
    ▼ more below                               
     ‹ back       ≡ menu       run ›       ⋯  

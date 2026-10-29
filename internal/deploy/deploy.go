@@ -48,6 +48,7 @@ const (
 	StepCopyData
 	StepTags
 	StepUninstall
+	StepDisk
 )
 
 var stepNames = map[Step]string{
@@ -74,6 +75,7 @@ var stepNames = map[Step]string{
 	StepCopyData:     "Copy /matrix to the new server",
 	StepTags:         "Run the playbook",
 	StepUninstall:    "Remove everything",
+	StepDisk:         "Measure the disk",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -99,6 +101,7 @@ const (
 	ActionMigrate
 	ActionTags      // run Options.Tags (docs/playbook-tags.md)
 	ActionUninstall // the playbook's remove-all (docs/uninstalling.md)
+	ActionDisk      // what takes the server's disk space
 )
 
 // Plan lists the steps an action runs, in order.
@@ -134,6 +137,8 @@ func Plan(a Action) []Step {
 		return []Step{StepAnsible, StepInventory, StepTags}
 	case ActionUninstall:
 		return []Step{StepAnsible, StepInventory, StepUninstall}
+	case ActionDisk:
+		return []Step{StepAnsible, StepInventory, StepDisk}
 	case ActionMigrate:
 		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepStopOld, StepCopyData, StepMirrors, StepInstall, StepSelfCheck}
 	}
@@ -305,6 +310,7 @@ func (r *Runner) run(ctx context.Context) error {
 		StepCopyData:     r.copyData,
 		StepTags:         r.tags,
 		StepUninstall:    r.uninstall,
+		StepDisk:         r.disk,
 	}
 	plan := Plan(r.opts.Action)
 	r.emit(Event{Plan: plan})

@@ -444,10 +444,16 @@ func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 			}
 			parts = append(parts, mark(f.id+"c"+strconv.Itoa(idx)+"."+strconv.Itoa(i), opt))
 		}
-		body = strings.Join(parts, "  ")
-		if lipgloss.Width(body) > inner {
-			body = strings.Join(parts, "\n") // too narrow for a row: one per line
+		// as many to a row as fit
+		var rows []string
+		for _, p := range parts {
+			if n := len(rows); n > 0 && lipgloss.Width(rows[n-1])+2+lipgloss.Width(p) <= inner {
+				rows[n-1] += "  " + p
+			} else {
+				rows = append(rows, p)
+			}
 		}
+		body = strings.Join(rows, "\n")
 	case fArea:
 		fl.area.SetWidth(max(20, inner))
 		body = fl.area.View()

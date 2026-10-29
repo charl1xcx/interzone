@@ -522,6 +522,7 @@ var actionTitles = map[deploy.Action][3]string{ // running, done, failed
 	deploy.ActionFetchBackups: {"Downloading backups…", "Backups downloaded", "Couldn't download the backups"},
 	deploy.ActionMigrate:      {"Moving the server…", "Moved to the new server ✨", "The move stopped"},
 	deploy.ActionUninstall:    {"Removing everything…", "Everything was removed", "The removal stopped"},
+	deploy.ActionDisk:         {"Measuring the disk…", "Disk usage", "Couldn't measure the disk"},
 }
 
 func (s *deployScreen) name() string { return "Deploy" }
@@ -925,6 +926,9 @@ func (s *deployScreen) resultView(w int) string {
 			sMuted.Render(fmt.Sprintf("%d backup(s) of %s on this computer now.", n, c.Domain)))
 	case deploy.ActionLogs:
 		return ""
+	case deploy.ActionDisk:
+		return panel(cMint, sGood.Render("✓ What uses the disk is in the output above."),
+			sMuted.Render("Manage › Disk space removes unused Docker data, or deletes old media from other servers."))
 	case deploy.ActionTags:
 		return panel(cMint, sGood.Render("✓ Done in "+s.elapsed.Round(time.Second).String()+"."),
 			sMuted.Render("The full output is above and in ")+s.logPath())
