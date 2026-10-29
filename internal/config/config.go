@@ -311,6 +311,10 @@ func (c *Config) Missing() []string {
 		if !c.Enabled(comp) {
 			continue
 		}
+		// The playbook refuses Synapse's password providers once MAS does the logins.
+		if c.UsesMAS() && (comp.ID == "rest-auth" || comp.ID == "shared-secret-auth" || comp.ID == "ldap-auth" || comp.ID == "corporal") {
+			out = append(out, comp.Name+": doesn't work with MAS logins; untick one")
+		}
 		if h := c.Values[comp.HostVar()]; h != "" && !ValidHost(h) {
 			out = append(out, comp.Name+": address "+h+" isn't a hostname")
 		}

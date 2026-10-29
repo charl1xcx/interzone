@@ -66,7 +66,7 @@ func TestShot(t *testing.T) {
 	for i, ids := range [][]string{
 		{"coturn", "exim", "ddclient"},
 		{"element", "cinny", "sable", "fluffychat"},
-		{"mas", "ketesa", "shared-secret-auth", "ldap-auth"},
+		{"uvs", "mas", "ketesa", "element-admin"},
 		{"s3-provider"},
 		{"double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "postmoogle"},
 		{"reminder-bot", "honoroit", "baibot", "draupnir"},
