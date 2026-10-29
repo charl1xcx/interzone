@@ -315,17 +315,22 @@ func (s *historyScreen) update(msg tea.Msg) tea.Cmd {
 }
 
 func (s *historyScreen) rollback(d deploy.Deploy) tea.Cmd {
+	fail := func(err error) tea.Cmd {
+		return func() tea.Msg { return failNoteMsg("Couldn't roll back: " + err.Error()) }
+	}
 	rc, err := deploy.RollbackConfig(s.cfg, d)
 	if err != nil {
-		return nil
+		return fail(err)
 	}
 	// Keep the answers being replaced, in case they're wanted back; without
 	// that copy, don't replace them.
 	if err := s.cfg.SaveFile(config.BeforeRollbackPath()); err != nil {
-		return nil
+		return fail(err)
 	}
 	*s.cfg = *rc
-	_ = s.cfg.Save()
+	if err := s.cfg.Save(); err != nil {
+		return fail(err)
+	}
 	return run(deploy.Options{Action: deploy.ActionRollback})
 }
 
