@@ -303,12 +303,23 @@ func (s *reviewScreen) view(w, h int) string {
 	left := lipgloss.JoinVertical(lipgloss.Left, append(summary, append(gap, status...)...)...)
 	if wide {
 		s.vp.Width = w - lw - 4
-		s.vp.Height = h - 4
+		s.vp.Height = max(0, h-4)
+		s.vp.SetYOffset(s.vp.YOffset) // back in range after a resize
 		right := sPanel.Width(w - lw - 2).Render(s.previewTitle() + "\n\n" + s.vp.View())
 		return lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(lw).Render(left), right)
 	}
 	s.vp.Width = w - 4
-	s.vp.Height = h - lipgloss.Height(left) - 5
+	room := h - lipgloss.Height(left) - 5
+	if room < 3 && s.zone != nil { // the DNS records were asked for: cut the left short for them
+		lines := strings.Split(left, "\n")
+		if keep := max(4, h-5-10); len(lines) > keep {
+			left = strings.Join(lines[:keep-1], "\n") + "\n" + sFaint.Render(fmt.Sprintf("  ▼ %d more lines; a taller window shows them", len(lines)-keep+1))
+		}
+		room = h - lipgloss.Height(left) - 5
+	}
+	// ↑↓ scroll it even while it's hidden, so its height and offset stay in range.
+	s.vp.Height = max(0, room)
+	s.vp.SetYOffset(s.vp.YOffset)
 	if s.vp.Height < 3 {
 		return left
 	}

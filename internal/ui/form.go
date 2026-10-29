@@ -96,6 +96,9 @@ func toggleField(key, label string, on bool, help string) *field {
 }
 
 func choiceField(key, label string, choices, labels []string, value, help string) *field {
+	if labels != nil && len(labels) != len(choices) {
+		panic("choiceField " + key + ": the labels don't match the choices") // an unmatched one can't be picked
+	}
 	f := &field{key: key, label: label, help: help, kind: fChoice, choices: choices, labels: labels}
 	for i, c := range choices {
 		if c == value {
