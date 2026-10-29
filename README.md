@@ -1,5 +1,15 @@
 # interzone
 
+**Guides:** [Setup guide](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Setup-guide) ·
+[Blackout mode](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Blackout-mode) ·
+[Components](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Components)
+
+**راهنماها:** [راهنمای نصب](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Setup-guide-fa) ·
+[حالت قطعی](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Blackout-mode-fa) ·
+[مؤلفه‌ها](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Components-fa)
+
+Also on [GitHub's wiki](https://github.com/charl1xcx/interzone/wiki).
+
 > for autisaman
 >
 > ok so this thing exists bc of u which is honestly the most useful thing
