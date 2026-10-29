@@ -271,8 +271,8 @@ var Components = []Component{
 		Description: "Bridge GroupMe.", Doc: "configuring-playbook-bridge-mx-puppet-groupme.md"},
 	{ID: "steam", Name: "Steam", Category: "Bridges", EnableVar: "matrix_bridge_steam_enabled",
 		Description: "Bridge Steam chat.", Doc: "configuring-playbook-bridge-steam.md"},
-	{ID: "mx-puppet-steam", Name: "Steam (mx-puppet)", Category: "Bridges", EnableVar: "matrix_bridge_mx_puppet_steam_enabled",
-		Description: "Alternative Steam bridge.", Doc: "configuring-playbook-bridge-mx-puppet-steam.md"},
+	{ID: "mx-puppet-steam", Name: "Steam (mx-puppet)", Category: "Bridges", EnableVar: "matrix_bridge_mx_puppet_steam_enabled", Status: "deprecated",
+		Description: "Deprecated upstream. Prefer the other Steam bridge.", Doc: "configuring-playbook-bridge-mx-puppet-steam.md"},
 	{ID: "postmoogle", Name: "Postmoogle (email)", Category: "Bridges", EnableVar: "matrix_bridge_postmoogle_enabled",
 		Description: "Send and receive email in Matrix rooms.", Doc: "configuring-playbook-bridge-postmoogle.md",
 		Fields: []Field{{Var: "matrix_bridge_postmoogle_password", Label: "Bot password", Kind: Secret, Required: true}}},
@@ -296,8 +296,8 @@ var Components = []Component{
 			{Var: "matrix_bridge_meshtastic_relay_matrix_rooms_list", Label: "Rooms", Kind: YAML,
 				Default: "- id: \"#meshtastic:{{ matrix_domain }}\"\n  meshtastic_channel: \"0\""},
 		}},
-	{ID: "wechat", Name: "WeChat", Category: "Bridges", EnableVar: "matrix_bridge_wechat_enabled",
-		Description: "Bridge WeChat.", Doc: "configuring-playbook-bridge-wechat.md"},
+	{ID: "wechat", Name: "WeChat", Category: "Bridges", EnableVar: "matrix_bridge_wechat_enabled", Status: "unmaintained",
+		Description: "Doesn't work with current Synapse versions any more.", Doc: "configuring-playbook-bridge-wechat.md"},
 
 	// ── Bots ───────────────────────────────────────────────────────
 	{ID: "baibot", Name: "baibot (AI bot)", Category: "Bots", EnableVar: "matrix_bot_baibot_enabled",
