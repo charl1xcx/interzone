@@ -14,10 +14,10 @@
 │                        ││   ╰──────────────────────────────────────────────────────────────────────╯                 │
 │ ▸ Test                 ││                                                                                            │
 │                        ││   ╭──────────────────────────────────────────────────────────────────────╮                 │
-│ ▾ Servers              ││   │ ✓ Ready to deploy.                                                   │                 │
-│   ● example.org        ││   ╰──────────────────────────────────────────────────────────────────────╯                 │
-│                        ││                                                                                            │
-│                        ││   Pre-deploy checks  ⠋ checking the server… 0s  c stop                                     │
+│ ▸ Host                 ││   │ ✓ Ready to deploy.                                                   │                 │
+│                        ││   ╰──────────────────────────────────────────────────────────────────────╯                 │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││   Pre-deploy checks  ⠋ checking the server… 0s  c stop                                     │
 │                        ││                                                                                            │
 │                        ││     ○  Synapse      matrix.example.org                                                     │
 │                        ││     ○  Element Web  element.example.org                                                    │

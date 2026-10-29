@@ -14,10 +14,10 @@
 │                        ││     │        • Sable                                                                 │     │
 │ ▸ Test                 ││     │ Login  • Matrix Authentication Service                                         │     │
 │                        ││     │        • Ketesa admin panel                                                    │     │
-│ ▾ Servers              ││     │ Calls  • Element Call                                                          │     │
-│   ● example.org        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
-│                        ││     Bridge hub        Synapse · 11 components                                              │
-│                        ││     Public community  Synapse · 8 components                                               │
+│ ▸ Host                 ││     │ Calls  • Element Call                                                          │     │
+│                        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
+│ ▾ Servers              ││     Bridge hub        Synapse · 11 components                                              │
+│   ● example.org        ││     Public community  Synapse · 8 components                                               │
 │                        ││     Lightweight       Tuwunel · 3 components                                               │
 │                        ││                                                                                            │
 │                        ││   Or only the homeserver, and pick the components yourself                                 │

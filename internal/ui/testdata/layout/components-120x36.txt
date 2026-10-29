@@ -14,10 +14,10 @@
 │                        ││                                                                                            │
 │ ▸ Test                 ││     ○  Exim email relay    needs settings                                                  │
 │                        ││        Lets services send email (password resets, notifications).                          │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││     ○  Serve the base domain                                                               │
-│                        ││        Host a simple page and .well-known files on <domain> itself (only if nothing els…   │
-│                        ││                                                                                            │
+│ ▸ Host                 ││                                                                                            │
+│                        ││     ○  Serve the base domain                                                               │
+│ ▾ Servers              ││        Host a simple page and .well-known files on <domain> itself (only if nothing els…   │
+│   ● example.org        ││                                                                                            │
 │                        ││     ○  Dynamic DNS (ddclient)    needs settings                                            │
 │                        ││        Keep DNS records updated when your server has a changing IP.                        │
 │                        ││                                                                                            │

@@ -11,10 +11,10 @@
 │   ✗ example.org        ││   ✗ example.org  1 failed, 1 warning                                                       │
 │   · matrix.org         ││     Federation                                                                             │
 │                        ││     ✓  Delegation        /.well-known/matrix/server sends servers to                       │
-│ ▾ Servers              ││                          matrix.example.org:443                                            │
-│   ● example.org        ││     ✓  Federation API    matrix.example.org:443 answers as example.org, with a trusted     │
-│                        ││                          certificate                                                       │
-│                        ││     ✓  Software          Synapse 1.140.0                                                   │
+│ ▸ Host                 ││                          matrix.example.org:443                                            │
+│                        ││     ✓  Federation API    matrix.example.org:443 answers as example.org, with a trusted     │
+│ ▾ Servers              ││                          certificate                                                       │
+│   ● example.org        ││     ✓  Software          Synapse 1.140.0                                                   │
 │                        ││     Clients                                                                                │
 │                        ││     !  Well-known        https://example.org/.well-known/matrix/client sends apps to       │
 │                        ││                          https://matrix.example.org, but without the CORS header web       │

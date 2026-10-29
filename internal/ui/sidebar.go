@@ -36,10 +36,11 @@ const (
 	sideManage
 	sideMirrors
 	sideTest
+	sideHost
 	sideServers
 )
 
-var sectionNames = map[sideSection]string{sideSetup: "setup", sideManage: "manage", sideMirrors: "mirrors", sideTest: "test", sideServers: "servers"}
+var sectionNames = map[sideSection]string{sideSetup: "setup", sideManage: "manage", sideMirrors: "mirrors", sideTest: "test", sideHost: "host", sideServers: "servers"}
 
 func sideOpenFile() string { return filepath.Join(config.Dir(), "sidebar-open") }
 
@@ -63,7 +64,7 @@ func loadSideOpen() map[sideSection]bool {
 
 func (a *App) saveSideOpen() {
 	var names []string
-	for _, sec := range []sideSection{sideSetup, sideManage, sideMirrors, sideTest, sideServers} {
+	for _, sec := range []sideSection{sideSetup, sideManage, sideMirrors, sideTest, sideHost, sideServers} {
 		if a.sideOpen[sec] {
 			names = append(names, sectionNames[sec])
 		}
@@ -144,6 +145,8 @@ func (a *App) section() sideSection {
 		return sideMirrors
 	case name == "Test":
 		return sideTest
+	case name == "Host":
+		return sideHost
 	case name == "Manage", a.isTool(a.step):
 		return sideManage
 	case name == "Deploy":
@@ -176,6 +179,7 @@ func (a *App) sidebar(h int) string {
 		}
 		lines := []string{mark("side:head:setup", icon(sideSetup, "◇")), "", mark("side:head:manage", icon(sideManage, "◆")), "",
 			mark("side:head:mirrors", icon(sideMirrors, "⇅")), "", mark("side:head:test", icon(sideTest, "⌖")), "",
+			mark("side:head:host", icon(sideHost, "⇄")), "",
 			mark("side:head:servers", icon(sideServers, "▤"))}
 		if !a.sideCollapsed {
 			lines = append(lines, "", "", sFaint.Render(" ⋯")) // too narrow; ctrl+b does nothing here
@@ -317,7 +321,21 @@ func (a *App) menu() []menuSection {
 			servers.items = append(servers.items, it)
 		}
 	}
-	return []menuSection{setup, manage, mirrors, test, servers}
+	host := menuSection{sec: sideHost, icon: "⇄", title: "Host"}
+	if a.sideOpen[sideHost] {
+		hs := a.screens[a.index("Host")].(*hostScreen)
+		it := menuItem{id: "side:host:", icon: sFaint.Render("·"), label: "Host for IPFS", on: sec == sideHost}
+		switch {
+		case hs.running:
+			it.icon = hs.spin.View()
+		case hs.err != nil:
+			it.icon = sBad.Render("✗")
+		case hs.done:
+			it.icon = sGood.Render("✓")
+		}
+		host.items = append(host.items, it)
+	}
+	return []menuSection{setup, manage, mirrors, test, host, servers}
 }
 
 // menuHead is a section's heading: an arrow showing whether it's open.

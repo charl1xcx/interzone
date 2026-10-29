@@ -14,10 +14,10 @@
 │                        ││                                             │                                              │
 │ ▸ Test                 ││                                             │                                              │
 │                        ││   ◆ Coturn TURN server ──────────────────── │                                              │
-│ ▾ Servers              ││                                             │                                              │
-│   ● example.org        ││      Public IP address(es)                  │                                              │
-│                        ││      › comma, separated, values             │                                              │
-│                        ││                                             │                                              │
+│ ▸ Host                 ││                                             │                                              │
+│                        ││      Public IP address(es)                  │                                              │
+│ ▾ Servers              ││      › comma, separated, values             │                                              │
+│   ● example.org        ││                                             │                                              │
 │                        ││                                             │                                              │
 │                        ││   ◆ Addresses ───────────────────────────── │                                              │
 │                        ││                                             │                                              │

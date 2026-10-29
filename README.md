@@ -157,6 +157,15 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   firewall), and lets the swarm's members see that the server holds Matrix
   software. Without sharing, the daemon stops after each run.
 
+  **Hosting without a homeserver.** Anyone can help the swarm: **Host** in
+  the menu sets up this machine or a server over SSH (Linux with systemd,
+  x86 or ARM) to keep the newest publish and share it, everything (about
+  19 GB) or only the container images (about 15 GB). An hourly timer on
+  that machine fetches each new signed publish and lets the old one go;
+  interzone doesn't need to keep running. It listens on TCP 4001 and
+  shows the swarm that it holds Matrix software, like a sharing server.
+  To stop: `systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs`.
+
   The swarm is private: its key ships with interzone, which keeps the
   public IPFS network out but isn't a secret. Its entry node is at
   infamous.g0th.ir (TCP 4001, or WebSocket on yeule.g0th.ir:443). The

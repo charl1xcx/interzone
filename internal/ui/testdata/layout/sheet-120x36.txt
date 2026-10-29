@@ -21,10 +21,10 @@
 │                        ││     b        Back up the database              ?        these keys                         │
 │ ▸ Test                 ││     s        Backups                           ctrl+s   save answers                       │
 │                        ││     e        Restore a backup                  ctrl+l   layout: auto (wide)                │
-│ ▾ Servers              ││     z        Roll back                         ctrl+y   theme: interzone                   │
-│   ● example.org        ││     D        Disk space                        q        quit, when not typing              │
-│                        ││     V        Vacuum the database               ctrl+c   quit                               │
-│                        ││     P        Upgrade Postgres                                                              │
+│ ▸ Host                 ││     z        Roll back                         ctrl+y   theme: interzone                   │
+│                        ││     D        Disk space                        q        quit, when not typing              │
+│ ▾ Servers              ││     V        Vacuum the database               ctrl+c   quit                               │
+│   ● example.org        ││     P        Upgrade Postgres                                                              │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

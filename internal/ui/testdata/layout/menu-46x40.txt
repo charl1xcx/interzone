@@ -25,13 +25,13 @@
                                               
  ⇅  Mirrors                                 ▸ 
  ⌖  Test                                    ▸ 
+ ⇄  Host                                    ▸ 
  ▤  Servers                                 ▾ 
  ╭───────────────────╮                        
  │ ●  example.org    │                        
  ╰───────────────────╯                        
                                               
  ◫ auto (compact)     ◐ interzone             
-                                              
                                               
                                               
                                               

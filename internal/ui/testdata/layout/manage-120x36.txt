@@ -21,10 +21,10 @@
 │                        ││     +  Add a user                                                                   a      │
 │ ▸ Test                 ││     @  Manage users                                                                 m      │
 │                        ││     #  Manage rooms                                                                 R      │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
-│                        ││     ⇩  Back up the database                                                         b      │
-│                        ││     ◷  Backups                                                                      s      │
+│ ▸ Host                 ││                                                                                            │
+│                        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
+│ ▾ Servers              ││     ⇩  Back up the database                                                         b      │
+│   ● example.org        ││     ◷  Backups                                                                      s      │
 │                        ││     ↺  Restore a backup                                                             e      │
 │                        ││     ↶  Roll back                                                                    z      │
 │                        ││     ◔  Disk space                                                                   D      │

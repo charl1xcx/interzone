@@ -21,10 +21,10 @@
 │                        ││                                           │ Email      alice@example.org               │   │
 │ ▸ Test                 ││                                           │ Picture    set                             │   │
 │                        ││                                           │                                            │   │
-│ ▾ Servers              ││                                           │  p  new password    a  remove admin        │   │
-│   ● example.org        ││                                           │  s  sign out everywhere    d  deactivate   │   │
-│                        ││                                           ╰────────────────────────────────────────────╯   │
-│                        ││                                                                                            │
+│ ▸ Host                 ││                                           │  p  new password    a  remove admin        │   │
+│                        ││                                           │  s  sign out everywhere    d  deactivate   │   │
+│ ▾ Servers              ││                                           ╰────────────────────────────────────────────╯   │
+│   ● example.org        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

@@ -11,10 +11,10 @@
 │                        ││   checked just now · r checks again                                                        │
 │ ▸ Test                 ││   The playbook, and the roles it pins at their versions from                               │
 │                        ││   https://itsjustadream.g0th.ir/                                                           │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││   ✗ cinny            has no v4.12.8-0 yet; the … https://itsjustadre…ible-role-cinny.git   │
-│                        ││   ✓ playbook         HEAD 1a2b3c4d5e             https://itsjustadre…cker-ansible-deploy   │
-│                        ││   ✓ auxiliary        v2.0.0-0                    https://itsjustadre…nsible-role-aux.git   │
+│ ▸ Host                 ││                                                                                            │
+│                        ││   ✗ cinny            has no v4.12.8-0 yet; the … https://itsjustadre…ible-role-cinny.git   │
+│ ▾ Servers              ││   ✓ playbook         HEAD 1a2b3c4d5e             https://itsjustadre…cker-ansible-deploy   │
+│   ● example.org        ││   ✓ auxiliary        v2.0.0-0                    https://itsjustadre…nsible-role-aux.git   │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

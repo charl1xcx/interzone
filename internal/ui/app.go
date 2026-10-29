@@ -103,6 +103,7 @@ func New(cfg *config.Config, loaded bool) *App {
 		newMigrateScreen(),
 		newMirrorsScreen(), // its own sidebar section
 		newProbeScreen(),   // so is this
+		newHostScreen(),    // and this
 	}
 	a.deployBack = a.index("Review")
 	if cfg.Installed() {
@@ -136,7 +137,7 @@ func (a *App) jump(n int) tea.Cmd {
 	if n < 0 || n >= len(a.screens) || n == a.step {
 		return nil
 	}
-	if a.screens[n].name() == "Mirrors" {
+	if name := a.screens[n].name(); (name == "Mirrors" || name == "Host") && a.cur().name() != "Mirrors" && a.cur().name() != "Host" {
 		a.mirrorsBack = a.step
 	}
 	if ds, ok := a.screens[n].(*deployScreen); ok {
@@ -327,7 +328,7 @@ func (a *App) back() tea.Cmd {
 	switch a.cur().name() {
 	case "Deploy":
 		return a.jump(a.deployBack)
-	case "Mirrors":
+	case "Mirrors", "Host":
 		return a.jump(a.mirrorsBack)
 	case "Manage":
 		return a.jump(0)
@@ -429,6 +430,9 @@ func (a *App) stepper(w int) string {
 	}
 	if a.cur().name() == "Mirrors" {
 		return " " + sAccent.Render("⇅ Mirrors") + sMuted.Render("  what deploys download") + server
+	}
+	if a.cur().name() == "Host" {
+		return " " + sAccent.Render("⇄ Host") + sMuted.Render("  share interzone's files over IPFS")
 	}
 	if _, ok := a.cur().(toolScreen); ok {
 		return " " + sAccent.Render("◆ Manage") + sMuted.Render("  "+domain) + sFaint.Render("  ›  ") + sTitle.Render(a.cur().name()) + server

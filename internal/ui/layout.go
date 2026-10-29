@@ -227,6 +227,8 @@ func (a *App) compactWhere() string {
 		return sAccent.Render("⇅ Mirrors")
 	case sideTest:
 		return sAccent.Render("⌖ Test")
+	case sideHost:
+		return sAccent.Render("⇄ Host")
 	case sideServers:
 		return sAccent.Render("▤ Servers")
 	}

@@ -14,10 +14,10 @@
 │                        ││      ›                                                                                     │
 │ ▸ Test                 ││                                                                                            │
 │                        ││                                                                                            │
-│ ▾ Servers              ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
-│   ● example.org        ││                                                                                            │
-│                        ││      Network situation                                                                     │
-│                        ││       ◉ Normal internet    ○ Blackout: in-country mirrors only                             │
+│ ▸ Host                 ││   ◆ Downloads ──────────────────────────────────────────────────────────────────────────   │
+│                        ││                                                                                            │
+│ ▾ Servers              ││      Network situation                                                                     │
+│   ● example.org        ││       ◉ Normal internet    ○ Blackout: in-country mirrors only                             │
 │                        ││       ○ IPFS: from interzone's swarm                                                       │
 │                        ││                                                                                            │
 │                        ││      Playbook git repository                                                               │

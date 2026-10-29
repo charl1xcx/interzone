@@ -1,0 +1,20 @@
+ ◢◤ ⇄ Host                                      
+ Host interzone's files over IPFS               
+ Help servers set up and update during a        
+ blackout: the machine keeps the newest signed  
+ copy of what interzone downloads and shares it 
+ with interzone's IPFS swarm. It listens on TCP 
+ port 4001 (open it in the firewall), and the   
+ swarm's members can see that it holds Matrix   
+ software.                                      
+                                                
+ ▌  What to host                                
+ ▌   ◉ Everything (about 19 GB)                 
+ ▌   ○ Container images only (about 15 GB)      
+ ▌  Everything lets other servers set up from   
+ ▌  scratch through yours: the playbook, OS,    
+   ▼ more below                                 
+                                                
+ ✓ hosting. It keeps going without interzone; e 
+   installing IPFS v0.43.1 (from                
+    ‹ back       ≡ menu    start hosting…   ⋯  

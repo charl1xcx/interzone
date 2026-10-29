@@ -1,0 +1,36 @@
+ ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
+╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ▸ Setup                ││                                                                                            │
+│                        ││   Host interzone's files over IPFS                                                         │
+│ ▸ Manage example.org   ││                                                                                            │
+│                        ││   Help servers set up and update during a blackout: the machine keeps the newest signed    │
+│ ▸ Mirrors              ││   copy of what interzone downloads and shares it with interzone's IPFS swarm. It listens   │
+│                        ││   on TCP port 4001 (open it in the firewall), and the swarm's members can see that it      │
+│ ▸ Test                 ││   holds Matrix software.                                                                   │
+│                        ││                                                                                            │
+│ ▾ Host                 ││   ▌  What to host                                                                          │
+│ ▌ ✓ Host for IPFS      ││   ▌   ◉ Everything (about 19 GB)    ○ Container images only (about 15 GB)                  │
+│                        ││   ▌  Everything lets other servers set up from scratch through yours: the playbook,        │
+│ ▾ Servers              ││   ▌  OS, Docker and Python packages, and every image. New publishes replace the old        │
+│   ● example.org        ││   ▌  one every hour.                                                                       │
+│                        ││     ▼ more below                                                                           │
+│                        ││                                                                                            │
+│                        ││   ✓ hosting. It keeps going without interzone; enter sets it up again.                     │
+│                        ││     installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)                          │
+│                        ││     the server is downloading about 19 GB in the background and shares it as it arrives    │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
+│ ◂ fold   ctrl+b menu   ││                                                                                            │
+╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
+ enter start hosting   ·   ↑↓ move   ·   esc back   ·   ctrl+c quit                                                     

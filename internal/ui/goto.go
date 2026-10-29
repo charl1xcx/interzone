@@ -60,6 +60,7 @@ func (a *App) gotoEntries() []gotoEntry {
 		es = append(es, gotoEntry{label: "Mirrors › " + t, id: "side:mirrors:" + strconv.Itoa(i)})
 	}
 	es = append(es, gotoEntry{label: "Test servers", id: "side:test:"})
+	es = append(es, gotoEntry{label: "Host for IPFS", id: "side:host:"})
 	for _, p := range config.Profiles() {
 		if p.Name != config.Active() {
 			es = append(es, gotoEntry{label: "Servers › switch to " + p.Name, id: "side:server:" + p.Name})

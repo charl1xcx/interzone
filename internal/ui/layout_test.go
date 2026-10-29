@@ -99,6 +99,12 @@ func TestLayout(t *testing.T) {
 		{"tokens", openTokens},
 		{"rooms", openRooms},
 		{"test", openTest},
+		{"host", func(a *App) {
+			a.jump(a.index("Host"))
+			hs := a.cur().(*hostScreen)
+			hs.done, hs.log = true, []string{"installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)",
+				"the server is downloading about 19 GB in the background and shares it as it arrives"}
+		}},
 		{"maintenance", func(a *App) { deliver(a, maintainMsg("vacuum")) }},
 		{"users-bridge", func(a *App) {
 			openUsers(a)

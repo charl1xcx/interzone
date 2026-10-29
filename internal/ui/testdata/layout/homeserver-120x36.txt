@@ -14,10 +14,10 @@
 │                        ││                                                                                            │
 │ ▸ Test                 ││   ╭──────────────────────────────────────────────────────────────────────────────────╮     │
 │                        ││   │  ◉  Synapse   the reference server · recommended                                 │     │
-│ ▾ Servers              ││   │                                                                                  │     │
-│   ● example.org        ││   │     Most complete and best supported implementation. Every component in this     │     │
-│                        ││   │     tool works with it.                                                          │     │
-│                        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
+│ ▸ Host                 ││   │                                                                                  │     │
+│                        ││   │     Most complete and best supported implementation. Every component in this     │     │
+│ ▾ Servers              ││   │     tool works with it.                                                          │     │
+│   ● example.org        ││   ╰──────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││      ○  Continuwuity   lightweight Rust server                                             │
 │                        ││      ○  Tuwunel   lightweight Rust server                                                  │
 │                        ││      ○  Conduit   minimal Rust server                                                      │
