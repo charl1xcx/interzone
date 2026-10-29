@@ -109,6 +109,12 @@ type Alerts struct {
 	URL     string // where messages are POSTed
 	JSON    bool   // {"text": …} for webhooks (Hookshot, Slack, Discord), else plain text (ntfy)
 	Every   string // systemd OnCalendar, e.g. "*:0/5"
+	// Matrix, when set, posts to Room on Homeserver as the account Token
+	// belongs to, instead of to URL.
+	Matrix     bool   `json:",omitempty"`
+	Homeserver string `json:",omitempty"` // e.g. https://matrix.example.org
+	Room       string `json:",omitempty"` // !id:server or #alias:server
+	Token      string `json:",omitempty"`
 }
 
 // BackupSchedule configures the database backups the server makes itself.

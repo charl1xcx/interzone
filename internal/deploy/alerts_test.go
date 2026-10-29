@@ -1,12 +1,18 @@
 package deploy
 
 import (
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"interzone/internal/config"
 )
 
 // The alert script sends once when problems appear, nothing while they
@@ -86,5 +92,46 @@ printf '# 2026-10-28\n\n## Something about Jitsi\n\nOther.\n\n## Bridges: see [d
 	_ = os.WriteFile(env, []byte("IZ_DOMAIN=example.org\nIZ_HOST=matrix.example.org\nIZ_SCHEME=http\nIZ_PORT=80\nIZ_URL=https://hook.example/x\nIZ_JSON=true\n"), 0o600)
 	if got := run("test"); !strings.Contains(got, `"text": "interzone alerts are on for example.org`) {
 		t.Errorf("JSON test message sent as %q", got)
+	}
+
+	// To a Matrix room: joined by its alias, then a formatted message.
+	var paths []string
+	var msg map[string]string
+	hs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.Method+" "+r.URL.EscapedPath()+" "+r.Header.Get("Authorization"))
+		if r.Method == "PUT" {
+			b, _ := io.ReadAll(r.Body)
+			_ = json.Unmarshal(b, &msg)
+		}
+		_, _ = io.WriteString(w, `{"room_id": "!abc:example.org", "event_id": "$e"}`)
+	}))
+	defer hs.Close()
+	_ = os.WriteFile(env, []byte("IZ_DOMAIN=example.org\nIZ_HOST=matrix.example.org\nIZ_SCHEME=http\nIZ_PORT=80\nIZ_URL=\nIZ_JSON=false\n"+
+		"IZ_MATRIX=true\nIZ_MATRIX_HS="+hs.URL+"\nIZ_MATRIX_ROOM='#alerts:example.org'\nIZ_MATRIX_TOKEN=sekrit\n"), 0o600)
+	t.Setenv("no_proxy", "127.0.0.1")
+	_ = os.WriteFile(filepath.Join(dir, "failing"), nil, 0o644)
+	run()
+	if len(paths) != 2 || paths[0] != "POST /_matrix/client/v3/join/%23alerts%3Aexample.org Bearer sekrit" ||
+		!strings.HasPrefix(paths[1], "PUT /_matrix/client/v3/rooms/%21abc%3Aexample.org/send/m.room.message/interzone") {
+		t.Fatalf("Matrix requests: %q", paths)
+	}
+	f := msg["formatted_body"]
+	if msg["format"] != "org.matrix.custom.html" || !strings.HasPrefix(f, `<h4><font data-mx-color="#e5484d"`) ||
+		!strings.Contains(f, "<li>matrix-synapse.service has failed</li>") || !strings.Contains(f, "doesn&#x27;t answer") ||
+		!strings.Contains(msg["body"], "• matrix-synapse.service has failed") {
+		t.Errorf("Matrix message: %q", msg)
+	}
+}
+
+func TestAlertsProblem(t *testing.T) {
+	ok := config.Alerts{Matrix: true, Homeserver: "https://matrix.example.org", Room: "#alerts:example.org", Token: "t"}
+	if p := AlertsProblem(ok); p != "" {
+		t.Error(p)
+	}
+	for _, bad := range []config.Alerts{{URL: "ntfy.sh/x"}, {Matrix: true, Homeserver: "matrix.example.org", Room: "#a:b", Token: "t"},
+		{Matrix: true, Homeserver: "https://m.example", Room: "alerts", Token: "t"}, {Matrix: true, Homeserver: "https://m.example", Room: "!a:b"}} {
+		if AlertsProblem(bad) == "" {
+			t.Errorf("%+v passed", bad)
+		}
 	}
 }

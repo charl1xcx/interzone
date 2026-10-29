@@ -27,8 +27,42 @@ set -uo pipefail
 set -a; . "${IZ_ENV:-/etc/interzone-alerts.env}"; set +a
 state=${IZ_STATE:-/var/lib/interzone-alerts.state}
 
+# A Matrix message: the headline coloured by what it says, the lines after
+# it as a list (★ ones in bold), and where and when it came from.
+send_matrix() {
+  python3 - "$1" <<'PY'
+import html, json, os, ssl, sys, time, urllib.parse, urllib.request
+msg = sys.argv[1]
+head, *rest = msg.split("\n")
+color = {"✗": "#e5484d", "✓": "#30a46c"}.get(head[:1], "#8e4ec6")
+out = ['<h4><font data-mx-color="%s" color="%s">%s</font></h4>' % (color, color, html.escape(head))]
+items = []
+for line in rest:
+    if line[:2] in ("• ", "★ "):
+        text = html.escape(line[2:])
+        items.append("<li><b>★ %s</b></li>" % text if line[0] == "★" else "<li>%s</li>" % text)
+    elif line.strip():
+        out.append("<p>%s</p>" % html.escape(line))
+if items:
+    out.append("<ul>%s</ul>" % "".join(items))
+out.append("<p><sub>interzone · %s · %s</sub></p>" % (html.escape(os.environ["IZ_HOST"]), time.strftime("%Y-%m-%d %H:%M %Z")))
+ctx = ssl._create_unverified_context() if os.environ.get("IZ_MATRIX_INSECURE") == "true" else None
+def call(method, path, body):
+    req = urllib.request.Request(os.environ["IZ_MATRIX_HS"].rstrip("/") + path, json.dumps(body).encode(), method=method,
+        headers={"Authorization": "Bearer " + os.environ["IZ_MATRIX_TOKEN"], "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=20, context=ctx) as resp:
+        return json.load(resp)
+# Joining is how an alias becomes a room ID; in a room already, it changes nothing.
+room = call("POST", "/_matrix/client/v3/join/" + urllib.parse.quote(os.environ["IZ_MATRIX_ROOM"], safe=""), {})["room_id"]
+call("PUT", "/_matrix/client/v3/rooms/%s/send/m.room.message/interzone%d" % (urllib.parse.quote(room, safe=""), time.time_ns()),
+    {"msgtype": "m.text", "body": msg, "format": "org.matrix.custom.html", "formatted_body": "".join(out)})
+PY
+}
+
 send() {
-  if [ "$IZ_JSON" = true ]; then
+  if [ "${IZ_MATRIX:-}" = true ]; then
+    send_matrix "$1"
+  elif [ "$IZ_JSON" = true ]; then
     printf '%s' "$1" | python3 -c 'import json, sys; m = sys.stdin.read(); print(json.dumps({"text": m, "body": m, "content": m}))' |
       curl -fsS -m 20 -o /dev/null -H 'Content-Type: application/json' --data-binary @- "$IZ_URL"
   else
@@ -143,6 +177,11 @@ const alertsPlay = `- name: Set up alerts
           IZ_PORT={{ interzone_port | quote }}
           IZ_URL={{ interzone_url | quote }}
           IZ_JSON={{ interzone_json | bool | lower }}
+          IZ_MATRIX={{ interzone_matrix | bool | lower }}
+          IZ_MATRIX_HS={{ interzone_matrix_hs | quote }}
+          IZ_MATRIX_ROOM={{ interzone_matrix_room | quote }}
+          IZ_MATRIX_TOKEN={{ interzone_matrix_token | quote }}
+          IZ_MATRIX_INSECURE={{ interzone_matrix_insecure | bool | lower }}
           IZ_MIRRORS={{ interzone_mirrors | join(' ') | quote }}
           IZ_PLAYBOOK={{ interzone_playbook | quote }}
           IZ_HOMESERVER={{ interzone_homeserver | quote }}
@@ -282,11 +321,23 @@ func seenTitles(c *config.Config) string {
 	return out.String()
 }
 
-// AlertsURLProblem says what's wrong with an alerts URL, or "".
-func AlertsURLProblem(u string) string {
-	p, err := url.Parse(u)
-	if err != nil || (p.Scheme != "https" && p.Scheme != "http") || p.Host == "" {
+// AlertsProblem says what's wrong with where alerts go, or "".
+func AlertsProblem(a config.Alerts) string {
+	web := func(u string) bool {
+		p, err := url.Parse(u)
+		return err == nil && (p.Scheme == "https" || p.Scheme == "http") && p.Host != ""
+	}
+	switch {
+	case !a.Matrix && !web(a.URL):
 		return "The alerts address must be an http(s):// URL, e.g. https://ntfy.sh/a-long-random-topic."
+	case !a.Matrix:
+		return ""
+	case !web(a.Homeserver):
+		return "The homeserver must be an http(s):// URL, e.g. https://matrix.example.org."
+	case !strings.Contains(a.Room, ":") || (a.Room[0] != '!' && a.Room[0] != '#'):
+		return "The room is its ID (!abc…:example.org) or an address (#alerts:example.org)."
+	case strings.TrimSpace(a.Token) == "":
+		return "The access token of the account that posts the alerts is missing."
 	}
 	return ""
 }
@@ -298,7 +349,7 @@ func (r *Runner) alerts(ctx context.Context) error {
 		if !calendarSafe.MatchString(a.Every) {
 			return fmt.Errorf("%q isn't a schedule systemd understands (try *:0/5 for every 5 minutes)", a.Every)
 		}
-		if p := AlertsURLProblem(a.URL); p != "" {
+		if p := AlertsProblem(a); p != "" {
 			return fmt.Errorf("%s", p)
 		}
 	}
@@ -306,9 +357,13 @@ func (r *Runner) alerts(ctx context.Context) error {
 	if r.cfg.SSL.Mode == "none" {
 		scheme, port = "http", "80"
 	}
+	// A self-signed certificate is only trusted on this server's own name.
+	insecure := r.cfg.SSL.Mode == "selfsigned" && strings.Contains(a.Homeserver, "//"+r.cfg.HostName())
 	// The URL may hold a secret topic or token, so it goes in a file, not
 	// on the command line.
 	vars, _ := json.Marshal(map[string]any{"interzone_enabled": a.Enabled, "interzone_every": a.Every,
+		"interzone_matrix": a.Matrix, "interzone_matrix_hs": a.Homeserver, "interzone_matrix_room": a.Room,
+		"interzone_matrix_token": a.Token, "interzone_matrix_insecure": insecure,
 		"interzone_url": a.URL, "interzone_json": a.JSON, "interzone_domain": r.cfg.Domain,
 		"interzone_host": r.cfg.HostName(), "interzone_scheme": scheme, "interzone_port": port,
 		"interzone_script": alertsScript, "interzone_mirrors": alertMirrors(r.cfg),

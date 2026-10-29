@@ -250,7 +250,11 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     (registry, packages, playbook) not answering, and
     sends a message when that changes (once when something breaks, once
     when it's fixed) to an ntfy topic, or as `{"text": …}` to a webhook
-    such as a Hookshot room, Slack, Discord or Mattermost. Applying sends
+    such as a Hookshot room, Slack, Discord or Mattermost, or straight
+    into a Matrix room as formatted messages (a coloured headline and a
+    list), posted by an account you make for it with its access token.
+    Use a room on another server for that, or ntfy: an alert that your
+    homeserver is down can't come through it. Applying sends
     a test message. Once a day it also looks at the playbook's changelog
     and sends the entries newer than your last update, marking with ★
     those about your homeserver or enabled components.
