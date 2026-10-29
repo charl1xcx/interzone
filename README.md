@@ -218,7 +218,12 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   - **Update preview:** the playbook's new `CHANGELOG.md` entries, the
     new commits and the component versions they change, before installing
     anything. Entries about your homeserver or a component you've turned
-    on come first, marked, with their first paragraph.
+    on come first, marked, with their first paragraph. `d` there is a
+    dry run: the newest playbook is checked out beside yours (yours isn't
+    touched), its roles fetched, and the update run in Ansible's check
+    mode, which lists the tasks that would change something on the server
+    without changing it. The playbook doesn't fully support check mode,
+    so a run may stop early; it then says where.
   - **Rollback:** every successful install records its playbook commit and
     answers (the last 10). Rolling back backs up the database, checks
     that commit out and reinstalls; the playbook stays held there until

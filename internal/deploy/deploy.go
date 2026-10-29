@@ -50,6 +50,8 @@ const (
 	StepUninstall
 	StepDisk
 	StepAlerts
+	StepDryPlaybook
+	StepDryRun
 )
 
 var stepNames = map[Step]string{
@@ -78,6 +80,8 @@ var stepNames = map[Step]string{
 	StepUninstall:    "Remove everything",
 	StepDisk:         "Measure the disk",
 	StepAlerts:       "Set up alerts",
+	StepDryPlaybook:  "Get the newest playbook, beside yours",
+	StepDryRun:       "Run it without changing anything",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -105,6 +109,7 @@ const (
 	ActionUninstall // the playbook's remove-all (docs/uninstalling.md)
 	ActionDisk      // what takes the server's disk space
 	ActionAlerts    // the server's own checks and alerts (Config.Alerts)
+	ActionDryRun    // an update in check mode, in a copy of the playbook
 )
 
 // Plan lists the steps an action runs, in order.
@@ -144,6 +149,8 @@ func Plan(a Action) []Step {
 		return []Step{StepAnsible, StepInventory, StepDisk}
 	case ActionAlerts:
 		return []Step{StepAnsible, StepInventory, StepAlerts}
+	case ActionDryRun:
+		return []Step{StepAnsible, StepDryPlaybook, StepInventory, StepRoles, StepDryRun}
 	case ActionMigrate:
 		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepStopOld, StepCopyData, StepMirrors, StepInstall, StepSelfCheck}
 	}
@@ -176,6 +183,9 @@ type Result struct {
 	Images        []string // image check: images the registries have
 	MissingImages []string // image check: "ref: why"
 	Version       string   // self-update: the version installed
+
+	WouldChange []string // dry run: the tasks that would change something
+	StoppedAt   string   // dry run: the task check mode couldn't get past
 }
 
 type NewUser struct {
@@ -264,9 +274,12 @@ type Runner struct {
 func Start(ctx context.Context, cfg *config.Config, opts Options) <-chan Event {
 	// A migration and blackout mirror picks change the run's config; the
 	// caller applies those changes through events.
-	if opts.Action == ActionMigrate || cfg.Sources.Blackout {
+	if opts.Action == ActionMigrate || opts.Action == ActionDryRun || cfg.Sources.Blackout {
 		cp := *cfg
 		cfg = &cp
+	}
+	if opts.Action == ActionDryRun {
+		cfg.PlaybookDir = DryRunDir(cfg)
 	}
 	r := &Runner{cfg: cfg, opts: opts, events: make(chan Event, 256)}
 	go func() {
@@ -317,6 +330,8 @@ func (r *Runner) run(ctx context.Context) error {
 		StepUninstall:    r.uninstall,
 		StepDisk:         r.disk,
 		StepAlerts:       r.alerts,
+		StepDryPlaybook:  r.dryPlaybook,
+		StepDryRun:       r.dryRun,
 	}
 	plan := Plan(r.opts.Action)
 	r.emit(Event{Plan: plan})

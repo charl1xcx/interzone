@@ -115,7 +115,7 @@ func (s *updatesScreen) keys() [][2]string {
 	if s.loading || s.err != nil {
 		return [][2]string{{"r", "check again"}}
 	}
-	return [][2]string{{"enter", "update now"}, {"↑↓", "scroll"}, {"r", "check again"}}
+	return [][2]string{{"enter", "update now"}, {"d", "dry run"}, {"↑↓", "scroll"}, {"r", "check again"}}
 }
 func (s *updatesScreen) leave(*config.Config) {}
 
@@ -149,6 +149,10 @@ func (s *updatesScreen) update(msg tea.Msg) tea.Cmd {
 		case "r":
 			if !s.loading {
 				return s.check()
+			}
+		case "d":
+			if !s.loading {
+				return run(deploy.Options{Action: deploy.ActionDryRun})
 			}
 		case "enter":
 			if !s.loading {

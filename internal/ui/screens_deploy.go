@@ -375,6 +375,27 @@ func (s *reviewScreen) checksView(w int) []string {
 	return lines
 }
 
+// dryRunLines list what an update would change on the server.
+func dryRunLines(res *deploy.Result) []string {
+	var lines []string
+	if len(res.WouldChange) == 0 {
+		lines = append(lines, sGood.Render("✓ Nothing on the server would change."))
+	} else {
+		lines = append(lines, sTitle.Render(fmt.Sprintf("%d task(s) would change something:", len(res.WouldChange))))
+		for i, t := range res.WouldChange {
+			if i == 25 {
+				lines = append(lines, sFaint.Render(fmt.Sprintf("  …and %d more (see the output above)", len(res.WouldChange)-i)))
+				break
+			}
+			lines = append(lines, sMuted.Render("  • "+t))
+		}
+	}
+	if res.StoppedAt != "" {
+		lines = append(lines, "", sWarn.Render("! Check mode couldn't get past "+res.StoppedAt+", so the tasks after it weren't checked."))
+	}
+	return append(lines, "", sMuted.Render("Nothing was changed, and your playbook copy wasn't updated. Updates › enter updates for real."))
+}
+
 // portsView lists the ports a firewall in front of the server must let in
 // for the components turned on.
 func portsView(c *config.Config, w int) []string {
@@ -524,6 +545,7 @@ var actionTitles = map[deploy.Action][3]string{ // running, done, failed
 	deploy.ActionUninstall:    {"Removing everything…", "Everything was removed", "The removal stopped"},
 	deploy.ActionDisk:         {"Measuring the disk…", "Disk usage", "Couldn't measure the disk"},
 	deploy.ActionAlerts:       {"Setting up alerts…", "Alerts set", "Couldn't set up alerts"},
+	deploy.ActionDryRun:       {"Trying the update without changing anything…", "What the update would change", "The dry run stopped"},
 }
 
 func (s *deployScreen) name() string { return "Deploy" }
@@ -921,6 +943,8 @@ func (s *deployScreen) resultView(w int) string {
 		return panel(cMint, sGood.Render("✓ The server backs up its database ")+sTitle.Render(c.Backups.When)+
 			sGood.Render(fmt.Sprintf(", keeping %d.", c.Backups.Keep)),
 			sMuted.Render("Dumps go to "+deploy.ServerBackupDir+"; download them from Manage › Restore with d."))
+	case deploy.ActionDryRun:
+		return panel(cMint, dryRunLines(res)...)
 	case deploy.ActionAlerts:
 		if !c.Alerts.Enabled {
 			return panel(cMint, sGood.Render("✓ Alerts are off; the server no longer checks itself."))
