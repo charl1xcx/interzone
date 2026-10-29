@@ -238,6 +238,7 @@ func openMirrors(a *App) {
 		},
 		Sources: []deploy.Check{{Name: "Container registry", Target: a.cfg.Sources.RegistryPrefix, OK: true, Detail: "HTTP 200"}},
 		Known:   []deploy.MirrorResult{{Mirror: config.KnownMirrors[0], OK: true, Detail: "fresh", Took: 120 * time.Millisecond}},
+		IPFS:    []deploy.Check{{Name: "IPFS publish", Target: "https://infamous.g0th.ir/.ipfs/", OK: true, Detail: "signed, from 2026-10-29T21:57:16Z"}},
 		ImgErr:  "the images are worked out from the playbook on the server; set it up first",
 	}
 }

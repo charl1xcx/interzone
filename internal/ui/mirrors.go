@@ -41,6 +41,7 @@ type mirrorsResult struct {
 	Repos   []deploy.Check
 	Sources []deploy.Check
 	Known   []deploy.MirrorResult
+	IPFS    []deploy.Check
 	Images  []deploy.ImageStatus
 	Arch    string
 	ImgErr  string
@@ -114,9 +115,11 @@ func (s *mirrorsScreen) check() tea.Cmd {
 		part(mirrorsRepos, func(r *mirrorsResult) { r.Repos = deploy.CheckRepos(&cfg) }),
 		part(mirrorsSources, func(r *mirrorsResult) {
 			done := make(chan []deploy.MirrorResult)
+			swarm := make(chan []deploy.Check)
 			go func() { done <- deploy.ProbeKnownMirrors() }()
+			go func() { swarm <- deploy.ProbeIPFS() }()
 			r.Sources = deploy.CheckSources(&cfg)
-			r.Known = <-done
+			r.Known, r.IPFS = <-done, <-swarm
 		}),
 		part(mirrorsImages, func(r *mirrorsResult) {
 			if !cfg.Installed() {
@@ -145,7 +148,7 @@ func (s *mirrorsScreen) update(msg tea.Msg) tea.Cmd {
 		case mirrorsRepos:
 			s.res.Repos = m.res.Repos
 		case mirrorsSources:
-			s.res.Sources, s.res.Known = m.res.Sources, m.res.Known
+			s.res.Sources, s.res.Known, s.res.IPFS = m.res.Sources, m.res.Known, m.res.IPFS
 		case mirrorsImages:
 			s.res.ImgErr = m.res.ImgErr
 			if m.res.ImgErr == "" {
@@ -204,6 +207,12 @@ func (s *mirrorsScreen) tally(part int) (ok, n int) {
 			}
 		}
 		for _, c := range s.res.Known {
+			n++
+			if c.OK {
+				ok++
+			}
+		}
+		for _, c := range s.res.IPFS {
 			n++
 			if c.OK {
 				ok++
@@ -400,7 +409,10 @@ func (s *mirrorsScreen) sourceRows(w int) []string {
 		return s.waiting(mirrorsSources, "probing the mirrors…")
 	}
 	rows := []string{sectionHeading("Used by "+s.cfg.Domain, min(w, 80))}
-	if len(src) == 0 {
+	switch {
+	case s.cfg.Sources.IPFS:
+		rows = append(rows, sFaint.Render("  everything comes from interzone's IPFS swarm, checked below"))
+	case len(src) == 0:
 		rows = append(rows, sFaint.Render("  no registry or package mirror is set; the upstream ones are used"))
 	}
 	for _, i := range failuresFirst(len(src), func(i int) bool { return src[i].OK }) {
@@ -415,6 +427,12 @@ func (s *mirrorsScreen) sourceRows(w int) []string {
 			detail += fmt.Sprintf(" · %dms", k.Took.Milliseconds())
 		}
 		rows = append(rows, checkRow(w, k.OK, kinds[k.Mirror.Kind]+" · "+k.Mirror.Name, k.Mirror.URL, detail)...)
+	}
+	if len(s.res.IPFS) > 0 {
+		rows = append(rows, "", sectionHeading("interzone's IPFS swarm", min(w, 80)))
+		for _, c := range s.res.IPFS {
+			rows = append(rows, checkRow(w, c.OK, c.Name, c.Target, c.Detail)...)
+		}
 	}
 	return rows
 }

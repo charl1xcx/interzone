@@ -127,7 +127,7 @@ func CheckSources(c *config.Config) []Check {
 	var out []Check
 	for _, ch := range Preflight(c) {
 		switch ch.Name {
-		case "Local tool", "Playbook git", "Roles git mirror":
+		case "Local tool", "Playbook git", "Roles git mirror", "IPFS publish", "IPFS entry node": // the swarm has its own section
 			continue
 		}
 		out = append(out, ch)

@@ -1,7 +1,7 @@
  ◢◤ ⇅ Mirrors                                 
  Is everything there to download?             
                                               
- ▌Repos 2/3  ·  Mirrors 2/2  ·  Images –      
+ ▌Repos 2/3  ·  Mirrors 3/3  ·  Images –      
  checked just now · r checks again            
  The playbook, and the roles it pins at their 
  versions from https://itsjustadream.g0th.ir/ 

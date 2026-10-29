@@ -232,7 +232,7 @@ func Check(args []string) error {
 func Mirrors(args []string) error {
 	fs := flag.NewFlagSet("mirrors", flag.ExitOnError)
 	fs.Usage = func() {
-		fmt.Fprintln(fs.Output(), "Usage: interzone mirrors\n\nTests every known mirror in Iran for OS packages, Docker Engine and PyPI, and\nshows which distros each one carries. OS mirrors count for a distro only\nif its security or update indexes are fresh; PyPI mirrors must list\nansible-core.")
+		fmt.Fprintln(fs.Output(), "Usage: interzone mirrors\n\nTests every known mirror in Iran for OS packages, Docker Engine and PyPI, and\nshows which distros each one carries. OS mirrors count for a distro only\nif its security or update indexes are fresh; PyPI mirrors must list\nansible-core. Also checks interzone's IPFS swarm: its newest signed\npublish, and whether an entry node answers.")
 	}
 	parse(fs, args)
 	fmt.Println(muted.Render("Testing " + fmt.Sprint(len(config.KnownMirrors)) + " mirrors…"))
@@ -254,6 +254,15 @@ func Mirrors(args []string) error {
 			icon, style = bad.Render("✗"), bad
 		}
 		fmt.Printf("  %s  %-58s %s\n", icon, r.Mirror.URL, style.Render(fmt.Sprintf("%s  (%.1fs)", r.Detail, r.Took.Seconds())))
+	}
+	fmt.Println()
+	fmt.Println(head.Render("==> interzone's IPFS swarm"))
+	for _, c := range deploy.ProbeIPFS() {
+		icon, style := good.Render("✓"), muted
+		if !c.OK {
+			icon, style = bad.Render("✗"), bad
+		}
+		fmt.Printf("  %s  %-58s %s\n", icon, c.Name+"  "+c.Target, style.Render(c.Detail))
 	}
 	fmt.Println()
 	fmt.Printf("%d of %d mirrors work.\n", working, len(config.KnownMirrors))

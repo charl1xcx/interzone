@@ -45,18 +45,11 @@ func Preflight(c *config.Config) []Check {
 		})
 	}
 	s := c.Sources
+	swarm := make(chan []Check, 1)
 	if s.IPFS {
-		add("IPFS publish", ipfs.IndexURL, func(ctx context.Context) (string, error) {
-			idx, err := indexFromWeb(ctx)
-			if err != nil {
-				return "", err
-			}
-			return "signed, from " + idx.Created, nil
-		})
-		add("IPFS entry node", "infamous.g0th.ir", func(ctx context.Context) (string, error) {
-			return ipfsEntryReachable(ctx)
-		})
+		go func() { swarm <- ProbeIPFS() }()
 	} else {
+		swarm <- nil
 		add("Playbook git", s.PlaybookGit, func(ctx context.Context) (string, error) { return gitReachable(ctx, s.PlaybookGit) })
 	}
 	if s.RolesGitBase != "" && !s.IPFS {
@@ -98,6 +91,30 @@ func Preflight(c *config.Config) []Check {
 		}(i, p)
 	}
 	wg.Wait()
+	return append(out, <-swarm...)
+}
+
+// ProbeIPFS checks interzone's swarm from here: the newest publish, and
+// whether an entry node answers.
+func ProbeIPFS() []Check {
+	ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
+	defer cancel()
+	out := []Check{{Name: "IPFS publish", Target: ipfs.IndexURL}, {Name: "IPFS entry node", Target: "infamous.g0th.ir"}}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		if idx, err := indexFromWeb(ctx); err != nil {
+			out[0].Detail = err.Error()
+		} else {
+			out[0].OK, out[0].Detail = true, "signed, from "+idx.Created
+		}
+	}()
+	d, err := ipfsEntryReachable(ctx)
+	out[1].OK, out[1].Detail = err == nil, d
+	if err != nil {
+		out[1].Detail = err.Error()
+	}
+	<-done
 	return out
 }
 
