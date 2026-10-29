@@ -60,6 +60,9 @@ type Config struct {
 	SSL        SSL
 	IPv6       bool
 	Federation bool
+	// FederateOnly, when set, are the only servers federated with;
+	// FederateNever are never federated with (not on Synapse).
+	FederateOnly, FederateNever []string
 
 	Components map[string]bool
 	Values     map[string]string

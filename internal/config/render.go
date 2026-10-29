@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"os"
@@ -189,6 +190,9 @@ func (c *Config) VarsYAML(migrationVersion, certPath, keyPath string) string {
 	w.raw("devture_systemd_docker_base_ipv6_enabled", fmt.Sprint(c.IPv6))
 	w.str("postgres_connection_password", c.PostgresPassword)
 	w.raw("matrix_homeserver_federation_enabled", fmt.Sprint(c.Federation))
+	if c.Federation {
+		c.renderFederationLists(w)
+	}
 	if c.FederationPort() == "443" {
 		w.comment("Federation goes through 443 with the client API, so 8448 stays closed.")
 		w.raw("matrix_federation_public_port", "443")
@@ -388,4 +392,33 @@ func (c *Config) HostsINI() string {
 	}
 	b.WriteString(strings.Join(parts, " ") + "\n")
 	return b.String()
+}
+
+// renderFederationLists writes which servers to federate with: Synapse
+// takes an allow list of names, Continuwuity and Tuwunel regexes for both.
+func (c *Config) renderFederationLists(w *yamlWriter) {
+	list := func(names []string, pattern bool) string {
+		out := []string{}
+		for _, n := range names {
+			if pattern {
+				n = "^" + regexp.QuoteMeta(n) + "$"
+			}
+			out = append(out, n)
+		}
+		b, _ := json.Marshal(out)
+		return string(b)
+	}
+	switch c.Homeserver {
+	case "synapse":
+		if len(c.FederateOnly) > 0 {
+			w.raw("matrix_synapse_federation_domain_whitelist", list(c.FederateOnly, false))
+		}
+	case "continuwuity", "tuwunel":
+		if len(c.FederateOnly) > 0 {
+			w.raw("matrix_"+c.Homeserver+"_config_allowed_remote_server_names", list(c.FederateOnly, true))
+		}
+		if len(c.FederateNever) > 0 {
+			w.raw("matrix_"+c.Homeserver+"_config_forbidden_remote_server_names", list(c.FederateNever, true))
+		}
+	}
 }

@@ -236,8 +236,14 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 
 		toggleField("federation", "Federate with other Matrix servers", c.Federation,
 			"Turn off for a private server that never talks to the outside world."),
+		textField("fed.only", "Federate only with", strings.Join(c.FederateOnly, " "), "everyone",
+			"Server names separated by spaces, e.g. matrix.org friends.example; empty federates with everyone."),
+		textField("fed.never", "Never federate with", strings.Join(c.FederateNever, " "), "nobody",
+			"Server names separated by spaces. Synapse can't block single servers; use the list above instead."),
 		toggleField("ipv6", "Enable IPv6 networking for containers", c.IPv6, "Only if your server has working IPv6."),
 	)
+	f.get("fed.only").hidden = func() bool { return !f.get("federation").on }
+	f.get("fed.never").hidden = func() bool { return !f.get("federation").on || c.Homeserver == "synapse" }
 	remote := func() bool { return f.value("mode") != "ssh" }
 	for _, k := range []string{"host", "user", "port", "key"} {
 		f.get(k).hidden = remote
@@ -326,6 +332,10 @@ func (s *serverScreen) leave(c *config.Config) {
 	c.SSL = config.SSL{Mode: f.value("ssl"), ACMEEmail: f.value("ssl.email"),
 		CertPath: f.value("ssl.cert"), KeyPath: f.value("ssl.key")}
 	c.Federation = f.get("federation").on
+	names := func(v string) []string {
+		return strings.FieldsFunc(v, func(r rune) bool { return r == ' ' || r == ',' })
+	}
+	c.FederateOnly, c.FederateNever = names(f.value("fed.only")), names(f.value("fed.never"))
 	c.IPv6 = f.get("ipv6").on
 }
 

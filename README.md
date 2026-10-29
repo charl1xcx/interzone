@@ -85,6 +85,9 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   in the presets too. Untick it on Components to keep Synapse's own
   logins. Servers that are already installed keep what they have, since
   moving existing accounts to MAS is a migration of its own.
+- **Who to federate with**, on the Server step: only the servers you
+  list (Synapse's `federation_domain_whitelist`), and on Continuwuity and
+  Tuwunel also servers never to federate with.
 - **Presets** to start from on the Homeserver step: Minimal chat (Synapse,
   MAS, Element and Sable), Friends & family (adds Element Call and
   Ketesa), Bridge hub (Telegram, WhatsApp, Signal and Discord with double
