@@ -110,39 +110,41 @@ const statusPlay = `- name: interzone status
   gather_facts: false
   tasks:
     - name: interzone status
-      ansible.builtin.shell: !unsafe |
-        echo "load=$(cut -d' ' -f1-3 /proc/loadavg)"
-        echo "cpus=$(nproc)"
-        echo "uptime=$(cut -d' ' -f1 /proc/uptime)"
-        awk '/^MemTotal:/{print "memtotal="$2} /^MemAvailable:/{print "memavail="$2} /^SwapTotal:/{print "swaptotal="$2} /^SwapFree:/{print "swapfree="$2}' /proc/meminfo
-        (. /etc/os-release 2>/dev/null && echo "os=$PRETTY_NAME")
-        echo "kernel=$(uname -r)"
-        echo "hostname=$(hostname)"
-        echo "docker=$(docker version --format '{{.Server.Version}}' 2>/dev/null)"
-        df -Pk / /matrix 2>/dev/null | awk 'NR>1{print "disk="$6" "$2" "$3" "$4}'
-        echo "timer=$(systemctl show interzone-backup.timer -p NextElapseUSecRealtime --value 2>/dev/null)"
-        docker ps -a --filter name=^matrix- --format 'ps={{json .}}'
-        ids=$(docker ps -q --filter name=^matrix-)
-        if [ -n "$ids" ]; then docker stats --no-stream --format 'stats={{json .}}' $ids; fi
-        all=$(docker ps -aq --filter name=^matrix-)
-        if [ -n "$all" ]; then docker inspect --format 'inspect={{.Name}} {{.RestartCount}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' $all; fi
-        docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Names}} {{.Labels}}'
-        if [ ! -x /usr/local/bin/interzone-stats ]; then
-          cat > /usr/local/bin/interzone-stats <<'EOF'
-        #!/bin/sh
-        # Written by interzone: notes load, memory and disk for its dashboard's history.
-        f=/var/lib/interzone-stats
-        echo "$(date +%s) $(cut -d' ' -f1 /proc/loadavg) $(nproc) $(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{print t-a, t}' /proc/meminfo) $( (df -Pk /matrix || df -Pk /) 2>/dev/null | awk 'NR==2{print $3, $2}')" >> $f
-        tail -n 4320 $f > $f.new && mv $f.new $f
-        EOF
-          chmod 755 /usr/local/bin/interzone-stats
-          printf '[Unit]\nDescription=Note load, memory and disk (interzone)\n\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/interzone-stats\n' > /etc/systemd/system/interzone-stats.service
-          printf '[Unit]\nDescription=Note load, memory and disk (interzone)\n\n[Timer]\nOnCalendar=*:0/10\n\n[Install]\nWantedBy=timers.target\n' > /etc/systemd/system/interzone-stats.timer
-          systemctl daemon-reload && systemctl enable --now interzone-stats.timer
-        fi >/dev/null 2>&1
-        if [ "$IZ_HISTORY" = true ] && [ -f /var/lib/interzone-stats ]; then
-          awk '{l = $0} NR % 3 == 0 {print "hist=" $0} END {if (NR % 3) print "hist=" l}' /var/lib/interzone-stats
-        fi
+      ansible.builtin.shell:
+        # cmd: Ansible's splitter, used for the free form, rejects this quoting.
+        cmd: !unsafe |
+          echo "load=$(cut -d' ' -f1-3 /proc/loadavg)"
+          echo "cpus=$(nproc)"
+          echo "uptime=$(cut -d' ' -f1 /proc/uptime)"
+          awk '/^MemTotal:/{print "memtotal="$2} /^MemAvailable:/{print "memavail="$2} /^SwapTotal:/{print "swaptotal="$2} /^SwapFree:/{print "swapfree="$2}' /proc/meminfo
+          (. /etc/os-release 2>/dev/null && echo "os=$PRETTY_NAME")
+          echo "kernel=$(uname -r)"
+          echo "hostname=$(hostname)"
+          echo "docker=$(docker version --format '{{.Server.Version}}' 2>/dev/null)"
+          df -Pk / /matrix 2>/dev/null | awk 'NR>1{print "disk="$6" "$2" "$3" "$4}'
+          echo "timer=$(systemctl show interzone-backup.timer -p NextElapseUSecRealtime --value 2>/dev/null)"
+          docker ps -a --filter name=^matrix- --format 'ps={{json .}}'
+          ids=$(docker ps -q --filter name=^matrix-)
+          if [ -n "$ids" ]; then docker stats --no-stream --format 'stats={{json .}}' $ids; fi
+          all=$(docker ps -aq --filter name=^matrix-)
+          if [ -n "$all" ]; then docker inspect --format 'inspect={{.Name}} {{.RestartCount}} {{if .State.Health}}{{.State.Health.Status}}{{end}}' $all; fi
+          docker ps --filter name=^matrix- --filter label=traefik.enable=true --format 'labels={{.Names}} {{.Labels}}'
+          if [ ! -x /usr/local/bin/interzone-stats ]; then
+            cat > /usr/local/bin/interzone-stats <<'EOF'
+          #!/bin/sh
+          # Written by interzone: notes load, memory and disk for its dashboard's history.
+          f=/var/lib/interzone-stats
+          echo "$(date +%s) $(cut -d' ' -f1 /proc/loadavg) $(nproc) $(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{print t-a, t}' /proc/meminfo) $( (df -Pk /matrix || df -Pk /) 2>/dev/null | awk 'NR==2{print $3, $2}')" >> $f
+          tail -n 4320 $f > $f.new && mv $f.new $f
+          EOF
+            chmod 755 /usr/local/bin/interzone-stats
+            printf '[Unit]\nDescription=Note load, memory and disk (interzone)\n\n[Service]\nType=oneshot\nExecStart=/usr/local/bin/interzone-stats\n' > /etc/systemd/system/interzone-stats.service
+            printf '[Unit]\nDescription=Note load, memory and disk (interzone)\n\n[Timer]\nOnCalendar=*:0/10\n\n[Install]\nWantedBy=timers.target\n' > /etc/systemd/system/interzone-stats.timer
+            systemctl daemon-reload && systemctl enable --now interzone-stats.timer
+          fi >/dev/null 2>&1
+          if [ "$IZ_HISTORY" = true ] && [ -f /var/lib/interzone-stats ]; then
+            awk '{l = $0} NR % 3 == 0 {print "hist=" $0} END {if (NR % 3) print "hist=" l}' /var/lib/interzone-stats
+          fi
       environment:
         IZ_HISTORY: "{{ interzone_history | default(false) }}"
       changed_when: false

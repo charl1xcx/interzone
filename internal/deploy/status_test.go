@@ -39,13 +39,15 @@ func TestStatusHistory(t *testing.T) {
 func TestStatsScript(t *testing.T) {
 	var play []struct {
 		Tasks []struct {
-			Shell string `yaml:"ansible.builtin.shell"`
+			Shell struct {
+				Cmd string `yaml:"cmd"`
+			} `yaml:"ansible.builtin.shell"`
 		}
 	}
 	if err := yaml.Unmarshal([]byte(statusPlay), &play); err != nil {
 		t.Fatal(err)
 	}
-	sh := play[0].Tasks[0].Shell
+	sh := play[0].Tasks[0].Shell.Cmd
 	if err := exec.Command("bash", "-n", "-c", sh).Run(); err != nil {
 		t.Fatal("the status shell doesn't parse:", err)
 	}

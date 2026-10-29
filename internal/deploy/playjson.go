@@ -133,6 +133,11 @@ func taskMessage(h TaskResult) string {
 
 func lastLine(s string, fallback error) string {
 	s = strings.TrimSpace(s)
+	// Ansible's own errors end with where in the file, e.g. "^ column 7".
+	if _, e, ok := strings.Cut(s, "[ERROR]: "); ok {
+		s, _, _ = strings.Cut(e, "\n")
+		return s
+	}
 	if i := strings.LastIndex(s, "\n"); i >= 0 {
 		s = s[i+1:]
 	}
