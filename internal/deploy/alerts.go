@@ -7,6 +7,11 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
+
+	"interzone/internal/catalog"
+	"interzone/internal/config"
 )
 
 // The server checks itself on a timer, as scheduled backups do, so alerts
@@ -19,7 +24,7 @@ const alertsScript = `#!/bin/bash
 # Written by interzone: checks this Matrix server and sends a message when
 # what's wrong changes. "interzone-alerts test" sends a test message.
 set -uo pipefail
-. "${IZ_ENV:-/etc/interzone-alerts.env}"
+set -a; . "${IZ_ENV:-/etc/interzone-alerts.env}"; set +a
 state=${IZ_STATE:-/var/lib/interzone-alerts.state}
 
 send() {
@@ -53,6 +58,49 @@ while read -r use mount; do
     problems+=("$mount is $use full")
   fi
 done < <(df -P / /matrix 2>/dev/null | awk 'NR > 1 && !seen[$6]++ { print $5, $6 }')
+# Mirrors only have to answer: a registry says 401, a repository root 403.
+for m in ${IZ_MIRRORS:-}; do
+  code=$(curl -sS -m 20 -o /dev/null -r 0-0 -w '%{http_code}' "$m" 2>/dev/null)
+  if [ "${code:-000}" -lt 200 ] || [ "$code" -ge 500 ]; then
+    problems+=("the mirror $m doesn't answer")
+  fi
+done
+
+# Once a day, the playbook's changelog: entries newer than the titles in
+# $news are sent, those about this server's components first.
+news=${IZ_NEWS:-/var/lib/interzone-alerts.news}
+if [ -n "${IZ_PLAYBOOK:-}" ] && [ -s "$news" ] && [ -z "$(find "$news" -mmin -1380 2>/dev/null)" ]; then
+  tmp=$(mktemp -d)
+  if git clone -q --depth 1 --filter=blob:none --no-checkout "$IZ_PLAYBOOK" "$tmp/p" 2>/dev/null &&
+    git -C "$tmp/p" show HEAD:CHANGELOG.md > "$tmp/CHANGELOG.md" 2>/dev/null; then
+    msg=$(python3 - "$news" "$tmp/CHANGELOG.md" <<'PY'
+import os, re, sys
+seen = set(l.strip() for l in open(sys.argv[1]))
+hs = os.environ.get("IZ_HOMESERVER", "").lower()
+words = [w for w in os.environ.get("IZ_WATCH", "").lower().split("|") if w]
+new = []
+for l in open(sys.argv[2]):
+    if l.startswith("## "):
+        if l[3:].strip() in seen:
+            break
+        new.append([l[3:].strip(), ""])
+    elif new:
+        new[-1][1] += l.lower()
+# by title for the homeserver: nearly every entry mentions Synapse in passing
+yours = lambda t, b: bool(hs and hs in t.lower()) or any(w in b or w in t.lower() for w in words)
+new.sort(key=lambda n: not yours(*n))
+if new:
+    print("%d new in the Matrix playbook's changelog (interzone's Updates shows them):" % len(new))
+for t, b in new:
+    print(("★ " if yours(t, b) else "• ") + re.sub(r"\[([^]]*)\]\([^)]*\)", r"\1", t))
+PY
+)
+    if [ -z "$msg" ] || send "$msg"; then
+      sed -n 's/^## //p' "$tmp/CHANGELOG.md" > "$news"
+    fi
+  fi
+  rm -rf "$tmp"
+fi
 
 now=$(printf '%s\n' "${problems[@]+"${problems[@]}"}")
 before=$(cat "$state" 2>/dev/null || true)
@@ -78,9 +126,9 @@ const alertsPlay = `- name: Set up alerts
       changed_when: false
       when: interzone_enabled | bool
 
-    - name: Install curl and openssl
+    - name: Install curl, openssl, git and python3
       ansible.builtin.package:
-        name: [curl, openssl]
+        name: [curl, openssl, git, python3]
         state: present
       when: interzone_enabled | bool
 
@@ -95,8 +143,20 @@ const alertsPlay = `- name: Set up alerts
           IZ_PORT={{ interzone_port | quote }}
           IZ_URL={{ interzone_url | quote }}
           IZ_JSON={{ interzone_json | bool | lower }}
+          IZ_MIRRORS={{ interzone_mirrors | join(' ') | quote }}
+          IZ_PLAYBOOK={{ interzone_playbook | quote }}
+          IZ_HOMESERVER={{ interzone_homeserver | quote }}
+          IZ_WATCH={{ interzone_watch | join('|') | quote }}
       no_log: true
       when: interzone_enabled | bool
+
+    - name: Note the changelog entries already known
+      ansible.builtin.copy:
+        dest: /var/lib/interzone-alerts.news
+        content: "{{ interzone_seen }}"
+        force: false
+        mode: "0644"
+      when: interzone_enabled | bool and interzone_seen != ""
 
     - name: Install the check
       ansible.builtin.copy:
@@ -165,8 +225,62 @@ const alertsPlay = `- name: Set up alerts
         - /usr/local/bin/interzone-alerts
         - /etc/interzone-alerts.env
         - /var/lib/interzone-alerts.state
+        - /var/lib/interzone-alerts.news
       when: not interzone_enabled | bool
 `
+
+// alertMirrors are the mirrors the server installs and updates from.
+func alertMirrors(c *config.Config) []string {
+	s := c.Sources
+	var out []string
+	if s.UseRegistry && s.RegistryPrefix != "" {
+		host, _, _ := strings.Cut(s.RegistryPrefix, "/")
+		out = append(out, "https://"+host+"/v2/")
+	}
+	for _, u := range []string{s.APTMirror, s.DockerPackageURL, s.PlaybookGit, s.RolesGitBase} {
+		if u != "" && !slices.Contains(out, u) {
+			out = append(out, u)
+		}
+	}
+	return out
+}
+
+// watchWords tie a changelog entry to this server, as markYours does:
+// the doc pages of enabled components and the words in mentions.
+func watchWords(c *config.Config) []string {
+	var out []string
+	for _, comp := range catalog.Components {
+		if c.Enabled(comp) {
+			if comp.Doc != "" {
+				out = append(out, strings.ToLower(comp.Doc))
+			}
+			out = append(out, mentions[comp.ID]...)
+		}
+	}
+	return out
+}
+
+func hsName(id string) string {
+	for _, h := range catalog.Homeservers {
+		if h.ID == id {
+			return h.Name
+		}
+	}
+	return ""
+}
+
+// seenTitles are the entries of the local playbook's changelog, which the
+// server starts from so only later ones are sent.
+func seenTitles(c *config.Config) string {
+	b, _ := os.ReadFile(filepath.Join(c.PlaybookDir, "CHANGELOG.md"))
+	var out strings.Builder
+	for _, l := range strings.Split(string(b), "\n") {
+		if t, ok := strings.CutPrefix(l, "## "); ok {
+			out.WriteString(strings.TrimSpace(t) + "\n")
+		}
+	}
+	return out.String()
+}
 
 // AlertsURLProblem says what's wrong with an alerts URL, or "".
 func AlertsURLProblem(u string) string {
@@ -197,7 +311,9 @@ func (r *Runner) alerts(ctx context.Context) error {
 	vars, _ := json.Marshal(map[string]any{"interzone_enabled": a.Enabled, "interzone_every": a.Every,
 		"interzone_url": a.URL, "interzone_json": a.JSON, "interzone_domain": r.cfg.Domain,
 		"interzone_host": r.cfg.HostName(), "interzone_scheme": scheme, "interzone_port": port,
-		"interzone_script": alertsScript})
+		"interzone_script": alertsScript, "interzone_mirrors": alertMirrors(r.cfg),
+		"interzone_playbook": r.cfg.Sources.PlaybookGit, "interzone_homeserver": hsName(r.cfg.Homeserver),
+		"interzone_watch": watchWords(r.cfg), "interzone_seen": seenTitles(r.cfg)})
 	dir := filepath.Join(r.cfg.PlaybookDir, "inventory")
 	varsFile := filepath.Join(dir, "interzone-alerts-vars.json")
 	if err := os.WriteFile(varsFile, vars, 0o600); err != nil {

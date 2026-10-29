@@ -49,7 +49,7 @@ func (s *alertsScreen) enter(c *config.Config) tea.Cmd {
 	}
 	s.form = newForm(
 		toggleField("on", "Send alerts", a.Enabled,
-			"The server checks itself, even when this computer is off: failed services, the homeserver not answering, a certificate expiring within 14 days, a disk over 90% full."),
+			"The server checks itself, even when this computer is off: failed services, the homeserver not answering, a certificate expiring within 14 days, a disk over 90% full, a mirror not answering. Once a day, new entries in the playbook's changelog too."),
 		textField("url", "Send them to", a.URL, example,
 			"An ntfy topic (subscribe to it in the ntfy app), or a webhook: a Hookshot room webhook, Slack, Discord or Mattermost. Anyone who knows an ntfy topic can read it, so make it long and random."),
 		choiceField("format", "Message format", []string{"text", "json"},

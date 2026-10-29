@@ -243,11 +243,14 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   - **Alerts** (off until you turn them on): a systemd timer on the
     server checks it every few minutes, even when your computer is off,
     for failed `matrix-*` services, the homeserver not answering, a
-    certificate expiring within 14 days and a disk over 90% full, and
+    certificate expiring within 14 days, a disk over 90% full and a mirror
+    (registry, packages, playbook) not answering, and
     sends a message when that changes (once when something breaks, once
     when it's fixed) to an ntfy topic, or as `{"text": …}` to a webhook
     such as a Hookshot room, Slack, Discord or Mattermost. Applying sends
-    a test message.
+    a test message. Once a day it also looks at the playbook's changelog
+    and sends the entries newer than your last update, marking with ★
+    those about your homeserver or enabled components.
   - **Users** (Synapse): totals at the top (people, active in the last
     30 days, admins, new, rooms, media), then everyone with how recently
     they were seen; the one selected opens into a card with when they
