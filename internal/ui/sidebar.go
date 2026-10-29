@@ -92,6 +92,7 @@ var manageMenu = []struct{ screen, label, icon string }{
 	{"Dashboard", "Dashboard", "▦"},
 	{"Updates", "Updates", "↻"},
 	{"Backups", "Backups", "◷"},
+	{"Alerts", "Alerts", "⚑"},
 	{"Restore", "Restore", "↺"},
 	{"Rollback", "Rollback", "↶"},
 	{"Tuning", "Fine-tune", "✎"},

@@ -9,12 +9,12 @@
  ╰────────────────────────────────────────────╯ 
    ±  See what an update brings            n    
    ▣  Check container images               i    
+   ⚑  Alerts                                    
    ⏻  Start, stop or reinstall services    p    
    ⇪  Update interzone                          
  People ─────────────────────────────────────── 
    +  Add a user                           a    
    @  Manage users                         m    
  Data ───────────────────────────────────────── 
-   ⇩  Back up the database                 b    
    ▼ more below                                 
     ‹ back       ≡ menu        run ›        ⋯  

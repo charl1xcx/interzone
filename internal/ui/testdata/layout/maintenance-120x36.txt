@@ -8,18 +8,18 @@
 │   ▦ Dashboard          ││   ▌    Uninstall                                                                           │
 │   ↻ Updates            ││   ▌  Give the disk space of deleted rows back (Postgres VACUUM). Do it after deleting      │
 │   ◷ Backups            ││   ▌  a lot, e.g. after compressing Synapse's state.                                        │
-│   ↺ Restore            ││                                                                                            │
-│   ↶ Rollback           ││      Kind of vacuum                                                                        │
-│   ✎ Fine-tune          ││        Complete (FULL, ANALYZE; services stop)      Full (services stop)                   │
-│ ▌ ⚒ Maintenance        ││        Plain (services keep running)      Plain + ANALYZE (services keep running)          │
-│   ⇢ Move server        ││        ANALYZE only (fastest)                                                              │
+│   ⚑ Alerts             ││                                                                                            │
+│   ↺ Restore            ││      Kind of vacuum                                                                        │
+│   ↶ Rollback           ││        Complete (FULL, ANALYZE; services stop)      Full (services stop)                   │
+│   ✎ Fine-tune          ││        Plain (services keep running)      Plain + ANALYZE (services keep running)          │
+│ ▌ ⚒ Maintenance        ││        ANALYZE only (fastest)                                                              │
+│   ⇢ Move server        ││                                                                                            │
 │   ▤ Servers            ││                                                                                            │
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││                                                                                            │
 │                        ││                                                                                            │
 │ ▾ Servers              ││                                                                                            │
 │   ● example.org        ││                                                                                            │
-│                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

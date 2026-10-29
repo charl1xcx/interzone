@@ -90,9 +90,19 @@ type Config struct {
 	PlaybookDir string
 
 	Backups BackupSchedule
+	Alerts  Alerts
 	// PinnedCommit holds the playbook at this commit after a rollback, until
 	// the next update.
 	PinnedCommit string
+}
+
+// Alerts configures the checks the server runs on itself, sending a
+// message when something breaks and when it's fine again.
+type Alerts struct {
+	Enabled bool
+	URL     string // where messages are POSTed
+	JSON    bool   // {"text": …} for webhooks (Hookshot, Slack, Discord), else plain text (ntfy)
+	Every   string // systemd OnCalendar, e.g. "*:0/5"
 }
 
 // BackupSchedule configures the database backups the server makes itself.

@@ -50,7 +50,7 @@ type manageAction struct {
 var manageGroups = []string{"Keep it running", "People", "Data", "Look closer", "Change things"}
 
 var actionGroup = map[string]int{
-	"update": 0, "check": 0, "restart": 0, "services": 0, "changes": 0, "images": 0, "selfupdate": 0,
+	"update": 0, "check": 0, "alerts": 0, "restart": 0, "services": 0, "changes": 0, "images": 0, "selfupdate": 0,
 	"user": 1, "registration": 1, "users": 1, "tokens": 1,
 	"backup": 2, "schedule": 2, "restore": 2, "rollback": 2, "disk": 2, "vacuum": 2, "pgupgrade": 2, "compress": 2,
 	"dashboard": 3, "logs": 3, "tuning": 3, "psql": 3, "tags": 3,
@@ -58,7 +58,7 @@ var actionGroup = map[string]int{
 }
 
 var actionIcons = map[string]string{
-	"update": "↻", "check": "✓", "restart": "↯", "changes": "±", "images": "▣", "selfupdate": "⇪",
+	"update": "↻", "check": "✓", "alerts": "⚑", "restart": "↯", "changes": "±", "images": "▣", "selfupdate": "⇪",
 	"user": "+", "registration": "⊕", "users": "@", "tokens": "⚿",
 	"backup": "⇩", "schedule": "◷", "restore": "↺", "rollback": "↶",
 	"dashboard": "▦", "logs": "≡", "tuning": "✎",
@@ -198,6 +198,8 @@ func (s *manageScreen) actions() []manageAction {
 			desc: "Copy everything in /matrix to a new machine and install there; the old one is stopped."},
 		manageAction{id: "servers", title: "Other servers",
 			desc: "Switch between the servers interzone manages, or add another."},
+		manageAction{id: "alerts", title: "Alerts",
+			desc: "Have the server tell you, through ntfy or a webhook, when a service fails, it stops answering, its certificate is about to expire or its disk fills up."},
 		manageAction{id: "services", title: "Start, stop or reinstall services",
 			desc: "Every service or one group of them. Reinstalling everything also removes the components you've turned off."},
 		manageAction{id: "disk", title: "Disk space",
@@ -361,8 +363,8 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 		return run(deploy.Options{Action: deploy.ActionImages})
 	case "selfupdate":
 		return run(deploy.Options{Action: deploy.ActionSelfUpdate})
-	case "users", "tokens", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate":
-		screen := map[string]string{"users": "Users", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
+	case "users", "tokens", "dashboard", "changes", "schedule", "restore", "rollback", "tuning", "servers", "migrate", "alerts":
+		screen := map[string]string{"alerts": "Alerts", "users": "Users", "tokens": "Tokens", "dashboard": "Dashboard", "changes": "Updates", "schedule": "Backups",
 			"restore": "Restore", "rollback": "Rollback", "tuning": "Tuning", "servers": "Servers", "migrate": "Move"}[id]
 		return func() tea.Msg { return gotoMsg(screen) }
 	case "psql":

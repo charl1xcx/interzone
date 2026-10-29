@@ -523,6 +523,7 @@ var actionTitles = map[deploy.Action][3]string{ // running, done, failed
 	deploy.ActionMigrate:      {"Moving the server…", "Moved to the new server ✨", "The move stopped"},
 	deploy.ActionUninstall:    {"Removing everything…", "Everything was removed", "The removal stopped"},
 	deploy.ActionDisk:         {"Measuring the disk…", "Disk usage", "Couldn't measure the disk"},
+	deploy.ActionAlerts:       {"Setting up alerts…", "Alerts set", "Couldn't set up alerts"},
 }
 
 func (s *deployScreen) name() string { return "Deploy" }
@@ -920,6 +921,12 @@ func (s *deployScreen) resultView(w int) string {
 		return panel(cMint, sGood.Render("✓ The server backs up its database ")+sTitle.Render(c.Backups.When)+
 			sGood.Render(fmt.Sprintf(", keeping %d.", c.Backups.Keep)),
 			sMuted.Render("Dumps go to "+deploy.ServerBackupDir+"; download them from Manage › Restore with d."))
+	case deploy.ActionAlerts:
+		if !c.Alerts.Enabled {
+			return panel(cMint, sGood.Render("✓ Alerts are off; the server no longer checks itself."))
+		}
+		return panel(cMint, sGood.Render("✓ The server checks itself ")+sTitle.Render(c.Alerts.Every)+sGood.Render(" and a test message was sent."),
+			sMuted.Render("If it didn't arrive, check the address on Manage › Alerts."))
 	case deploy.ActionFetchBackups:
 		n := len(deploy.ListBackups(c.Domain))
 		return panel(cMint, sGood.Render("✓ The server's backups are in ")+sTitle.Render(res.File),

@@ -8,11 +8,12 @@
 │   ▦ Dashboard          ││   │ ↻  Update the server                                                            u  │   │
 │   ↻ Updates            ││   │    Pull the latest playbook and roles, then re-run the install with your saved     │   │
 │   ◷ Backups            ││   │    answers. Also applies any changes you made in the setup.                        │   │
-│   ↺ Restore            ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
-│   ↶ Rollback           ││     ✓  Check services                                                               c      │
-│   ✎ Fine-tune          ││     ↯  Restart all services                                                         r      │
-│   ⚒ Maintenance        ││     ±  See what an update brings                                                    n      │
-│   ⇢ Move server        ││     ▣  Check container images                                                       i      │
+│   ⚑ Alerts             ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
+│   ↺ Restore            ││     ✓  Check services                                                               c      │
+│   ↶ Rollback           ││     ↯  Restart all services                                                         r      │
+│   ✎ Fine-tune          ││     ±  See what an update brings                                                    n      │
+│   ⚒ Maintenance        ││     ▣  Check container images                                                       i      │
+│   ⇢ Move server        ││     ⚑  Alerts                                                                              │
 │   ▤ Servers            ││     ⏻  Start, stop or reinstall services                                            p      │
 │                        ││     ⇪  Update interzone                                                                    │
 │ ▸ Mirrors              ││                                                                                            │
@@ -28,8 +29,7 @@
 │                        ││     ◔  Disk space                                                                          │
 │                        ││     ⌫  Vacuum the database                                                                 │
 │                        ││     ⇡  Upgrade Postgres                                                                    │
-│                        ││     ⇲  Compress Synapse's state                                                            │
-│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││     ⇲  Compress Synapse's state                                                            │
 │ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯

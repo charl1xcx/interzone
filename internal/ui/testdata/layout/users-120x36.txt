@@ -8,18 +8,18 @@
 │   ▦ Dashboard          ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
 │   ↻ Updates            ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
 │   ◷ Backups            ││    /  search    f  everyone    o  by last seen                                             │
-│   ↺ Restore            ││                                                                                            │
-│   ↶ Rollback           ││   ▌ ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
-│   ✎ Fine-tune          ││     ●  Bob                        3d ago  │ ●  Alice Liddell   admin                   │   │
-│   ⚒ Maintenance        ││     ●  Carol                     45d ago  │    @alice:example.org                      │   │
-│   ⇢ Move server        ││     ○  eve                         never  │                                            │   │
-│   ▤ Servers            ││     ⊘  dave                  deactivated  │ Last seen  2h ago  0000-00-00 00:00        │   │
-│                        ││     ⇄  Telegram  3 accounts           ▸   │ Joined     0000-00-00  1y ago              │   │
-│ ▸ Mirrors              ││     ⇄  WhatsApp  1 account            ▸   │ Sessions   3 devices                       │   │
-│                        ││                                           │ Rooms      27                              │   │
-│ ▾ Servers              ││                                           │ Media      380 MB  142 files               │   │
-│   ● example.org        ││                                           │ Email      alice@example.org               │   │
-│                        ││                                           │ Picture    set                             │   │
+│   ⚑ Alerts             ││                                                                                            │
+│   ↺ Restore            ││   ▌ ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
+│   ↶ Rollback           ││     ●  Bob                        3d ago  │ ●  Alice Liddell   admin                   │   │
+│   ✎ Fine-tune          ││     ●  Carol                     45d ago  │    @alice:example.org                      │   │
+│   ⚒ Maintenance        ││     ○  eve                         never  │                                            │   │
+│   ⇢ Move server        ││     ⊘  dave                  deactivated  │ Last seen  2h ago  0000-00-00 00:00        │   │
+│   ▤ Servers            ││     ⇄  Telegram  3 accounts           ▸   │ Joined     0000-00-00  1y ago              │   │
+│                        ││     ⇄  WhatsApp  1 account            ▸   │ Sessions   3 devices                       │   │
+│ ▸ Mirrors              ││                                           │ Rooms      27                              │   │
+│                        ││                                           │ Media      380 MB  142 files               │   │
+│ ▾ Servers              ││                                           │ Email      alice@example.org               │   │
+│   ● example.org        ││                                           │ Picture    set                             │   │
 │                        ││                                           │                                            │   │
 │                        ││                                           │  p  new password    a  remove admin        │   │
 │                        ││                                           │  s  sign out everywhere    d  deactivate   │   │

@@ -10,6 +10,7 @@
  ╰──────────────────────────────────────────╯ 
    ±  See what an update brings          n    
    ▣  Check container images             i    
+   ⚑  Alerts                                  
    ⏻  Start, stop or reinstall servic…   p    
    ⇪  Update interzone                        
                                               
@@ -35,6 +36,5 @@
    #  Run playbook tags                  x    
                                               
  Change things ────────────────────────────── 
-   ◇  Change the setup                   w    
    ▼ more below                               
     ‹ back       ≡ menu       run ›       ⋯  

@@ -8,18 +8,18 @@
 │   ▦ Dashboard          ││   │ people  │ │ active  │ │ admin   │ │ new     │ │ rooms   │ │ media   │ │ bridged    │   │
 │   ↻ Updates            ││   ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰─────────╯ ╰────────────╯   │
 │   ◷ Backups            ││    /  search    f  everyone    o  by last seen                                             │
-│   ↺ Restore            ││                                                                                            │
-│   ↶ Rollback           ││     ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
-│   ✎ Fine-tune          ││     ●  Bob                        3d ago  │ ⇄  Telegram  bridge                        │   │
-│   ⚒ Maintenance        ││     ●  Carol                     45d ago  │                                            │   │
-│   ⇢ Move server        ││     ○  eve                         never  │ Accounts   3  1 active this month          │   │
-│   ▤ Servers            ││     ⊘  dave                  deactivated  │ Bot        @telegrambot:example.org        │   │
-│                        ││   ▌ ⇄  Telegram  3 accounts           ▾   │ Media      4.0 MB                          │   │
-│ ▸ Mirrors              ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
-│                        ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
-│ ▾ Servers              ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
-│   ● example.org        ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
-│                        ││                                                                                            │
+│   ⚑ Alerts             ││                                                                                            │
+│   ↺ Restore            ││     ●  Alice Liddell  admin       2h ago  ╭────────────────────────────────────────────╮   │
+│   ↶ Rollback           ││     ●  Bob                        3d ago  │ ⇄  Telegram  bridge                        │   │
+│   ✎ Fine-tune          ││     ●  Carol                     45d ago  │                                            │   │
+│   ⚒ Maintenance        ││     ○  eve                         never  │ Accounts   3  1 active this month          │   │
+│   ⇢ Move server        ││     ⊘  dave                  deactivated  │ Bot        @telegrambot:example.org        │   │
+│   ▤ Servers            ││   ▌ ⇄  Telegram  3 accounts           ▾   │ Media      4.0 MB                          │   │
+│                        ││        ●  Telegram bridge…  bot   1h ago  │                                            │   │
+│ ▸ Mirrors              ││        ○  Nikolai (Telegram)       never  │ Puppets stand in for people on the other n │   │
+│                        ││        ○  Pavel (Telegram)         never  │ the bridge creates and manages them.       │   │
+│ ▾ Servers              ││     ⇄  WhatsApp  1 account            ▸   ╰────────────────────────────────────────────╯   │
+│   ● example.org        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
