@@ -403,7 +403,7 @@ func (s *restoreScreen) view(w, h int) string {
 		return sMuted.Render("You use an external Postgres server; restore it where it runs.")
 	}
 	if len(s.list) == 0 {
-		return sMuted.Render("No backups of "+s.cfg.Domain+" in "+deploy.BackupDir()+".") + "\n\n" +
+		return sMuted.Render("No backups of "+s.cfg.Domain+" in "+tildePath(deploy.BackupDir())+".") + "\n\n" +
 			sMuted.Render("Make one with Manage › Back up the database, or press ") + keyLink("d") +
 			sMuted.Render(" to download the server's scheduled backups.")
 	}
@@ -412,12 +412,12 @@ func (s *restoreScreen) view(w, h int) string {
 		rows = append(rows, sTitle.Render(b.Time.Local().Format("2006-01-02 15:04"))+"  "+
 			lipgloss.NewStyle().Width(10).Render(sMuted.Render(deploy.HumanSize(b.Size)))+sFaint.Render(filepath.Base(b.Path)))
 	}
-	out := sMuted.Render(deploy.BackupDir()) + "\n\n" + listRows(rows, s.cursor, h-12, w)
+	out := sMuted.Render(tildePath(deploy.BackupDir())) + "\n\n" + listRows(rows, s.cursor, h-12, w)
 	if s.confirm {
 		b := s.list[s.cursor]
 		out += "\n\n" + confirmView(w,
 			sWarn.Render("Replace the database of "+s.cfg.Domain+" with the dump from "+b.Time.Local().Format("2006-01-02 15:04")+"?"),
-			sSub.Render("Every service stops, the current database is dumped to "+deploy.BackupDir()+" first, then emptied and loaded from this file. Messages sent since the dump are lost."),
+			sSub.Render("Every service stops, the current database is dumped to "+tildePath(deploy.BackupDir())+" first, then emptied and loaded from this file. Messages sent since the dump are lost."),
 			"", confirmKeys("enter", "restore"))
 	}
 	return out
@@ -489,7 +489,7 @@ func (s *backupsScreen) apply() tea.Cmd {
 func (s *backupsScreen) view(w, h int) string {
 	info := []string{
 		sSub.Render("Each scheduled backup is a full pg_dumpall, the same as Manage › Back up the database."),
-		sSub.Render("Press ") + keyLink("ctrl+d") + sSub.Render(" to copy them to ") + sTitle.Render(deploy.BackupDir()) +
+		sSub.Render("Press ") + keyLink("ctrl+d") + sSub.Render(" to copy them to ") + sTitle.Render(tildePath(deploy.BackupDir())) +
 			sSub.Render("; Manage › Restore lists them there."),
 	}
 	if n := len(deploy.ListBackups(s.cfg.Domain)); n > 0 {
@@ -614,7 +614,7 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		note := "✓ starting fresh"
 		if len(moved) > 0 {
-			note += "; the old setup is in " + strings.Join(moved, " and ")
+			note += "; the old setup is kept as " + filepath.Base(moved[0]) // beside each folder moved
 		}
 		return func() tea.Msg {
 			return switchServerMsg{name: config.DefaultProfile, cfg: config.Fresh(), fresh: true, note: note}

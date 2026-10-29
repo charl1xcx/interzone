@@ -1060,7 +1060,7 @@ func (s *deployScreen) resultView(w int) string {
 		inv := filepath.Join(c.PlaybookDir, "inventory")
 		return panel(cMint,
 			sGood.Render("✓ Files written to ")+inv,
-			sMuted.Render("Deploy later with: ")+sTitle.Render("cd "+c.PlaybookDir+" && ansible-playbook -i inventory/hosts setup.yml --tags=install-all,ensure-matrix-users-created,start"))
+			sMuted.Render("Deploy later with: ")+sTitle.Render("cd "+tildePath(c.PlaybookDir)+" && ansible-playbook -i inventory/hosts setup.yml --tags=install-all,ensure-matrix-users-created,start"))
 	case deploy.ActionSelfCheck:
 		color := lipgloss.TerminalColor(cMint)
 		if len(res.Problems) > 0 {
@@ -1076,7 +1076,7 @@ func (s *deployScreen) resultView(w int) string {
 	case deploy.ActionBulkUsers:
 		return panel(cMint,
 			sGood.Render(fmt.Sprintf("✓ %d users created on %s", len(s.opts.Users), c.Domain)),
-			sMuted.Render("Their passwords are in ")+sTitle.Render(s.opts.Output)+sMuted.Render("; hand them out, then delete it."),
+			sMuted.Render("Their passwords are in ")+sTitle.Render(tildePath(s.opts.Output))+sMuted.Render("; hand them out, then delete it."),
 			sMuted.Render("Accounts that already existed kept their own passwords."))
 	case deploy.ActionBackup:
 		return panel(cMint,
@@ -1095,7 +1095,7 @@ func (s *deployScreen) resultView(w int) string {
 			sMuted.Render("Quit (q) and start interzone again to use it."))
 	case deploy.ActionRestore:
 		return panel(cMint, sGood.Render("✓ The database of "+c.Domain+" was restored from ")+sTitle.Render(filepath.Base(s.opts.Backup)),
-			sMuted.Render("The database as it was just before is in "+deploy.BackupDir()+"; every service was started again."))
+			sMuted.Render("The database as it was just before is in "+tildePath(deploy.BackupDir())+"; every service was started again."))
 	case deploy.ActionSchedule:
 		if !c.Backups.Enabled {
 			return panel(cMint, sGood.Render("✓ Scheduled backups are off."),
@@ -1150,7 +1150,7 @@ func (s *deployScreen) resultView(w int) string {
 	}
 	switch c.Homeserver {
 	case "synapse", "dendrite":
-		lines = append(lines, sMuted.Render("Admin       ")+sTitle.Render("@"+c.AdminUser+":"+c.Domain)+sMuted.Render("  (password saved in "+config.Dir()+")"))
+		lines = append(lines, sMuted.Render("Admin       ")+sTitle.Render("@"+c.AdminUser+":"+c.Domain)+sMuted.Render("  (password saved in "+tildePath(config.Dir())+")"))
 		if c.RegistrationOpen() {
 			lines = append(lines, sMuted.Render("Sign-up     ")+sTitle.Render(c.SignupToken)+sMuted.Render("  (share this token; close sign-up from Manage)"))
 		}
@@ -1164,7 +1164,7 @@ func (s *deployScreen) resultView(w int) string {
 		}
 	}
 	if c.SSL.Mode == "selfsigned" {
-		lines = append(lines, sWarn.Render("Self-signed certificate: import "+filepath.Join(config.Dir(), "ssl", c.Domain, "cert.pem")+" on your devices."))
+		lines = append(lines, sWarn.Render("Self-signed certificate: import "+tildePath(filepath.Join(config.Dir(), "ssl", c.Domain, "cert.pem"))+" on your devices."))
 	}
 	if len(res.MissingImages) > 0 {
 		lines = append(lines, "")

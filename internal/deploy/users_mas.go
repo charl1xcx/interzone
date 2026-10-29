@@ -46,7 +46,7 @@ func masRun(ctx context.Context, c *config.Config, secret bool, args ...string) 
 	if err != nil {
 		switch {
 		case strings.Contains(err.Error(), "No such container"):
-			return "", fmt.Errorf("MAS isn't running on the server")
+			return "", fmt.Errorf("start MAS under Maintenance › Services: it isn't running on the server")
 		case secret:
 			return "", fmt.Errorf("MAS refused %s; run 'mas-cli manage %s' on the server to see why", args[0], args[0])
 		}

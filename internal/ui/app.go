@@ -286,7 +286,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if err := a.cfg.Save(); err != nil {
 				a.status = sBad.Render("save failed: " + err.Error())
 			} else {
-				a.status = sGood.Render("✓ answers saved to " + config.Dir())
+				a.status = sGood.Render("✓ answers saved to " + tildePath(config.Dir()))
 			}
 			return a, nil
 		case "q":

@@ -42,7 +42,7 @@ func TestListTokens(t *testing.T) {
 	}
 
 	fakeTokens(t, "", errors.New("Error response from daemon: No such container: matrix-postgres"))
-	if _, err := ListTokens(context.Background(), masConfig()); err == nil || !strings.Contains(err.Error(), "bundled Postgres") {
+	if _, err := ListTokens(context.Background(), masConfig()); err == nil || !strings.Contains(err.Error(), "start Postgres") {
 		t.Errorf("err %v", err)
 	}
 }

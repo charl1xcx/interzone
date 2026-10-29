@@ -65,7 +65,7 @@ func tokensSQL(ctx context.Context, c *config.Config, sql, token string) (string
 	res, err := runMAS(ctx, c, "tokens", tokensPlay, map[string]any{"interzone_sql": sql, "interzone_token": token})
 	if err != nil {
 		if strings.Contains(err.Error(), "No such container") {
-			return "", fmt.Errorf("the bundled Postgres isn't running, so MAS's tokens can't be read")
+			return "", fmt.Errorf("start Postgres under Maintenance › Services: it isn't running, so MAS's tokens can't be read")
 		}
 		return "", fmt.Errorf("couldn't reach MAS's database: %w", err)
 	}

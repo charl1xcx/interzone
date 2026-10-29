@@ -261,7 +261,7 @@ func adminRun(ctx context.Context, c *config.Config, login *AdminLogin, req map[
 	if err != nil {
 		switch {
 		case strings.Contains(err.Error(), "No such container"):
-			return nil, e, fmt.Errorf("Synapse isn't running on the server")
+			return nil, e, fmt.Errorf("start Synapse under Maintenance › Services: it isn't running on the server")
 		case strings.HasPrefix(err.Error(), "interzone request:"):
 			// no_log hides the reason; it can only be the file write.
 			return nil, e, fmt.Errorf("couldn't write to /matrix on the server: is Matrix installed there, and can the SSH user become root?")

@@ -51,7 +51,7 @@ const maxCommits = 200
 func PreviewUpdate(ctx context.Context, c *config.Config) (*Changes, error) {
 	dir := c.PlaybookDir
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
-		return nil, fmt.Errorf("the playbook isn't downloaded yet (or came from an offline bundle without git)")
+		return nil, fmt.Errorf("update the server once first: the playbook isn't downloaded yet (or came from an offline bundle without git)")
 	}
 	git := func(args ...string) (string, error) {
 		cmd := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)

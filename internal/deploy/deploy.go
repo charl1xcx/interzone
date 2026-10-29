@@ -432,7 +432,7 @@ func (r *Runner) inventory(ctx context.Context) error {
 	r.begin(StepInventory)
 	c := r.cfg
 	if _, err := os.Stat(filepath.Join(c.PlaybookDir, "setup.yml")); err != nil {
-		return fmt.Errorf("no playbook in %s; run a full install first", c.PlaybookDir)
+		return fmt.Errorf("run a full install first: there's no playbook in %s yet", c.PlaybookDir)
 	}
 	inv := filepath.Join(c.PlaybookDir, "inventory")
 	hostDir := filepath.Join(inv, "host_vars", c.HostName())

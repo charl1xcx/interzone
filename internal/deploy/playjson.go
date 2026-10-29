@@ -29,10 +29,10 @@ func (t TaskResult) String(key string) string {
 func runPlayJSON(ctx context.Context, c *config.Config, name, play string, vars map[string]any, args ...string) (map[string]TaskResult, error) {
 	bin, err := lookPath("ansible-playbook")
 	if err != nil {
-		return nil, fmt.Errorf("ansible isn't installed yet; run a full install first")
+		return nil, fmt.Errorf("run a full install first: Ansible isn't installed yet")
 	}
 	if _, err := os.Stat(filepath.Join(c.PlaybookDir, "inventory", "hosts")); err != nil {
-		return nil, fmt.Errorf("no inventory in %s; run a full install first", c.PlaybookDir)
+		return nil, fmt.Errorf("run a full install first: there's no inventory in %s yet", c.PlaybookDir)
 	}
 	dir := c.PlaybookDir
 	playDir := filepath.Join(dir, "inventory")
