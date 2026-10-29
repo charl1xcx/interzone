@@ -101,6 +101,8 @@ func RollbackConfig(cur *config.Config, d Deploy) (*config.Config, error) {
 	c.Target = cur.Target // the server may have moved since
 	// Not part of what was deployed: keep today's.
 	c.Backups, c.AdminToken = cur.Backups, cur.AdminToken
+	// What the server runs as stays: a rollback past it would break it.
+	c.Deployed = cur.Deployed
 	c.PinnedCommit = d.Commit
 	return c, nil
 }
@@ -138,3 +140,19 @@ func (r *Runner) checkout(ctx context.Context, dir, commit string) error {
 }
 
 func short(commit string) string { return commit[:min(len(commit), 10)] }
+
+// Backfill records what an install from before Config.Deployed existed
+// runs as, from the answers of its last successful deploy.
+func Backfill(c *config.Config) {
+	if c.Deployed != nil {
+		return
+	}
+	h := History()
+	if len(h) == 0 {
+		return
+	}
+	if snap, err := config.LoadFile(filepath.Join(h[0].Dir, "config.json")); err == nil {
+		snap.MarkDeployed()
+		c.Deployed = snap.Deployed
+	}
+}

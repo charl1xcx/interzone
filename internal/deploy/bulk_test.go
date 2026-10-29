@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"interzone/internal/config"
 )
 
 func TestReadUsersCSV(t *testing.T) {
@@ -35,5 +37,20 @@ func TestReadUsersCSV(t *testing.T) {
 		if _, err := ReadUsersCSV(path); err == nil {
 			t.Errorf("took %q", bad)
 		}
+	}
+}
+
+// A config that changes what the server runs as never reaches vars.yml.
+func TestInventoryRefusesBreaks(t *testing.T) {
+	c := config.Fresh()
+	c.Domain, c.Homeserver, c.PlaybookDir = "example.org", "synapse", t.TempDir()
+	c.MarkDeployed()
+	c.Domain = "other.org"
+	r := &Runner{cfg: c}
+	if err := r.writeInventory(StepInventory); err == nil || !strings.Contains(err.Error(), "can't be undone") {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(c.PlaybookDir, "inventory")); err == nil {
+		t.Error("it wrote the inventory anyway")
 	}
 }

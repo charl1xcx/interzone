@@ -101,6 +101,7 @@ func ImportMDAD(path string, base *Config) (*Import, error) {
 				"; interzone confirms them up to the playbook's current "+cur+" on every update. Read the playbook's CHANGELOG.md between the two before updating")
 		}
 	}
+	im.Config.MarkDeployed() // it runs: the setup mustn't change what can't be
 	return im, nil
 }
 

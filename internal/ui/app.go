@@ -71,6 +71,7 @@ type App struct {
 func New(cfg *config.Config, loaded bool) *App {
 	zone.NewGlobal()
 	loadTheme()
+	deploy.Backfill(cfg)
 	a := &App{cfg: cfg, loaded: loaded, sideCollapsed: loadSidebarCollapsed(), sideOpen: loadSideOpen(), layout: loadLayout()}
 	a.screens = []screen{
 		&welcomeScreen{loaded: loaded},
@@ -504,6 +505,7 @@ func (a *App) switchServer(m switchServerMsg) tea.Cmd {
 		return nil
 	}
 	*a.cfg = *m.cfg // every screen holds this pointer
+	deploy.Backfill(a.cfg)
 	if err := a.cfg.Save(); err != nil {
 		a.status = sBad.Render("couldn't save config: " + err.Error())
 	}

@@ -107,6 +107,9 @@ func Apply(args []string) error {
 	if err != nil {
 		return err
 	}
+	if *file == "" {
+		deploy.Backfill(c)
+	}
 	c.FillGenerated()
 	if *latest {
 		c.PinnedCommit = ""
@@ -150,6 +153,10 @@ func Apply(args []string) error {
 		fmt.Println(good.Render("✓ Files written. Deploy later with: ") +
 			"cd " + c.PlaybookDir + " && ansible-playbook -i inventory/hosts setup.yml --tags=install-all,ensure-matrix-users-created,start")
 		return nil
+	}
+	c.MarkDeployed()
+	if err := c.SaveFile(path); err != nil {
+		fmt.Println(warn.Render("! couldn't save that it's deployed: " + err.Error()))
 	}
 	fmt.Println(good.Render("✓ Deployed: ") + "https://matrix." + c.Domain)
 	printSelfCheck(res)

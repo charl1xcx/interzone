@@ -104,6 +104,11 @@ func (s *componentsScreen) available(c catalog.Component) bool {
 	return !c.SynapseOnly || s.cfg.Homeserver == "synapse"
 }
 
+// toggles reports whether c can be ticked or unticked now.
+func (s *componentsScreen) toggles(c catalog.Component) bool {
+	return s.available(c) && s.cfg.Locked(c.ID) == ""
+}
+
 func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 	if s.saver != nil {
 		cmd, done := s.saver.update(s.cfg, msg)
@@ -127,7 +132,7 @@ func (s *componentsScreen) update(msg tea.Msg) tea.Cmd {
 	case " ", "ctrl+@":
 		if s.cursor < len(items) {
 			it := items[s.cursor]
-			if s.available(it) {
+			if s.toggles(it) {
 				s.selected[it.ID] = !s.selected[it.ID]
 			}
 		}
@@ -316,6 +321,10 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 		style = sFaint
 		tags = append(tags, tagChip("Synapse only", cMuted))
 	}
+	locked := s.available(c) && s.cfg.Locked(c.ID) != ""
+	if locked {
+		tags = append(tags, tagChip("locked", cAmber))
+	}
 	if c.Status != "" {
 		tags = append(tags, tagChip(c.Status, cAmber))
 	}
@@ -363,6 +372,11 @@ func (s *componentsScreen) row(c catalog.Component, i int, cur bool, w int) stri
 	}
 	for _, l := range strings.Split(sSub.Width(inner-3).Render(c.Description), "\n") {
 		lines = append(lines, "   "+l)
+	}
+	if locked {
+		for _, l := range strings.Split(sWarn.Width(inner-3).Render(s.cfg.Locked(c.ID)), "\n") {
+			lines = append(lines, "   "+l)
+		}
 	}
 	var meta []string
 	if c.Subdomain != "" {

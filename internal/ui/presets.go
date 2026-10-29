@@ -100,6 +100,14 @@ func (s *homeserverScreen) leave(c *config.Config) {
 	c.Homeserver = hs
 }
 
+// hsLocked says why the server can't be switched to homeserver id, or "".
+func (s *homeserverScreen) hsLocked(id string) string {
+	if d := s.cfg.Deployed; d != nil && id != d.Homeserver {
+		return s.cfg.Locked("homeserver")
+	}
+	return ""
+}
+
 // preset is the preset under the cursor, if it's on one.
 func (s *homeserverScreen) preset() (config.Preset, bool) {
 	if s.sel < len(s.presets) {
@@ -131,8 +139,16 @@ func (s *homeserverScreen) custom() bool {
 func (s *homeserverScreen) choose() tea.Cmd {
 	p, ok := s.preset()
 	if !ok {
+		if why := s.hsLocked(catalog.Homeservers[s.sel-len(s.presets)].ID); why != "" {
+			s.err = why
+			return nil
+		}
 		s.hs = s.sel - len(s.presets)
 		return nav(1)
+	}
+	if why := s.hsLocked(p.Homeserver); why != "" {
+		s.err = why
+		return nil
 	}
 	if s.custom() && s.armed != "apply:"+p.ID {
 		s.armed = "apply:" + p.ID
@@ -140,6 +156,7 @@ func (s *homeserverScreen) choose() tea.Cmd {
 	}
 	s.armed = ""
 	s.cfg.ApplyPreset(p.Preset)
+	s.cfg.KeepDeployed() // MAS stays as the server has it
 	for i, h := range catalog.Homeservers {
 		if h.ID == p.Homeserver {
 			s.hs = i
@@ -163,6 +180,9 @@ func (s *homeserverScreen) update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 	key := k.String()
+	if s.err != "" && s.err == s.cfg.Locked("homeserver") {
+		s.err = "" // a locked row's reason shows until the next key
+	}
 	if s.armed != "" && key != s.armedKey() {
 		s.armed = ""
 		if key == "esc" {
@@ -204,7 +224,7 @@ func (s *homeserverScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		return func() tea.Msg { return noteMsg("✓ deleted the preset " + p.Name) }
 	}
-	if s.sel >= len(s.presets) {
+	if s.sel >= len(s.presets) && s.hsLocked(catalog.Homeservers[s.sel-len(s.presets)].ID) == "" {
 		s.hs = s.sel - len(s.presets)
 	}
 	return nil
@@ -222,7 +242,12 @@ func (s *homeserverScreen) click(id string) (tea.Cmd, bool) {
 	}
 	sel := s.sel - len(s.presets)
 	if _, _, ok := rowClick(id, "hs:", &sel, len(catalog.Homeservers)); ok {
-		s.sel, s.hs = len(s.presets)+sel, sel
+		s.sel = len(s.presets) + sel
+		if why := s.hsLocked(catalog.Homeservers[sel].ID); why != "" {
+			s.err = why
+			return nil, true
+		}
+		s.hs = sel
 		return nav(1), true
 	}
 	return nil, false
@@ -306,6 +331,8 @@ func (s *homeserverScreen) presetRows(w int) string {
 			tags = "  " + sWarn.Render("d again brings interzone's back")
 		case s.armed == "delete:"+p.ID:
 			tags = "  " + sWarn.Render("d again deletes it")
+		case s.hsLocked(p.Homeserver) != "":
+			tags = "  " + tagChip("locked", cAmber)
 		default:
 			if p.Matches(s.cfg) {
 				tags += "  " + sGood.Render("● now")
@@ -397,8 +424,15 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 	for i, hs := range catalog.Homeservers {
 		on := s.sel == len(s.presets)+i
 		tag := sMuted.Render("   " + hs.Tagline)
+		if s.hsLocked(hs.ID) != "" {
+			tag = "   " + tagChip("locked", cAmber)
+		}
 		if i != s.hs && !on && compact {
-			cards = append(cards, markRow("hs:"+strconv.Itoa(i), "   "+sFaint.Render("○  ")+sMuted.Render(hs.Name)+tag, w))
+			icon := "○  "
+			if s.hsLocked(hs.ID) != "" {
+				icon = "⊘  "
+			}
+			cards = append(cards, markRow("hs:"+strconv.Itoa(i), "   "+sFaint.Render(icon)+sMuted.Render(hs.Name)+tag, w))
 			continue
 		}
 		style, name := card, sFaint.Render("○  ")+sTitle.Render(hs.Name)
@@ -407,6 +441,9 @@ func (s *homeserverScreen) cards(w int, compact bool) string {
 		}
 		if on {
 			style, name = card.BorderForeground(cPurple), sAccent.Render("◉  ")+gradient(hs.Name)
+		}
+		if s.hsLocked(hs.ID) != "" {
+			name = sFaint.Render("⊘  ") + sMuted.Render(hs.Name)
 		}
 		head := name + tag
 		if lipgloss.Width(head) > cardW-6 { // the tagline gets its own line

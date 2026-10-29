@@ -328,6 +328,13 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
     playbook's defaults. Your files are only read; interzone works on a
     copy of the playbook and keeps the original `vars.yml` to compare
     with, so the first Review lists each variable that would change.
+  - **What can't be undone stays put:** once a server is installed or
+    imported, the setup locks its domain (every user and room ID ends in
+    it), its homeserver (none reads another's database) and, on Synapse,
+    MAS on or off (moving accounts either way is a migration of its
+    own). Locked choices are marked and say why; presets keep them; and a
+    deploy whose answers differ anyway, say from a hand-edited answers
+    file, stops before writing `vars.yml`. Uninstalling unlocks them.
   - **Self-update** from the newest release, checked against its
     `SHA256SUMS`.
 - **Fully offline installs** with `interzone bundle` (see below).

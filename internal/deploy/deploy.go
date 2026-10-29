@@ -446,6 +446,9 @@ func (r *Runner) inventory(ctx context.Context) error {
 // call it again when they change what vars.yml says.
 func (r *Runner) writeInventory(step Step) error {
 	c := r.cfg
+	if breaks := c.Breaks(); len(breaks) > 0 {
+		return fmt.Errorf("this would break the running server, which can't be undone: %s. Put it back in the setup; a different server is added under Servers", strings.Join(breaks, "; "))
+	}
 	inv := filepath.Join(c.PlaybookDir, "inventory")
 	hostDir := filepath.Join(inv, "host_vars", c.HostName())
 	var cert, key string

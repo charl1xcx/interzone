@@ -88,7 +88,7 @@ func (s *componentsScreen) click(id string) (tea.Cmd, bool) {
 	}
 	items := s.items()
 	toggle := func(i int) {
-		if it := items[i]; s.available(it) {
+		if it := items[i]; s.toggles(it) {
 			s.selected[it.ID] = !s.selected[it.ID]
 		}
 	}

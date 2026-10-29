@@ -37,6 +37,16 @@ type field struct {
 
 	required bool
 	hidden   func() bool
+	// locked, when set, says why the field can't be changed; it's shown
+	// in place of the help.
+	locked string
+}
+
+// lock keeps the field as it is, saying why.
+func (fl *field) lock(why string) {
+	if why != "" {
+		fl.locked, fl.help = why, why
+	}
 }
 
 func (f *field) visible() bool { return f.hidden == nil || !f.hidden() }
@@ -257,6 +267,9 @@ func (f *form) Update(msg tea.Msg) tea.Cmd {
 				return nil
 			}
 		}
+		if c.locked != "" {
+			return nil
+		}
 		switch c.kind {
 		case fToggle:
 			if k.String() == " " || k.String() == "x" || k.String() == "left" || k.String() == "right" {
@@ -274,6 +287,9 @@ func (f *form) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 	var cmd tea.Cmd
+	if c.locked != "" {
+		return nil
+	}
 	switch c.kind {
 	case fText, fSecret:
 		c.input, cmd = c.input.Update(msg)
@@ -409,7 +425,9 @@ func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 		label = sTitle.Render(fl.label)
 		prompt = sAccent.Render("› ")
 	}
-	if fl.required {
+	if fl.locked != "" {
+		label += "  " + tagChip("locked", cAmber)
+	} else if fl.required {
 		label += sPink.Render(" *")
 	}
 	inner := width - 5
@@ -516,14 +534,16 @@ func (f *form) click(id string) (tea.Cmd, bool) {
 			return nil, false
 		}
 		f.focusOn(i)
-		f.fields[i].choice = j
+		if f.fields[i].locked == "" {
+			f.fields[i].choice = j
+		}
 	case strings.HasPrefix(rest, "f"):
 		i, err := strconv.Atoi(rest[1:])
 		if err != nil || i >= len(f.fields) {
 			return nil, false
 		}
 		f.focusOn(i)
-		if fl := f.fields[i]; fl.kind == fToggle {
+		if fl := f.fields[i]; fl.kind == fToggle && fl.locked == "" {
 			fl.on = !fl.on
 		}
 	default:

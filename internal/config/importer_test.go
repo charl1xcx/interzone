@@ -128,6 +128,9 @@ matrix_coturn_enabled: false
 	if c.GenericSecret != "gen-secret" || c.PostgresPassword != "pg-pass" || c.SSL.ACMEEmail != "me@example.org" {
 		t.Errorf("answers: %+v", c)
 	}
+	if d := c.Deployed; d == nil || d.Domain != "example.org" || d.Homeserver != "synapse" || d.MAS {
+		t.Errorf("an imported server isn't marked as running: %+v", d)
+	}
 	if !c.Components["whatsapp"] || c.Components["telegram"] {
 		t.Errorf("components %v", c.Components)
 	}

@@ -749,6 +749,14 @@ func (s *deployScreen) handle(ev deploy.Event) {
 		s.result = ev.Result
 		s.elapsed = time.Since(s.started)
 		s.finishActive(done)
+		switch s.opts.Action {
+		case deploy.ActionInstall, deploy.ActionMigrate:
+			s.cfg.MarkDeployed() // from now on the setup keeps what can't change
+			_ = s.cfg.Save()
+		case deploy.ActionUninstall:
+			s.cfg.Deployed = nil // nothing left to break
+			_ = s.cfg.Save()
+		}
 		if s.fromManage && autoBackActions[s.opts.Action] && (s.result == nil || len(s.result.Problems) == 0) && s.fails == 0 {
 			s.backAt = time.Now().Add(autoBackDelay)
 		}

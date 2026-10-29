@@ -177,6 +177,7 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 	domain := textField("domain", "Base domain", c.Domain, "example.com",
 		"User IDs look like @alice:<domain>. Point matrix.<domain> at your server.")
 	domain.required = true
+	domain.lock(c.Locked("domain"))
 	host := textField("host", "Server address", t.Host, "203.0.113.10 or server.example.com", "IP or hostname reachable over SSH.")
 	host.required = true
 	sudoHelp := "Needed if you're not root and sudo asks for a password. Leave empty otherwise."

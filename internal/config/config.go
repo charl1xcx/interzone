@@ -97,6 +97,9 @@ type Config struct {
 	// PinnedCommit holds the playbook at this commit after a rollback, until
 	// the next update.
 	PinnedCommit string
+	// Deployed is what the server was installed or imported as; Locked
+	// keeps the setup from changing it.
+	Deployed *Deployed `json:",omitempty"`
 }
 
 // Alerts configures the checks the server runs on itself, sending a
