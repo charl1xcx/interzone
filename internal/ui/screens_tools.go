@@ -288,6 +288,9 @@ func (s *historyScreen) keys() [][2]string {
 	if s.confirm {
 		return [][2]string{{"enter", "roll back"}, {"esc", "cancel"}}
 	}
+	if len(s.list) == 0 {
+		return nil
+	}
 	return [][2]string{{"↑↓", "select"}, {"enter", "roll back to this"}}
 }
 
@@ -370,6 +373,9 @@ func (s *restoreScreen) enter(c *config.Config) tea.Cmd {
 func (s *restoreScreen) keys() [][2]string {
 	if s.confirm {
 		return [][2]string{{"enter", "restore"}, {"esc", "cancel"}}
+	}
+	if len(s.list) == 0 {
+		return [][2]string{{"d", "download the server's backups"}}
 	}
 	return [][2]string{{"↑↓", "select"}, {"enter", "restore this"}, {"d", "download the server's backups"}}
 }

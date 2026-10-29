@@ -252,7 +252,7 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 	case "x": // can't be undone: the word is typed, not a key pressed twice
 		if ok {
 			s.err, s.info = nil, ""
-			sure := textField("sure", "Type delete to confirm", "", "delete", "")
+			sure := textField("sure", "Type delete to confirm", "", "", "")
 			sure.required = true
 			s.form, s.confirm = newForm(sure), "delete"
 		}

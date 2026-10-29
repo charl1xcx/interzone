@@ -288,7 +288,7 @@ func Rollback(args []string) error {
 		return nil
 	}
 	if len(hist) == 0 {
-		return fmt.Errorf("no deploys recorded yet; every successful install from now on is")
+		return fmt.Errorf("no deploys recorded yet; each successful install from now on is recorded, and can be rolled back to")
 	}
 	n, err := strconv.Atoi(fs.Arg(0))
 	if err != nil || n < 1 || n > len(hist) {

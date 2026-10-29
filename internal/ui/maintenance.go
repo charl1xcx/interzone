@@ -108,7 +108,7 @@ func (s *maintenanceScreen) enter(c *config.Config) tea.Cmd {
 		textField("min", "Compress rooms with more state groups than", "100000", "100000", ""),
 		textField("tags", "Tags", "", "install-mautrix-slack,start-group", "Comma-separated."),
 		textField("vars", "Extra vars", "", "group=mautrix-slack", "key=value pairs separated by spaces, passed as --extra-vars."),
-		textField("confirm", "Type "+c.Domain+" to confirm", "", c.Domain, ""),
+		textField("confirm", "Type "+c.Domain+" to confirm", "", "", ""), // no hint: in plain mode it would read as typed
 	)
 	on := func(ids ...string) func() bool {
 		return func() bool { return !slices.Contains(ids, f.value("task")) }
