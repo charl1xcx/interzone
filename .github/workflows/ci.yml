@@ -20,11 +20,12 @@ jobs:
       - name: gofmt
         run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
       - run: go vet ./...
-      - run: go test ./...
+      - run: go test -race ./...
 
   release:
     # A v* tag builds the release binaries and publishes them, on GitHub
-    # only: Forgejo reads this directory too and has its own releases.
+    # only. Forgejo has its own releases, and skips this file anyway: see
+    # .forgejo/workflows/README.md.
     if: startsWith(github.ref, 'refs/tags/v') && github.server_url == 'https://github.com'
     needs: test
     runs-on: ubuntu-latest
