@@ -28,9 +28,9 @@
 │                        ││     Federation                 8448/tcp; 8448/udp                                          │
 │                        ││     Coturn (TURN for calls)    3478, 5349/tcp; 3478, 5349, 49152-49172/udp                 │
 │                        ││                                                                                            │
-│                        ││                                                                                            │
-│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
-│ ◐ interzone  ctrl+y    ││                                                                                            │
+│                        ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
+│ ◫ auto (wide)  ctrl+l  ││   │ vars.yml preview                                                                   │   │
+│ ◐ interzone  ctrl+y    ││     ▼ 42 more · ↑↓ scroll                                                                  │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
  enter deploy · c check again · v details · z DNS records · ↑↓ scroll · s save files only · esc back · ctrl+c quit      

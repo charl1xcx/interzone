@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -106,4 +107,23 @@ func rule(title string, w int) string {
 		head += " " + sFaint.Render(strings.Repeat("─", n))
 	}
 	return head
+}
+
+// scrolled shows h lines of page from *top, which it keeps in range; the
+// first and last line say when there's more above or below.
+func scrolled(page string, top *int, h int) string {
+	lines := strings.Split(page, "\n")
+	if h < 3 || len(lines) <= h {
+		*top = 0
+		return page
+	}
+	*top = max(0, min(*top, len(lines)-h))
+	shown := append([]string(nil), lines[*top:*top+h]...)
+	if *top > 0 {
+		shown[0] = sFaint.Render(fmt.Sprintf("  ▲ %d more above", *top))
+	}
+	if below := len(lines) - *top - h; below > 0 {
+		shown[h-1] = sFaint.Render(fmt.Sprintf("  ▼ %d more · ↑↓ scroll", below))
+	}
+	return strings.Join(shown, "\n")
 }

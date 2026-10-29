@@ -16,5 +16,5 @@
                                                 
  Pre-deploy checks                              
  ⠋ checking the server and DNS…                 
-                                                
+   ▼ 60 more · ↑↓ scroll                        
     ‹ back       ≡ menu       deploy ›      ⋯  

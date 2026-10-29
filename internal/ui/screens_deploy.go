@@ -29,12 +29,14 @@ type serverChecksMsg []deploy.Finding
 type reviewScreen struct {
 	cfg      *config.Config
 	missing  []string
-	vp       viewport.Model
+	preview  string // what the preview panel shows
+	scroll   int    // the page's first line shown
+	toPrev   bool   // scroll to the preview once it's drawn
 	yaml     string
 	checks   []deploy.Finding
 	checking bool
 	verbose  bool // list passed checks too
-	confirm  bool // enter was pressed once despite failed checks
+	confirm  bool // enter was pressed: y deploys
 	spin     spinner.Model
 
 	last     *deploy.Deploy // the last successful deploy, if any
@@ -50,13 +52,17 @@ type reviewScreen struct {
 func (s *reviewScreen) comparable() bool { return s.last != nil || s.imported }
 
 func newReviewScreen() *reviewScreen {
-	return &reviewScreen{vp: viewport.New(0, 0), spin: newSpinner()}
+	return &reviewScreen{spin: newSpinner()}
 }
 
-func (s *reviewScreen) name() string  { return "Review" }
-func (s *reviewScreen) title() string { return "Everything look right?" }
-func (s *reviewScreen) typing() bool  { return false }
+func (s *reviewScreen) name() string     { return "Review" }
+func (s *reviewScreen) title() string    { return "Everything look right?" }
+func (s *reviewScreen) typing() bool     { return false }
+func (s *reviewScreen) handlesEsc() bool { return s.confirm }
 func (s *reviewScreen) keys() [][2]string {
+	if s.confirm {
+		return [][2]string{{"y", "deploy now"}, {"esc", "not yet"}}
+	}
 	k := [][2]string{{"c", "check again"}, {"v", "details"}, {"z", map[bool]string{false: "DNS records", true: "vars.yml"}[s.zone != nil]}, {"↑↓", "scroll"}, {"s", "save files only"}}
 	if s.comparable() {
 		k = append(k, [2]string{"x", map[bool]string{true: "whole vars.yml", false: "what changes"}[s.showDiff]})
@@ -71,7 +77,7 @@ func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
 	s.cfg, s.zone = c, nil
 	c.FillGenerated()
 	s.missing = c.Missing()
-	s.confirm = false
+	s.confirm, s.scroll = false, 0
 	cert, key := "<generated during deploy>", "<generated during deploy>"
 	if c.SSL.Mode == "custom" {
 		cert, key = c.SSL.CertPath, c.SSL.KeyPath
@@ -97,20 +103,19 @@ func (s *reviewScreen) enter(c *config.Config) tea.Cmd {
 func (s *reviewScreen) setPreview() {
 	if s.showDiff && s.imported {
 		if len(s.changes) == 0 {
-			s.vp.SetContent(sMuted.Render("Every variable keeps the value it had in the imported vars.yml."))
+			s.preview = sMuted.Render("Every variable keeps the value it had in the imported vars.yml.")
 		} else {
-			s.vp.SetContent(changesView(s.changes, s.defaults))
+			s.preview = changesView(s.changes, s.defaults)
 		}
 	} else if s.showDiff {
 		if a, r := diffChanges(s.diff); a+r == 0 {
-			s.vp.SetContent(sMuted.Render("Nothing in vars.yml changes. An update still pulls the newest playbook and images."))
+			s.preview = sMuted.Render("Nothing in vars.yml changes. An update still pulls the newest playbook and images.")
 		} else {
-			s.vp.SetContent(diffView(s.diff, 2))
+			s.preview = diffView(s.diff, 2)
 		}
 	} else {
-		s.vp.SetContent(highlightYAML(s.yaml))
+		s.preview = highlightYAML(s.yaml)
 	}
-	s.vp.GotoTop()
 }
 
 // changesView lists variables that differ from the imported vars.yml.
@@ -184,27 +189,31 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 		s.checks = m
 		return nil
 	case zoneMsg:
-		s.zone = m
-		s.vp.SetContent(strings.Join(m, "\n"))
-		s.vp.GotoTop()
+		s.zone, s.preview, s.toPrev = m, strings.Join(m, "\n"), true
 		return nil
 	case spinner.TickMsg:
 		return spinning(s.checking, &s.spin, m)
 	case tea.KeyMsg:
 		key := m.String()
-		if key != "enter" && key != "d" {
+		if s.confirm { // only y deploys; anything else steps back
 			s.confirm = false
+			if key == "y" {
+				return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{deploy.Options{Action: deploy.ActionInstall}} })
+			}
+			return nil
 		}
 		switch key {
 		case "enter", "d":
-			if len(s.missing) > 0 {
-				return nil
+			if len(s.missing) == 0 {
+				s.confirm, s.scroll = true, 0
 			}
-			if deploy.Worst(s.checks) == deploy.Fail && !s.confirm {
-				s.confirm = true
-				return nil
-			}
-			return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{deploy.Options{Action: deploy.ActionInstall}} })
+			return nil
+		case "up", "k":
+			s.scroll = max(0, s.scroll-1)
+		case "down", "j":
+			s.scroll++
+		case "home":
+			s.scroll = 0
 		case "s":
 			return tea.Sequence(nav(1), func() tea.Msg { return startDeployMsg{deploy.Options{Action: deploy.ActionSaveOnly}} })
 		case "c":
@@ -214,13 +223,13 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 			return nil
 		case "x":
 			if s.comparable() {
-				s.showDiff, s.zone = !s.showDiff, nil
+				s.showDiff, s.zone, s.toPrev = !s.showDiff, nil, true
 				s.setPreview()
 			}
 			return nil
 		case "z":
 			if s.zone != nil {
-				s.zone = nil
+				s.zone, s.toPrev = nil, true
 				s.setPreview()
 				return nil
 			}
@@ -232,9 +241,47 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 			}
 		}
 	}
-	var cmd tea.Cmd
-	s.vp, cmd = s.vp.Update(msg)
-	return cmd
+	return nil
+}
+
+// confirmLines say what pressing y will do.
+func (s *reviewScreen) confirmLines(w int) []string {
+	c := s.cfg
+	where := "this machine"
+	if c.Target.Mode == "ssh" {
+		where = c.Target.User + "@" + c.Target.Host
+	}
+	what := sWarn.Render("Install Matrix on "+where+"?") + "\n" +
+		sSub.Render("A first install usually takes 10 to 30 minutes. interzone downloads the playbook and its roles, then sets up Docker and every service there.")
+	if c.Installed() {
+		what = sWarn.Render("Update "+c.Domain+" on "+where+"?") + "\n" +
+			sSub.Render("Services restart as they're updated, so the server is unreachable for a minute or two. It usually takes 5 to 15 minutes.")
+	}
+	lines := []string{what, ""}
+	switch {
+	case s.imported:
+		lines = append(lines, sMuted.Render(fmt.Sprintf("vars.yml: %d variable(s) differ from the imported one.", len(s.changes))))
+	case s.last != nil:
+		a, r := diffChanges(s.diff)
+		lines = append(lines, sMuted.Render(fmt.Sprintf("vars.yml: %d line(s) added, %d removed since the last deploy.", a, r)))
+	}
+	var failed []string
+	for _, f := range s.checks {
+		if f.Level == deploy.Fail {
+			failed = append(failed, f.Name)
+		}
+	}
+	if len(failed) > 0 {
+		lines = append(lines, sBad.Render(fmt.Sprintf("✗ %d check(s) failed: %s. The deploy may fail too.", len(failed), strings.Join(failed, ", "))))
+	}
+	if s.checking {
+		lines = append(lines, sWarn.Render("! The checks haven't finished."))
+	}
+	lines = append(lines, "", keyLink("y")+sMuted.Render(" deploy now   ")+keyLink("esc")+sMuted.Render(" not yet"))
+	for i, l := range lines {
+		lines[i] = lipgloss.NewStyle().Width(min(w, maxFormWidth) - 6).Render(l)
+	}
+	return lines
 }
 
 func (s *reviewScreen) view(w, h int) string {
@@ -282,9 +329,6 @@ func (s *reviewScreen) view(w, h int) string {
 			}
 			status = append(status, sBad.Render("  • ")+m)
 		}
-	} else if s.confirm {
-		tone = cAmber
-		status = append(status, sWarn.Render("⚠ Some checks failed. Press enter again to deploy anyway."))
 	} else if deploy.Worst(s.checks) == deploy.Fail {
 		tone = cAmber
 		status = append(status, sWarn.Render("! Settings are complete, but some checks below failed."))
@@ -295,35 +339,31 @@ func (s *reviewScreen) view(w, h int) string {
 		status[i] = lipgloss.NewStyle().Width(cw - 4).Render(l)
 	}
 	status = []string{card("", strings.Split(strings.Join(status, "\n"), "\n"), cw, 0, tone)}
+	if s.confirm {
+		status = []string{confirmView(lw, s.confirmLines(lw)...)}
+	}
 	status = append(status, gap...)
 	status = append(status, s.checksView(lw-2)...)
 	status = append(append(status, gap...), portsView(s.cfg, lw-2)...)
 	summary = []string{card("", summary, cw, 0, cFaint)}
 
 	left := lipgloss.JoinVertical(lipgloss.Left, append(summary, append(gap, status...)...)...)
+	if s.confirm {
+		left = lipgloss.JoinVertical(lipgloss.Left, append(status, append(gap, summary...)...)...)
+	}
+	var page string
+	at := 0 // where the preview starts
 	if wide {
-		s.vp.Width = w - lw - 4
-		s.vp.Height = max(0, h-4)
-		s.vp.SetYOffset(s.vp.YOffset) // back in range after a resize
-		right := sPanel.Width(w - lw - 2).Render(s.previewTitle() + "\n\n" + s.vp.View())
-		return lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(lw).Render(left), right)
+		right := sPanel.Width(w - lw - 2).Render(s.previewTitle() + "\n\n" + s.preview)
+		page = lipgloss.JoinHorizontal(lipgloss.Top, lipgloss.NewStyle().Width(lw).Render(left), right)
+	} else {
+		at = lipgloss.Height(left) + 1
+		page = left + "\n\n" + sPanel.Width(w-2).Render(s.previewTitle()+"\n"+lipgloss.NewStyle().MaxWidth(w-4).Render(s.preview))
 	}
-	s.vp.Width = w - 4
-	room := h - lipgloss.Height(left) - 5
-	if room < 3 && s.zone != nil { // the DNS records were asked for: cut the left short for them
-		lines := strings.Split(left, "\n")
-		if keep := max(4, h-5-10); len(lines) > keep {
-			left = strings.Join(lines[:keep-1], "\n") + "\n" + sFaint.Render(fmt.Sprintf("  ▼ %d more lines; a taller window shows them", len(lines)-keep+1))
-		}
-		room = h - lipgloss.Height(left) - 5
+	if s.toPrev {
+		s.scroll, s.toPrev = at, false
 	}
-	// ↑↓ scroll it even while it's hidden, so its height and offset stay in range.
-	s.vp.Height = max(0, room)
-	s.vp.SetYOffset(s.vp.YOffset)
-	if s.vp.Height < 3 {
-		return left
-	}
-	return left + "\n\n" + sPanel.Width(w-2).Render(s.previewTitle()+"\n"+s.vp.View())
+	return scrolled(page, &s.scroll, h)
 }
 
 // checksView lists the pre-deploy checks. Passed server checks collapse
