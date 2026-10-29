@@ -459,9 +459,10 @@ func (f *form) renderField(fl *field, idx int, focused bool, width int) string {
 			if fl.labels != nil {
 				name = fl.labels[i]
 			}
-			opt := sMuted.Padding(0, 2).Render(name)
+			// The marker says which is chosen without colour (plain mode, screen readers).
+			opt := sMuted.Padding(0, 1).Render("○ " + name)
 			if i == fl.choice {
-				opt = lipgloss.NewStyle().Foreground(cOnAccent).Background(cPurple).Bold(true).Padding(0, 2).Render(name)
+				opt = lipgloss.NewStyle().Foreground(cOnAccent).Background(cPurple).Bold(true).Padding(0, 1).Render("◉ " + name)
 			}
 			parts = append(parts, mark(f.id+"c"+strconv.Itoa(idx)+"."+strconv.Itoa(i), opt))
 		}

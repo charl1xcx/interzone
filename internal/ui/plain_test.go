@@ -22,6 +22,10 @@ func TestPlain(t *testing.T) {
 			t.Fatalf("a line grew: %q", l)
 		}
 	}
+	a.jump(a.index("Server"))
+	if v := a.View(); !strings.Contains(v, "* This machine") || !strings.Contains(v, "o A remote server") {
+		t.Errorf("the chosen option can't be told without colour:\n%s", v)
+	}
 	if sp := newSpinner(); len(sp.Spinner.Frames) != 1 {
 		t.Error("the spinner still turns")
 	}

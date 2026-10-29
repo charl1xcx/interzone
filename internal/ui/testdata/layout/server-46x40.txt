@@ -7,8 +7,8 @@
  ▌  Point matrix.<domain> at your server.     
                                               
     Install where?                            
-      This machine                            
-      A remote server over SSH                
+     ◉ This machine                           
+     ○ A remote server over SSH               
                                               
     sudo password                             
     ›                                         
@@ -17,8 +17,8 @@
  ◆ Downloads ──────────────────────────────── 
                                               
     Network situation                         
-      Normal internet                         
-      Blackout: in-country mirrors only       
+     ◉ Normal internet                        
+     ○ Blackout: in-country mirrors only      
                                               
     Playbook git repository                   
     › https://itsjustadream.g0th.ir/spant…    
