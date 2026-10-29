@@ -57,59 +57,11 @@ func usesDownloads(plan []Step) bool {
 func (r *Runner) ipfsSetup(ctx context.Context) error {
 	r.begin(StepIPFS)
 	t := r.cfg.Target
-	facts, err := probe(ctx, r.cfg)
+	idx, arch, err := r.ipfsJoin(ctx, StepIPFS, r.cfg.Sources.IPFSSeed == "yes")
 	if err != nil {
-		return fmt.Errorf("can't log in to the server: %w", err)
+		return err
 	}
-	arch := ociArch(facts["arch"])
-	if arch != "amd64" && arch != "arm64" {
-		return fmt.Errorf("IPFS deploys need an amd64 or arm64 server, not %s", facts["arch"])
-	}
-	seed := r.cfg.Sources.IPFSSeed == "yes"
-	r.ipfs = &ipfsRun{seed: seed}
-
-	fromWeb, webErr := indexFromWeb(ctx)
-	want := ipfs.KuboVersion
-	if fromWeb != nil {
-		want = fromWeb.Kubo
-	}
-	have, _ := r.output(ctx, t, ipfsBin+"/ipfs version --number 2>/dev/null || true")
-	if have = strings.TrimSpace(have); "v"+have != want {
-		bin, from, err := kuboBinary(ctx, arch, want, fromWeb)
-		switch {
-		case err == nil:
-			r.note(StepIPFS, fmt.Sprintf("installing IPFS %s (from %s)", want, from))
-			if err := r.upload(ctx, ipfsBin+"/ipfs", bin); err != nil {
-				return err
-			}
-		case have != "":
-			r.note(StepIPFS, "! couldn't get IPFS "+want+" ("+err.Error()+"); keeping "+have)
-		default:
-			return fmt.Errorf("couldn't get the IPFS daemon for the server: %w. An offline bundle carries it", err)
-		}
-	}
-
-	r.note(StepIPFS, "starting the IPFS daemon in interzone's swarm"+map[bool]string{true: ", seeding for others", false: ""}[seed])
-	if _, err := r.output(ctx, t, ipfsConfigScript(seed)); err != nil {
-		return fmt.Errorf("starting IPFS on the server: %w", err)
-	}
-
-	idx := fromWeb
-	r.note(StepIPFS, "looking up the newest publish in the swarm…")
-	if fromSwarm, err := r.indexFromSwarm(ctx); err != nil {
-		r.note(StepIPFS, "! the swarm didn't answer: "+err.Error())
-	} else if idx == nil || fromSwarm.Version > idx.Version {
-		idx = fromSwarm
-	}
-	if idx == nil {
-		return fmt.Errorf("neither the swarm nor %s could be reached (%v)", ipfs.IndexURL, webErr)
-	}
-	if idx.Version < r.cfg.Sources.IPFSVersion {
-		return fmt.Errorf("the newest publish found (%s) is older than one this server already used; refusing it", idx.Created)
-	}
-	r.note(StepIPFS, fmt.Sprintf("using the publish of %s: playbook %s, interzone %s", idx.Created, short(idx.Playbook.Commit), idx.Interzone))
-
-	if err := r.registryBinary(ctx, arch, idx); err != nil {
+	if err := r.registryBinary(ctx, StepIPFS, arch, idx); err != nil {
 		return err
 	}
 	if _, err := r.output(ctx, t, registryScript(idx.Parts.OCI)); err != nil {
@@ -140,6 +92,121 @@ func (r *Runner) ipfsSetup(ctx context.Context) error {
 	r.env = Env(r.cfg)
 	r.emit(Event{Step: StepIPFS, Sources: &saved})
 	return nil
+}
+
+// ipfsJoin installs and starts the IPFS daemon on the server and finds the
+// newest publish; it returns that and the server's arch.
+func (r *Runner) ipfsJoin(ctx context.Context, step Step, seed bool) (*ipfs.Index, string, error) {
+	t := r.cfg.Target
+	facts, err := probe(ctx, r.cfg)
+	if err != nil {
+		return nil, "", fmt.Errorf("can't log in to the server: %w", err)
+	}
+	arch := ociArch(facts["arch"])
+	if arch != "amd64" && arch != "arm64" {
+		return nil, "", fmt.Errorf("IPFS needs an amd64 or arm64 server, not %s", facts["arch"])
+	}
+	r.ipfs = &ipfsRun{seed: seed}
+
+	fromWeb, webErr := indexFromWeb(ctx)
+	want := ipfs.KuboVersion
+	if fromWeb != nil {
+		want = fromWeb.Kubo
+	}
+	have, _ := r.output(ctx, t, ipfsBin+"/ipfs version --number 2>/dev/null || true")
+	if have = strings.TrimSpace(have); "v"+have != want {
+		bin, from, err := kuboBinary(ctx, arch, want, fromWeb)
+		switch {
+		case err == nil:
+			r.note(step, fmt.Sprintf("installing IPFS %s (from %s)", want, from))
+			if err := r.upload(ctx, ipfsBin+"/ipfs", bin); err != nil {
+				return nil, "", err
+			}
+		case have != "":
+			r.note(step, "! couldn't get IPFS "+want+" ("+err.Error()+"); keeping "+have)
+		default:
+			return nil, "", fmt.Errorf("couldn't get the IPFS daemon for the server: %w. An offline bundle carries it", err)
+		}
+	}
+
+	r.note(step, "starting the IPFS daemon in interzone's swarm"+map[bool]string{true: ", seeding for others", false: ""}[seed])
+	if _, err := r.output(ctx, t, ipfsConfigScript(seed)); err != nil {
+		return nil, "", fmt.Errorf("starting IPFS on the server: %w", err)
+	}
+
+	idx := fromWeb
+	r.note(step, "looking up the newest publish in the swarm…")
+	if fromSwarm, err := r.indexFromSwarm(ctx); err != nil {
+		r.note(step, "! the swarm didn't answer: "+err.Error())
+	} else if idx == nil || fromSwarm.Version > idx.Version {
+		idx = fromSwarm
+	}
+	if idx == nil {
+		return nil, "", fmt.Errorf("neither the swarm nor %s could be reached (%v)", ipfs.IndexURL, webErr)
+	}
+	if idx.Version < r.cfg.Sources.IPFSVersion {
+		return nil, "", fmt.Errorf("the newest publish found (%s) is older than one this server already used; refusing it", idx.Created)
+	}
+	r.note(step, fmt.Sprintf("using the publish of %s: playbook %s, interzone %s", idx.Created, short(idx.Playbook.Commit), idx.Interzone))
+
+	return idx, arch, nil
+}
+
+// ipfsHost makes the target a seeder that keeps the newest publish (all of
+// it, or the images) without a homeserver: a timer runs ipfs-follow, which
+// pins each new signed publish and lets the last one go.
+func (r *Runner) ipfsHost(ctx context.Context) error {
+	r.begin(StepHost)
+	parts := r.opts.HostParts
+	if parts != "all" && parts != "images" {
+		return fmt.Errorf("choose what to host: all or images")
+	}
+	idx, arch, err := r.ipfsJoin(ctx, StepHost, true)
+	if err != nil {
+		return err
+	}
+	if err := r.registryBinary(ctx, StepHost, arch, idx); err != nil {
+		return err
+	}
+	if _, err := r.output(ctx, r.cfg.Target, followScript(parts)); err != nil {
+		return fmt.Errorf("setting up the hourly update: %w", err)
+	}
+	size := map[string]string{"all": "about 19 GB", "images": "about 15 GB"}[parts]
+	r.note(StepHost, "the server is downloading "+size+" in the background and shares it as it arrives; "+
+		"it checks for a new publish every hour. Progress: journalctl -u interzone-ipfs-follow")
+	r.note(StepHost, "to stop hosting: systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs")
+	return nil
+}
+
+// followScript installs and starts ipfs-follow's service and hourly timer.
+func followScript(parts string) string {
+	return `set -e
+cat > /etc/systemd/system/interzone-ipfs-follow.service <<'EOF'
+[Unit]
+Description=Keep the newest interzone publish on this IPFS node
+After=interzone-ipfs.service
+Requires=interzone-ipfs.service
+
+[Service]
+Type=oneshot
+DynamicUser=yes
+StateDirectory=interzone-ipfs-follow
+ExecStart=` + ipfsBin + `/interzone ipfs-follow -parts ` + parts + ` -api http://` + strings.Replace(strings.TrimPrefix(ipfsAPI, "/ip4/"), "/tcp/", ":", 1) + `
+EOF
+cat > /etc/systemd/system/interzone-ipfs-follow.timer <<'EOF'
+[Unit]
+Description=Check for a new interzone publish every hour
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=1h
+
+[Install]
+WantedBy=timers.target
+EOF
+systemctl daemon-reload
+systemctl enable --now interzone-ipfs-follow.timer
+systemctl start --no-block interzone-ipfs-follow.service`
 }
 
 // ipfsDone stops what the run started; with seeding on, the daemon keeps
@@ -364,7 +431,7 @@ func fetchURL(ctx context.Context, url string, limit int64) ([]byte, error) {
 // registryBinary puts an interzone for the server's arch at
 // /opt/interzone/interzone: this one if it fits, else the release in the
 // swarm, checked against the signed index.
-func (r *Runner) registryBinary(ctx context.Context, arch string, idx *ipfs.Index) error {
+func (r *Runner) registryBinary(ctx context.Context, step Step, arch string, idx *ipfs.Index) error {
 	t := r.cfg.Target
 	cur, _ := r.output(ctx, t, "sha256sum "+ipfsBin+"/interzone 2>/dev/null || true")
 	if runtime.GOOS == "linux" && runtime.GOARCH == arch {
@@ -379,7 +446,7 @@ func (r *Runner) registryBinary(ctx context.Context, arch string, idx *ipfs.Inde
 		if strings.HasPrefix(cur, sha256Hex(b)) {
 			return nil
 		}
-		r.note(StepIPFS, "copying interzone to the server for its image registry")
+		r.note(step, "copying interzone to the server")
 		return r.upload(ctx, ipfsBin+"/interzone", b)
 	}
 	name := "interzone-linux-" + arch
@@ -390,7 +457,7 @@ func (r *Runner) registryBinary(ctx context.Context, arch string, idx *ipfs.Inde
 	if strings.HasPrefix(cur, want) {
 		return nil
 	}
-	r.note(StepIPFS, "fetching interzone "+idx.Interzone+" for the server's image registry from the swarm")
+	r.note(step, "fetching interzone "+idx.Interzone+" for the server from the swarm")
 	_, err := r.output(ctx, t, `set -e
 runuser -u `+ipfsUser+` -- env IPFS_PATH=`+ipfsRepo+` `+ipfsBin+`/ipfs --api `+ipfsAPI+` cat --timeout=10m /ipfs/`+idx.Parts.Bin+`/`+name+` > `+ipfsBin+`/interzone.new
 echo "`+want+`  `+ipfsBin+`/interzone.new" | sha256sum -c --quiet

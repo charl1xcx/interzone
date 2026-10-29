@@ -1,9 +1,12 @@
 package cli
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"interzone/internal/ipfs"
@@ -26,4 +29,16 @@ func ServeRegistry(args []string) error {
 		return fmt.Errorf("reading the image list: %w", err)
 	}
 	return http.ListenAndServe(*listen, r)
+}
+
+// IPFSFollow runs on a hosting node from a systemd timer that interzone
+// installs (Host for IPFS): it pins the newest signed publish and lets the
+// previous one go. It isn't in Usage.
+func IPFSFollow(args []string) error {
+	fs := flag.NewFlagSet("ipfs-follow", flag.ExitOnError)
+	api := fs.String("api", "http://127.0.0.1:45001", "the IPFS daemon's RPC API")
+	parts := fs.String("parts", "all", "what to host: all, or images")
+	state := fs.String("state", filepath.Join(os.Getenv("STATE_DIRECTORY"), "follow.json"), "where to remember what is pinned")
+	parse(fs, args)
+	return ipfs.Follow(context.Background(), *api, *parts, *state, func(s string) { fmt.Println(s) })
 }

@@ -53,6 +53,7 @@ const (
 	StepDryRun
 	StepBulkUsers
 	StepIPFS
+	StepHost
 )
 
 var stepNames = map[Step]string{
@@ -85,6 +86,7 @@ var stepNames = map[Step]string{
 	StepDryRun:       "Run it without changing anything",
 	StepBulkUsers:    "Create the users",
 	StepIPFS:         "Join the IPFS swarm",
+	StepHost:         "Host for the IPFS swarm",
 }
 
 func (s Step) String() string { return stepNames[s] }
@@ -114,6 +116,7 @@ const (
 	ActionAlerts    // the server's own checks and alerts (Config.Alerts)
 	ActionDryRun    // an update in check mode, in a copy of the playbook
 	ActionBulkUsers // create Options.Users
+	ActionHost      // host the swarm's files on the target, no homeserver (Options.HostParts)
 )
 
 // Plan lists the steps an action runs, in order.
@@ -157,6 +160,8 @@ func Plan(a Action) []Step {
 		return []Step{StepAnsible, StepDryPlaybook, StepInventory, StepRoles, StepDryRun}
 	case ActionBulkUsers:
 		return []Step{StepAnsible, StepInventory, StepBulkUsers}
+	case ActionHost:
+		return []Step{StepHost}
 	case ActionMigrate:
 		return []Step{StepAnsible, StepPlaybook, StepInventory, StepRoles, StepStopOld, StepCopyData, StepMirrors, StepInstall, StepSelfCheck}
 	}
@@ -216,6 +221,8 @@ type Options struct {
 	Tags  string
 	Vars  map[string]string
 	Title string
+	// ActionHost: what to keep and share, "all" or "images".
+	HostParts string
 }
 
 func dataDir() string   { return config.DataDir() }
@@ -342,6 +349,7 @@ func (r *Runner) run(ctx context.Context) error {
 		StepDryRun:       r.dryRun,
 		StepBulkUsers:    r.bulkUsers,
 		StepIPFS:         r.ipfsSetup,
+		StepHost:         r.ipfsHost,
 	}
 	plan := Plan(r.opts.Action)
 	if r.cfg.Sources.IPFS && usesDownloads(plan) {

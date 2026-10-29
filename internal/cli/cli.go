@@ -38,6 +38,7 @@ var Commands = map[string]func(args []string) error{
 	"mirrors":  Mirrors,
 
 	"serve-registry": ServeRegistry,
+	"ipfs-follow":    IPFSFollow,
 }
 
 const Usage = `Usage:
