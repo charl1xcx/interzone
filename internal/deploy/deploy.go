@@ -391,7 +391,7 @@ func (r *Runner) playbook(ctx context.Context) error {
 	dir := r.cfg.PlaybookDir
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
 		before := r.gitHead(dir)
-		err := r.exec(ctx, StepPlaybook, dir, "git", "remote", "set-url", "origin", r.cfg.Sources.PlaybookGit)
+		err := r.exec(ctx, StepPlaybook, dir, "git", "remote", "set-url", "--", "origin", r.cfg.Sources.PlaybookGit)
 		if pin := r.cfg.PinnedCommit; err == nil && pin != "" {
 			err = r.checkout(ctx, dir, pin)
 			r.playbookUpdated = before != r.gitHead(dir)
@@ -419,7 +419,7 @@ func (r *Runner) playbook(ctx context.Context) error {
 		return err
 	}
 	r.playbookUpdated = true
-	if err := r.exec(ctx, StepPlaybook, "", "git", "clone", "--depth", "1", r.cfg.Sources.PlaybookGit, dir); err != nil {
+	if err := r.exec(ctx, StepPlaybook, "", "git", "clone", "--depth", "1", "--", r.cfg.Sources.PlaybookGit, dir); err != nil {
 		return err
 	}
 	if pin := r.cfg.PinnedCommit; pin != "" {

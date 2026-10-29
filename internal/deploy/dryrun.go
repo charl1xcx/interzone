@@ -29,7 +29,7 @@ func (r *Runner) dryPlaybook(ctx context.Context) error {
 			return err
 		}
 	}
-	if err := r.exec(ctx, StepDryPlaybook, dir, "git", "fetch", "--quiet", r.cfg.Sources.PlaybookGit, defaultBranch(dir)); err != nil {
+	if err := r.exec(ctx, StepDryPlaybook, dir, "git", "fetch", "--quiet", "--", r.cfg.Sources.PlaybookGit, defaultBranch(dir)); err != nil {
 		return err
 	}
 	return r.exec(ctx, StepDryPlaybook, dir, "git", "checkout", "--quiet", "--force", "--detach", "FETCH_HEAD")

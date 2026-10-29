@@ -88,7 +88,7 @@ func Preflight(c *config.Config) []Check {
 }
 
 func gitReachable(ctx context.Context, url string) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", url, "HEAD")
+	cmd := exec.CommandContext(ctx, "git", "ls-remote", "--", url, "HEAD")
 	cmd.Env = append(cmd.Environ(), "GIT_TERMINAL_PROMPT=0")
 	b, err := cmd.Output()
 	if err != nil {

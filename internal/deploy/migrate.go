@@ -31,7 +31,7 @@ func sshArgs(t config.Target) []string {
 	if t.SSHKey != "" {
 		args = append(args, "-i", config.ExpandHome(t.SSHKey))
 	}
-	return append(args, t.User+"@"+t.Host)
+	return append(args, "--", t.User+"@"+t.Host) // --: a user or host starting with - isn't an option
 }
 
 // sshReuse keeps one connection per server open for a while and shares it

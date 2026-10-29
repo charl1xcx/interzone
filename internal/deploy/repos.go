@@ -107,7 +107,7 @@ func gitHasVersion(ctx context.Context, url, version string) (string, error) {
 		}
 		return d, err
 	}
-	cmd := exec.CommandContext(ctx, "git", "ls-remote", url, "refs/tags/"+version, "refs/heads/"+version)
+	cmd := exec.CommandContext(ctx, "git", "ls-remote", "--", url, "refs/tags/"+version, "refs/heads/"+version)
 	cmd.Env = append(cmd.Environ(), "GIT_TERMINAL_PROMPT=0")
 	b, err := cmd.Output()
 	switch {

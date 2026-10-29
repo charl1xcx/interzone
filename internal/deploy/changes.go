@@ -227,7 +227,7 @@ func FetchPlaybook(ctx context.Context, c *config.Config) error {
 	if err := os.MkdirAll(filepath.Dir(c.PlaybookDir), 0o755); err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", c.Sources.PlaybookGit, c.PlaybookDir)
+	cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", "--", c.Sources.PlaybookGit, c.PlaybookDir)
 	cmd.Env = Env(c)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
