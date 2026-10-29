@@ -64,7 +64,7 @@ func PreviewUpdate(ctx context.Context, c *config.Config) (*Changes, error) {
 		}
 		return strings.TrimSpace(string(out)), nil
 	}
-	if _, err := git("fetch", "--quiet", c.Sources.PlaybookGit, defaultBranch(dir)); err != nil {
+	if _, err := git("fetch", "--quiet", "--", c.Sources.PlaybookGit, defaultBranch(dir)); err != nil {
 		return nil, err
 	}
 	ch := &Changes{}

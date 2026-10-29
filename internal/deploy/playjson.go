@@ -26,6 +26,31 @@ func (t TaskResult) String(key string) string {
 // runPlayJSON runs a play against the server with Ansible's json output
 // and returns each named task's result. vars are passed through a
 // temporary owner-only file so secrets never show up in ps.
+// writeVarsFile writes extra vars that hold secrets to a 0600 file in the
+// inventory, for "-e @file"; the caller removes it.
+func writeVarsFile(dir string, vars any) (string, error) {
+	f, err := os.CreateTemp(filepath.Join(dir, "inventory"), ".interzone-vars-*.json")
+	if err != nil {
+		return "", err
+	}
+	err = json.NewEncoder(f).Encode(vars)
+	if cerr := f.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		os.Remove(f.Name())
+		return "", err
+	}
+	return f.Name(), nil
+}
+
+// jsonVars is extra vars as JSON, which Ansible doesn't split on spaces
+// the way it does key=value.
+func jsonVars(vars map[string]string) string {
+	b, _ := json.Marshal(vars)
+	return string(b)
+}
+
 func runPlayJSON(ctx context.Context, c *config.Config, name, play string, vars map[string]any, args ...string) (map[string]TaskResult, error) {
 	bin, err := lookPath("ansible-playbook")
 	if err != nil {
@@ -56,17 +81,12 @@ func runPlayJSON(ctx context.Context, c *config.Config, name, play string, vars 
 	}
 	cmdArgs := []string{"-i", "inventory/hosts", playFile}
 	if len(vars) > 0 {
-		f, err := os.CreateTemp(filepath.Join(dir, "inventory"), ".interzone-vars-*.json")
+		f, err := writeVarsFile(dir, vars)
 		if err != nil {
 			return nil, err
 		}
-		defer os.Remove(f.Name())
-		if err := json.NewEncoder(f).Encode(vars); err != nil {
-			f.Close()
-			return nil, err
-		}
-		f.Close()
-		cmdArgs = append(cmdArgs, "-e", "@"+f.Name())
+		defer os.Remove(f)
+		cmdArgs = append(cmdArgs, "-e", "@"+f)
 	}
 	cmd := exec.CommandContext(ctx, bin, append(cmdArgs, args...)...)
 	cmd.Dir = dir

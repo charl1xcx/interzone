@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -21,12 +22,18 @@ type LocalBackup struct {
 	Size int64
 }
 
+var backupStamp = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}-\d{4}\.sql\.gz$`)
+
 // ListBackups returns the dumps of domain in BackupDir, newest first: those
 // "Back up the database" made and those downloaded from the server.
 func ListBackups(domain string) []LocalBackup {
 	m, _ := filepath.Glob(filepath.Join(BackupDir(), domain+"-*.sql.gz"))
 	var out []LocalBackup
 	for _, f := range m {
+		// a.org-* also matches a.org-b.net's dumps.
+		if !backupStamp.MatchString(strings.TrimPrefix(filepath.Base(f), domain+"-")) {
+			continue
+		}
 		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
 			out = append(out, LocalBackup{Path: f, Time: st.ModTime(), Size: st.Size()})
 		}
@@ -105,7 +112,7 @@ func (r *Runner) restore(ctx context.Context) error {
 		return r.exec(ctx, StepRestore, dir, "ansible-playbook", append([]string{"-i", "inventory/hosts"}, args...)...)
 	}
 	r.note(StepRestore, "stopping every service and emptying the database…")
-	if err := play(prep, "-e", "interzone_restore_src="+src); err != nil {
+	if err := play(prep, "-e", jsonVars(map[string]string{"interzone_restore_src": src})); err != nil {
 		return err
 	}
 	r.note(StepRestore, "creating an empty database…")

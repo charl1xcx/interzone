@@ -243,7 +243,6 @@ func Env(c *config.Config) []string {
 		"GIT_TERMINAL_PROMPT=0",
 		"ANSIBLE_NOCOLOR=1",
 		"ANSIBLE_FORCE_COLOR=0",
-		"ANSIBLE_HOST_KEY_CHECKING=False",
 		"ANSIBLE_STDOUT_CALLBACK=default",
 		"PATH="+filepath.Join(venvDir(), "bin")+string(os.PathListSeparator)+os.Getenv("PATH"),
 	)
@@ -258,9 +257,10 @@ func Env(c *config.Config) []string {
 	if idx := c.Sources.PyPIIndex; idx != "" {
 		env = append(env, "PIP_INDEX_URL="+idx)
 	}
-	if reuse := sshReuse(); reuse != nil {
-		env = append(env, "ANSIBLE_SSH_ARGS=-C "+strings.Join(reuse, " "))
-	}
+	// A server seen before must still have the same key, as for
+	// interzone's own ssh calls: Ansible hands it the sudo password and
+	// every secret.
+	env = append(env, "ANSIBLE_SSH_ARGS="+strings.Join(append([]string{"-C", "-o", "StrictHostKeyChecking=accept-new"}, sshReuse()...), " "))
 	return env
 }
 
@@ -570,8 +570,13 @@ func (r *Runner) register(ctx context.Context) error {
 	if u.Admin {
 		admin = "yes"
 	}
-	vars, _ := json.Marshal(map[string]string{"username": u.Name, "password": u.Password, "admin": admin})
-	return r.playbookRun(ctx, StepRegister, "--tags=register-user", "--extra-vars", string(vars))
+	// Through a 0600 file: on the command line, ps shows the password.
+	f, err := writeVarsFile(r.cfg.PlaybookDir, map[string]string{"username": u.Name, "password": u.Password, "admin": admin})
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f)
+	return r.playbookRun(ctx, StepRegister, "--tags=register-user", "--extra-vars", "@"+f)
 }
 
 var validateVar = regexp.MustCompile(`(?m)^([a-z0-9_]+_self_check_validate_certificates):`)
@@ -706,7 +711,7 @@ func (r *Runner) backup(ctx context.Context) error {
 		return err
 	}
 	if err := r.exec(ctx, StepBackup, r.cfg.PlaybookDir, "ansible-playbook", "-i", "inventory/hosts", play,
-		"-e", "interzone_backup_dest="+dest); err != nil {
+		"-e", jsonVars(map[string]string{"interzone_backup_dest": dest})); err != nil {
 		return err
 	}
 	_ = os.Chmod(dest, 0o600)

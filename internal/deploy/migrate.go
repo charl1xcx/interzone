@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"interzone/internal/config"
@@ -41,6 +42,15 @@ func sshArgs(t config.Target) []string {
 func sshReuse() []string {
 	dir := filepath.Join(os.TempDir(), fmt.Sprintf("interzone-ssh-%d", os.Getuid()))
 	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return nil
+	}
+	// In a shared /tmp someone else could have made it first, and planted
+	// a socket that ssh would hand the session (and the sudo password) to.
+	fi, err := os.Lstat(dir)
+	if err != nil || !fi.IsDir() || fi.Mode().Perm() != 0o700 {
+		return nil
+	}
+	if st, ok := fi.Sys().(*syscall.Stat_t); !ok || int(st.Uid) != os.Getuid() {
 		return nil
 	}
 	return []string{"-o", "ControlMaster=auto", "-o", "ControlPersist=10m", "-o", "ControlPath=" + filepath.Join(dir, "%C"),
