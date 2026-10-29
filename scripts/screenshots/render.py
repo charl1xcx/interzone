@@ -6,13 +6,14 @@
 #     Puts already rendered windows side by side (docs/screenshots/phone.png).
 #
 # Needs Pillow, fontTools and the DejaVu and Noto symbol fonts.
-import re, sys
+import re, sys, unicodedata
 from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
 SIZE = 26
 FONTS = ["/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/TTF/DejaVuSansMono-Bold.ttf"]
 FALLBACK = ["/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/noto/NotoSansSymbols2-Regular.ttf", "/usr/share/fonts/noto/NotoSansMath-Regular.ttf"]
+EMOJI = "/usr/share/fonts/noto/NotoColorEmoji.ttf"  # a bitmap font: drawn at 109 px, then scaled
 BG, FG = (21, 19, 30), (220, 216, 235)
 
 reg = ImageFont.truetype(FONTS[0], SIZE)
@@ -47,6 +48,14 @@ def draw_cell(d, ch, px, py, fg):
     if "l" in a: d.rectangle([px, my - 1, mx, my], fill=fg)
     if "r" in a: d.rectangle([mx, my - 1, r, my], fill=fg)
     return True
+
+def draw_emoji(img, ch, px, py):
+    e = Image.new("RGBA", (160, 160))
+    ImageDraw.Draw(e).text((0, 0), ch, font=ImageFont.truetype(EMOJI, 109), embedded_color=True)
+    e = e.crop(e.getbbox())
+    h = CH - 6
+    e = e.resize((max(1, round(e.width * h / e.height)), h), Image.LANCZOS)
+    img.paste(e, (px + (2 * CW - e.width) // 2, py + 3), e)
 
 def finish(img, out, width=None):
     if width:
@@ -95,7 +104,10 @@ for line in lines:
         if line[i] == "\x1b":  # other escapes
             m2 = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]").match(line, i)
             i = m2.end() if m2 else i + 1; continue
-        row.append((line[i], fg, bg, b)); i += 1
+        row.append((line[i], fg, bg, b))
+        if unicodedata.east_asian_width(line[i]) in "WF":
+            row.append(("", fg, bg, b))  # it takes two cells, as in the terminal
+        i += 1
     cells.append(row)
 
 cols = max(len(r) for r in cells); rows = len(cells)
@@ -113,9 +125,11 @@ for y, row in enumerate(cells):
     for x, (ch, fg, bg, b) in enumerate(row):
         px, py = tx + x * CW, ty + y * CH
         if bg: d.rectangle([px, py, px + CW - 1, py + CH - 1], fill=bg)
-        if ch != " ":
+        if ch not in (" ", ""):
             # block and box characters stretch over the whole cell so they join
             if draw_cell(d, ch, px, py, fg): continue
+            if ch and font_for(ch, b) is reg and ord(ch) not in cmap and unicodedata.east_asian_width(ch) == "W":
+                draw_emoji(img, ch, px, py); continue
             d.text((px, py + 1), ch, font=font_for(ch, b), fill=fg)
 bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
 finish(Image.alpha_composite(bg, img), sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else None)
