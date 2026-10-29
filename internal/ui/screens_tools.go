@@ -317,8 +317,11 @@ func (s *historyScreen) rollback(d deploy.Deploy) tea.Cmd {
 	if err != nil {
 		return nil
 	}
-	// Keep the answers being replaced, in case they're wanted back.
-	_ = s.cfg.SaveFile(filepath.Join(config.Dir(), "config.before-rollback.json"))
+	// Keep the answers being replaced, in case they're wanted back; without
+	// that copy, don't replace them.
+	if err := s.cfg.SaveFile(config.BeforeRollbackPath()); err != nil {
+		return nil
+	}
 	*s.cfg = *rc
 	_ = s.cfg.Save()
 	return run(deploy.Options{Action: deploy.ActionRollback})
@@ -342,7 +345,7 @@ func (s *historyScreen) view(w, h int) string {
 		d := s.list[s.cursor]
 		out += "\n\n" + confirmView(w,
 			sWarn.Render("Roll back to "+d.Time.Local().Format("2006-01-02 15:04")+"?"),
-			sSub.Render("The playbook goes back to "+d.Commit[:min(10, len(d.Commit))]+" and your answers to the ones used then (today's are kept in config.before-rollback.json). The database is backed up first."),
+			sSub.Render("The playbook goes back to "+d.Commit[:min(10, len(d.Commit))]+" and your answers to the ones used then (today's are kept in "+tildePath(config.BeforeRollbackPath())+"). The database is backed up first."),
 			sSub.Render("Newer homeserver versions may have changed the database in ways an older one can't read; if it fails to start, restore the backup taken now with Manage › Restore."),
 			"", confirmKeys("enter", "roll back"))
 	}
