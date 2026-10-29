@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
+	"unicode"
 
 	"interzone/internal/config"
 )
@@ -28,6 +30,22 @@ func (r Room) Title() string {
 		return r.Alias
 	}
 	return r.ID
+}
+
+// Printable makes text anyone on Matrix can set safe to draw: control
+// characters (escapes, tabs, newlines) become spaces, and zero-width joiners
+// go: terminals disagree on how wide a joined emoji is, and a line drawn
+// wider than planned wraps and garbles the screen.
+func Printable(s string) string {
+	return strings.Map(func(r rune) rune {
+		switch {
+		case r == '\u200d':
+			return -1
+		case unicode.IsControl(r):
+			return ' '
+		}
+		return r
+	}, s)
 }
 
 // ListRooms returns every room on the server, biggest first.
@@ -66,7 +84,7 @@ func parseRooms(out []byte) ([]Room, error) {
 	}
 	rooms := make([]Room, 0, len(v.Rooms))
 	for _, r := range v.Rooms {
-		rooms = append(rooms, Room{ID: r.ID, Name: str(r.Name), Alias: str(r.Alias), Creator: r.Creator,
+		rooms = append(rooms, Room{ID: r.ID, Name: Printable(str(r.Name)), Alias: Printable(str(r.Alias)), Creator: Printable(r.Creator),
 			Members: r.Members, Local: r.Local, Events: r.Events, Public: r.Public,
 			Encrypted: str(r.Encrypted) != "", Federated: r.Federated, Blocked: r.Blocked})
 	}

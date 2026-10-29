@@ -151,7 +151,9 @@ func (a *App) jump(n int) tea.Cmd {
 	if sec := a.section(); sec != was {
 		a.openSection(sec)
 	}
-	return a.cur().enter(a.cfg)
+	// A repaint: a line the terminal drew wider than measured (some emoji)
+	// would otherwise leave the last screen's rows behind.
+	return tea.Batch(a.cur().enter(a.cfg), tea.ClearScreen)
 }
 
 // ownedMsg is a result for one screen, named by owner.

@@ -345,7 +345,7 @@ func parseUsers(out []byte, admins map[string]bool) (*UserList, error) {
 		if admins != nil {
 			admin = admins[localpart(u.Name)]
 		}
-		mu := MatrixUser{ID: u.Name, DisplayName: u.DisplayName, Admin: admin,
+		mu := MatrixUser{ID: u.Name, DisplayName: Printable(u.DisplayName), Admin: admin,
 			Deactivated: truthy(u.Deactivated), Created: msTime(u.Created), LastSeen: msTime(u.LastSeen),
 			Bridge: u.Appservice, Bot: u.Bot, Rooms: count(u.Rooms), Devices: count(u.Devices),
 			Emails: u.Threepids, Type: u.UserType, Locked: truthy(u.Locked), ShadowBanned: truthy(u.ShadowBanned), Avatar: u.Avatar != ""}

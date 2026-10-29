@@ -773,7 +773,7 @@ func FollowLogs(ctx context.Context, c *config.Config, unit string) (<-chan stri
 		sc.Buffer(make([]byte, 64*1024), 1024*1024)
 		var last string
 		for sc.Scan() {
-			last = sc.Text()
+			last = Printable(sc.Text())
 			select {
 			case ch <- last:
 			case <-ctx.Done():

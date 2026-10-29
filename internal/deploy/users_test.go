@@ -36,3 +36,16 @@ func TestParseUsers(t *testing.T) {
 		t.Errorf("the puppet: %+v", puppet)
 	}
 }
+
+func TestPrintable(t *testing.T) {
+	for in, want := range map[string]string{
+		"tab\there\nnext": "tab here next",
+		"esc \x1b[2Jred":  "esc  [2Jred",
+		"👨‍👩 ✌️ ok":       "👨👩 ✌️ ok",
+		"گروه 日本":         "گروه 日本",
+	} {
+		if got := Printable(in); got != want {
+			t.Errorf("Printable(%q) = %q, want %q", in, got, want)
+		}
+	}
+}

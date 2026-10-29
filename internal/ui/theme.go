@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lucasb-eyer/go-colorful"
 	"github.com/muesli/termenv"
+	"github.com/rivo/uniseg"
 
 	"interzone/internal/config"
 )
@@ -170,28 +172,33 @@ func gradientStops() []string {
 	return []string{pick(cPurple), pick(cPink), pick(cMint)}
 }
 
-// gradient colours each rune of s along the theme's ramp.
+// gradient colours each character of s along the theme's ramp. It steps by
+// grapheme, so an emoji isn't split from its variation selector: apart,
+// they'd be measured narrower than the terminal draws them.
 func gradient(s string) string {
 	stops := gradientStops()
-	runes := []rune(s)
+	var chars []string
+	for g := uniseg.NewGraphemes(s); g.Next(); {
+		chars = append(chars, g.Str())
+	}
 	n := 0
-	for _, r := range runes {
-		if r != ' ' && r != '\n' {
+	for _, r := range chars {
+		if r != " " && r != "\n" {
 			n++
 		}
 	}
 	var b strings.Builder
 	i := 0
-	for _, r := range runes {
-		if r == ' ' || r == '\n' {
-			b.WriteRune(r)
+	for _, r := range chars {
+		if r == " " || r == "\n" {
+			b.WriteString(r)
 			continue
 		}
 		t := 0.0
 		if n > 1 {
 			t = float64(i) / float64(n-1)
 		}
-		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(ramp(stops, t))).Render(string(r)))
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color(ramp(stops, t))).Render(r))
 		i++
 	}
 	return b.String()
@@ -263,11 +270,10 @@ func truncate(s string, w int) string {
 	if w <= 1 {
 		return ""
 	}
-	r := []rune(s)
-	if len(r) <= w {
+	if ansi.StringWidth(s) <= w {
 		return s
 	}
-	return string(r[:w-1]) + "…"
+	return ansi.Truncate(s, w, "…") // by width: CJK and emoji take two cells
 }
 
 // truncateMid shortens s to w runes by cutting its middle, so names that
