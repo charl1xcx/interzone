@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││     ▼ 42 more · ↑↓ scroll                                                                  │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- enter deploy · c check again · v details · z DNS records · ↑↓ scroll · s save files only · esc back · ctrl+c quit      
+ enter deploy · c check again · v details · z DNS records · ↑↓ scroll · s save files only · esc back · ? all keys       

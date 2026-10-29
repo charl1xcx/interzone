@@ -47,4 +47,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                                                                                        │
 │ ◂ fold   ctrl+b menu   ││                                                                                                                                                        │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select   ·   / search   ·   f filter   ·   o sort   ·   n new   ·   p password   ·   a admin   ·   d deactivate   ·   s sign out   ·   r reload   ·   esc back   ·   ctrl+c quit
+ ↑↓ select · / search · f filter · o sort · n new · p password · a admin · d deactivate · s sign out · r reload · esc back · ? all keys · ctrl+c quit                               

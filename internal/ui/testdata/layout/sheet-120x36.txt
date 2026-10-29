@@ -1,36 +1,36 @@
  ◢◤ interzone  matrix, deployed anywhere                                                                        ONLINE  
 ╭────────────────────────╮╭────────────────────────────────────────────────────────────────────────────────────────────╮
 │ ▸ Setup                ││                                                                                            │
-│                        ││   Manage example.org                                                                       │
+│                        ││   Keys  any key closes this                                                                │
 │ ▾ Manage example.org   ││                                                                                            │
-│ ▌ ⌂ Overview           ││   Keep it running ──────────────────────────────────────────────────────────────────────   │
-│   @ Users              ││   ╭────────────────────────────────────────────────────────────────────────────────────╮   │
-│   # Rooms              ││   │ ↻  Update the server                                                            u  │   │
-│   ▦ Dashboard          ││   │    Pull the latest playbook and roles, then re-run the install with your saved     │   │
-│   ↻ Updates            ││   │    answers. Also applies any changes you made in the setup.                        │   │
-│   ◷ Backups            ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
-│   ⚑ Alerts             ││     ✓  Check services                                                               c      │
-│   ↺ Restore            ││     ↯  Restart all services                                                         r      │
-│   ↶ Rollback           ││     ±  See what an update brings                                                    n      │
-│   ✎ Fine-tune          ││     ▣  Check container images                                                       i      │
-│   ⚒ Maintenance        ││     ⚑  Alerts                                                                              │
-│   ⇢ Move server        ││     ⏻  Start, stop or reinstall services                                            p      │
-│   ▤ Servers            ││     ⇪  Update interzone                                                                    │
+│ ▌ ⌂ Overview           ││   On this screen                               P        Upgrade Postgres                   │
+│   @ Users              ││     ↑↓       select                            C        Compress Synapse's state           │
+│   # Rooms              ││     enter    run                               d        Server dashboard                   │
+│   ▦ Dashboard          ││     a–z      shortcuts                         l        View logs                          │
+│   ↻ Updates            ││     u        Update the server                 f        Fine-tune the roles                │
+│   ◷ Backups            ││     c        Check services                    $        Database shell                     │
+│   ⚑ Alerts             ││     r        Restart all services              x        Run playbook tags                  │
+│   ↺ Restore            ││     n        See what an update brings         w        Change the setup                   │
+│   ↶ Rollback           ││     i        Check container images            v        Move to another server             │
+│   ✎ Fine-tune          ││     A        Alerts                            o        Other servers                      │
+│   ⚒ Maintenance        ││     p        Start, stop or reinstall serv…    X        Uninstall everything               │
+│   ⇢ Move server        ││     U        Update interzone                                                              │
+│   ▤ Servers            ││     a        Add a user                      Anywhere                                      │
+│                        ││     m        Manage users                      ctrl+b   the menu                           │
+│ ▸ Mirrors              ││     R        Manage rooms                      esc      back                               │
+│                        ││     b        Back up the database              ?        these keys                         │
+│ ▸ Test                 ││     s        Scheduled backups                 ctrl+s   save answers                       │
+│                        ││     e        Restore a backup                  ctrl+l   layout: auto (wide)                │
+│ ▾ Servers              ││     z        Roll back                         ctrl+y   theme: interzone                   │
+│   ● example.org        ││     D        Disk space                        q        quit, when not typing              │
+│                        ││     V        Vacuum the database               ctrl+c   quit                               │
 │                        ││                                                                                            │
-│ ▸ Mirrors              ││   People ───────────────────────────────────────────────────────────────────────────────   │
-│                        ││     +  Add a user                                                                   a      │
-│ ▸ Test                 ││     @  Manage users                                                                 m      │
-│                        ││     #  Manage rooms                                                                        │
-│ ▾ Servers              ││                                                                                            │
-│   ● example.org        ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
-│                        ││     ⇩  Back up the database                                                         b      │
-│                        ││     ◷  Scheduled backups                                                            s      │
-│                        ││     ↺  Restore a backup                                                             e      │
-│                        ││     ↶  Roll back                                                                    z      │
-│                        ││     ◔  Disk space                                                                          │
-│                        ││     ⌫  Vacuum the database                                                                 │
-│ ◫ auto (wide)  ctrl+l  ││     ⇡  Upgrade Postgres                                                                    │
-│ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│                        ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         
+ ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ? all keys   ·   ctrl+c quit                        

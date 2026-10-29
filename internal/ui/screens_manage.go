@@ -76,7 +76,10 @@ var runsAtOnce = map[string]bool{"update": true, "check": true, "restart": true,
 var hotkeys = map[string]string{"update": "u", "check": "c", "restart": "r", "user": "a", "registration": "g",
 	"users": "m", "tokens": "t", "dashboard": "d", "changes": "n", "images": "i", "backup": "b", "schedule": "s",
 	"restore": "e", "rollback": "z", "logs": "l", "tuning": "f", "setup": "w", "migrate": "v", "servers": "o",
-	"services": "p", "tags": "x"}
+	"services": "p", "tags": "x",
+	// No lowercase letter left that means them: the capital of their name.
+	"alerts": "A", "rooms": "R", "selfupdate": "U", "disk": "D", "vacuum": "V", "pgupgrade": "P", "compress": "C",
+	"psql": "$", "uninstall": "X"}
 
 type manageScreen struct {
 	cfg      *config.Config
@@ -124,6 +127,20 @@ func (s *manageScreen) keys() [][2]string {
 		return [][2]string{{"↑↓", "scroll"}, {"end", "follow"}}
 	}
 	return [][2]string{{"↑↓", "select"}, {"enter", "run"}, {"a–z", "shortcuts"}}
+}
+
+// moreKeys are the action shortcuts, for the ? sheet.
+func (s *manageScreen) moreKeys() [][2]string {
+	if s.mode != modeList {
+		return nil
+	}
+	var out [][2]string
+	for _, a := range s.actions() {
+		if k := hotkeys[a.id]; k != "" && a.disabled == "" {
+			out = append(out, [2]string{k, a.title})
+		}
+	}
+	return out
 }
 
 // inSubview reports whether esc should return to the action list rather

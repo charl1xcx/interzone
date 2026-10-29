@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select · enter hide · / search · f filter · o sort · n new · r reload · esc back · ctrl+c quit                      
+ ↑↓ select · enter hide · / search · f filter · o sort · n new · r reload · esc back · ? all keys · ctrl+c quit         

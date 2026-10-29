@@ -9,12 +9,12 @@
    ↯  Restart all services                 r    
    ±  See what an update brings            n    
    ▣  Check container images               i    
-   ⚑  Alerts                                    
+   ⚑  Alerts                               A    
    ⏻  Start, stop or reinstall services    p    
-   ⇪  Update interzone                          
+   ⇪  Update interzone                     U    
  People ─────────────────────────────────────── 
    +  Add a user                           a    
    @  Manage users                         m    
-   #  Manage rooms                              
+   #  Manage rooms                         R    
    ▼ more below                                 
     ‹ back       ≡ menu        run ›        ⋯  

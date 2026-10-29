@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select   ·   enter choose   ·   s save as preset   ·   esc back   ·   ctrl+c quit                                   
+ ↑↓ select   ·   enter choose   ·   s save as preset   ·   esc back   ·   ? all keys   ·   ctrl+c quit                  

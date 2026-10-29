@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select   ·   b block   ·   h delete old history   ·   x delete room   ·   r reload   ·   esc back   ·   ctrl+c quit 
+ ↑↓ select · b block · h delete old history · x delete room · r reload · esc back · ? all keys · ctrl+c quit            

@@ -12,25 +12,25 @@
 │   ⚑ Alerts             ││   ╰────────────────────────────────────────────────────────────────────────────────────╯   │
 │   ↺ Restore            ││     ±  See what an update brings                                                    n      │
 │   ↶ Rollback           ││     ▣  Check container images                                                       i      │
-│   ✎ Fine-tune          ││     ⚑  Alerts                                                                              │
+│   ✎ Fine-tune          ││     ⚑  Alerts                                                                       A      │
 │   ⚒ Maintenance        ││     ⏻  Start, stop or reinstall services                                            p      │
-│   ⇢ Move server        ││     ⇪  Update interzone                                                                    │
+│   ⇢ Move server        ││     ⇪  Update interzone                                                             U      │
 │   ▤ Servers            ││                                                                                            │
 │                        ││   People ───────────────────────────────────────────────────────────────────────────────   │
 │ ▸ Mirrors              ││     +  Add a user                                                                   a      │
 │                        ││     @  Manage users                                                                 m      │
-│ ▸ Test                 ││     #  Manage rooms                                                                        │
+│ ▸ Test                 ││     #  Manage rooms                                                                 R      │
 │                        ││                                                                                            │
 │ ▾ Servers              ││   Data ─────────────────────────────────────────────────────────────────────────────────   │
 │   ● example.org        ││     ⇩  Back up the database                                                         b      │
 │                        ││     ◷  Scheduled backups                                                            s      │
 │                        ││     ↺  Restore a backup                                                             e      │
 │                        ││     ↶  Roll back                                                                    z      │
-│                        ││     ◔  Disk space                                                                          │
-│                        ││     ⌫  Vacuum the database                                                                 │
-│                        ││     ⇡  Upgrade Postgres                                                                    │
-│ ◫ auto (wide)  ctrl+l  ││     ⇲  Compress Synapse's state                                                            │
+│                        ││     ◔  Disk space                                                                   D      │
+│                        ││     ⌫  Vacuum the database                                                          V      │
+│                        ││     ⇡  Upgrade Postgres                                                             P      │
+│ ◫ auto (wide)  ctrl+l  ││     ⇲  Compress Synapse's state                                                     C      │
 │ ◐ interzone  ctrl+y    ││     ▼ more below                                                                           │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ctrl+c quit                                         
+ ↑↓ select   ·   enter run   ·   a–z shortcuts   ·   esc back   ·   ? all keys   ·   ctrl+c quit                        

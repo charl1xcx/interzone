@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││     ↓ 20 more lines · ↑↓ scroll                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- r refresh   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                                                             
+ r refresh   ·   ↑↓ scroll   ·   esc back   ·   ? all keys   ·   ctrl+c quit                                            

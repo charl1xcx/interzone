@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- enter begin   ·   i import a setup   ·   s servers   ·   m mirrors   ·   ctrl+c quit                                   
+ enter begin   ·   i import a setup   ·   s servers   ·   m mirrors   ·   ? all keys   ·   ctrl+c quit                  

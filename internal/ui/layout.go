@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	zone "github.com/lrstanley/bubblezone"
 
 	"interzone/internal/config"
@@ -118,7 +119,7 @@ func (a *App) compactView() string {
 	case a.menuOpen:
 		content = a.menuScrolled(a.menuTiles(inner)+"\n"+a.menuLink("app:layout", "◫", a.layoutName(), "")+"     "+a.menuLink("app:theme", "◐", themeName, ""), bodyH)
 	case a.sheetOpen:
-		content = a.sheetView(inner)
+		content = a.sheetView(inner, bodyH)
 	default:
 		gap := "\n\n"
 		if tight {
@@ -297,7 +298,31 @@ func boolInt(b bool) int {
 
 // sheetView lists every key the screen takes, each a row to tap, plus the
 // ones that work everywhere.
-func (a *App) sheetView(inner int) string {
+func (a *App) sheetView(inner, h int) string {
+	lines, mine := a.sheetLines(inner)
+	// Too long for the wide layout's panel: side by side.
+	if cols := (len(lines) + h - 1) / max(1, h); !a.compact() && cols > 1 && inner/cols >= 30 {
+		lines, _ = a.sheetLines(inner/cols - 2)
+		per := (len(lines) + cols - 1) / cols
+		if cols == 2 && mine <= h && len(lines)-mine-1 <= h {
+			per = mine + 1 // each section its own column
+		}
+		var blocks []string
+		for i := 0; i < len(lines); i += per {
+			col := slices.Clone(lines[i:min(len(lines), i+per)])
+			for j := range col {
+				col[j] = ansi.Truncate(col[j], inner/cols-2, "…")
+			}
+			blocks = append(blocks, lipgloss.NewStyle().Width(inner/cols).Render(strings.Join(col, "\n")))
+		}
+		return lipgloss.JoinHorizontal(lipgloss.Top, blocks...)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// sheetLines are the sheet's rows, w wide, and how many are this screen's.
+func (a *App) sheetLines(inner int) ([]string, int) {
+	spaced := a.compact() && !tight // a row each to tap
 	row := func(key, desc string) []string {
 		label := sKey.Render(fmt.Sprintf("%-8s", key)) + " " + sTitle.Render(desc)
 		if _, ok := keyMsg(key); !ok {
@@ -307,21 +332,31 @@ func (a *App) sheetView(inner int) string {
 	}
 	var lines []string
 	lines = append(lines, sSection.Render("On this screen"))
-	for _, k := range a.cur().keys() {
-		if k[0] == "enter" || k[0] == "esc" {
+	keys := a.cur().keys()
+	if mk, ok := a.cur().(interface{ moreKeys() [][2]string }); ok && !a.compact() { // a phone taps them
+		keys = append(slices.Clone(keys), mk.moreKeys()...)
+	}
+	for _, k := range keys {
+		if a.compact() && (k[0] == "enter" || k[0] == "esc") {
 			continue // on the bar
 		}
 		lines = append(lines, row(k[0], k[1])...)
-		if !tight {
+		if spaced {
 			lines = append(lines, "")
 		}
 	}
+	mine := len(lines)
 	lines = append(lines, "", sSection.Render("Anywhere"))
-	for _, k := range [][2]string{{"ctrl+s", "save answers"}, {"ctrl+l", "layout: " + a.layoutName()}, {"ctrl+y", "theme: " + themeName}, {"ctrl+c", "quit"}} {
+	anywhere := [][2]string{{"ctrl+b", "the menu"}, {"esc", "back"}, {"?", "these keys"}, {"ctrl+s", "save answers"},
+		{"ctrl+l", "layout: " + a.layoutName()}, {"ctrl+y", "theme: " + themeName}, {"q", "quit, when not typing"}, {"ctrl+c", "quit"}}
+	if a.compact() {
+		anywhere = slices.DeleteFunc(anywhere, func(k [2]string) bool { return k[0] == "esc" || k[0] == "?" })
+	}
+	for _, k := range anywhere {
 		lines = append(lines, row(k[0], k[1])...)
-		if !tight {
+		if spaced {
 			lines = append(lines, "")
 		}
 	}
-	return strings.Join(lines, "\n")
+	return lines, mine
 }

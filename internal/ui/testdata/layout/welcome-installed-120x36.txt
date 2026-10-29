@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ↑↓ choose   ·   enter continue   ·   s servers   ·   m mirrors   ·   ctrl+c quit                                       
+ ↑↓ choose   ·   enter continue   ·   s servers   ·   m mirrors   ·   ? all keys   ·   ctrl+c quit                      

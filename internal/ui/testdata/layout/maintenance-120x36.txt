@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ←→ task   ·   ↑↓ move   ·   enter run   ·   esc back   ·   ctrl+c quit                                                 
+ ←→ task   ·   ↑↓ move   ·   enter run   ·   esc back   ·   ? all keys   ·   ctrl+c quit                                

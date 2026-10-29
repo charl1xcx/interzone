@@ -214,6 +214,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		ds, deploying := a.cur().(*deployScreen)
 		switch m.String() {
+		case "?":
+			if !a.cur().typing() {
+				a.sheetOpen = true
+				return a, nil
+			}
 		case "ctrl+c":
 			if deploying && ds.running {
 				ds.abort()
@@ -312,7 +317,7 @@ func (a *App) View() (out string) {
 	if a.compact() {
 		return a.compactView()
 	}
-	a.menuOpen, a.sheetOpen = false, false
+	a.menuOpen = false // the compact layout's; ? opens the sheet here too
 	header := a.header(a.w)
 	footer := a.footer(a.w)
 	// With the menu open, it shows the steps; the stepper line is only
@@ -341,7 +346,12 @@ func (a *App) View() (out string) {
 	inner := w - 2 - 2*padX
 	title := sTitle.Render(a.cur().title())
 	contentH := max(3, bodyH-2*padY-2)
-	content := a.screenView(inner, contentH)
+	var content string
+	if a.sheetOpen {
+		title, content = sTitle.Render("Keys")+sMuted.Render("  any key closes this"), a.sheetView(inner, contentH)
+	} else {
+		content = a.screenView(inner, contentH)
+	}
 	if lines := strings.Split(content, "\n"); len(lines) > contentH {
 		content = strings.Join(lines[:contentH], "\n") // never push the header off screen
 	}
@@ -444,6 +454,9 @@ func (a *App) footer(w int) string {
 	} else if a.step > 0 && !a.escListed() {
 		keys = append(keys, [2]string{"esc", "back"})
 	}
+	if !a.cur().typing() {
+		keys = append(keys, [2]string{"?", "all keys"}) // ? types itself in a form
+	}
 	keys = append(keys, [2]string{"ctrl+c", "quit"})
 	join := func(sep string) string {
 		var parts []string
@@ -463,6 +476,11 @@ func (a *App) footer(w int) string {
 			break
 		}
 		keys = slices.DeleteFunc(keys, func(k [2]string) bool { return k[0] == drop })
+		line = join(" · ")
+	}
+	// Still: the screen's last keys give way, before "? all keys".
+	for lipgloss.Width(line) > w && len(keys) > 2 && keys[len(keys)-1][0] == "?" {
+		keys = slices.Delete(keys, len(keys)-2, len(keys)-1)
 		line = join(" · ")
 	}
 	if a.status != "" {

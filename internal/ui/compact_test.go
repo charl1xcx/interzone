@@ -173,3 +173,18 @@ func TestMenuKeys(t *testing.T) {
 		t.Errorf("the selected tile isn't marked:\n%s", v)
 	}
 }
+
+// ? lists every key, Manage's action shortcuts too, and any key closes it.
+func TestQuestionMarkSheet(t *testing.T) {
+	a := demoApp(t, 120, 36)
+	a.jump(a.index("Manage"))
+	a.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("?")})
+	view := ansi.Strip(a.View())
+	if !a.sheetOpen || !strings.Contains(view, "Anywhere") || !strings.Contains(view, "Vacuum the database") {
+		t.Fatalf("? should list the keys:\n%s", view)
+	}
+	a.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("x")})
+	if a.sheetOpen {
+		t.Error("a key left the sheet open")
+	}
+}

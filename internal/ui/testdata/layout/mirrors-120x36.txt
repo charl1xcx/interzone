@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- ←→ repos · mirrors · images   ·   r check again   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                       
+ ←→ repos · mirrors · images   ·   r check again   ·   ↑↓ scroll   ·   esc back   ·   ? all keys   ·   ctrl+c quit      

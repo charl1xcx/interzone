@@ -10,30 +10,30 @@
  ╰──────────────────────────────────────────╯ 
    ±  See what an update brings          n    
    ▣  Check container images             i    
-   ⚑  Alerts                                  
+   ⚑  Alerts                             A    
    ⏻  Start, stop or reinstall servic…   p    
-   ⇪  Update interzone                        
+   ⇪  Update interzone                   U    
                                               
  People ───────────────────────────────────── 
    +  Add a user                         a    
    @  Manage users                       m    
-   #  Manage rooms                            
+   #  Manage rooms                       R    
                                               
  Data ─────────────────────────────────────── 
    ⇩  Back up the database               b    
    ◷  Scheduled backups                  s    
    ↺  Restore a backup                   e    
    ↶  Roll back                          z    
-   ◔  Disk space                              
-   ⌫  Vacuum the database                     
-   ⇡  Upgrade Postgres                        
-   ⇲  Compress Synapse's state                
+   ◔  Disk space                         D    
+   ⌫  Vacuum the database                V    
+   ⇡  Upgrade Postgres                   P    
+   ⇲  Compress Synapse's state           C    
                                               
  Look closer ──────────────────────────────── 
    ▦  Server dashboard                   d    
    ≡  View logs                          l    
    ✎  Fine-tune the roles                f    
-   $  Database shell                          
+   $  Database shell                     $    
    #  Run playbook tags                  x    
                                               
    ▼ more below                               

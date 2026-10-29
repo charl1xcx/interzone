@@ -91,9 +91,7 @@ func TestLayout(t *testing.T) {
 		}},
 		{"sheet", func(a *App) {
 			a.jump(a.index("Manage"))
-			if a.compact() {
-				a.sheetOpen = true
-			}
+			a.sheetOpen = true
 		}},
 		{"dashboard", openDashboard},
 		{"mirrors", openMirrors},
