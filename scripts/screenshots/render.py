@@ -6,14 +6,25 @@
 #     Puts already rendered windows side by side (docs/screenshots/phone.png).
 #
 # Needs Pillow, fontTools and the DejaVu and Noto symbol fonts.
-import re, sys, unicodedata
+import glob, os, re, sys, unicodedata
 from PIL import Image, ImageDraw, ImageFont
 from fontTools.ttLib import TTFont
 
+def font(name):
+    """Finds a font file by name wherever the distribution keeps it
+    (/usr/share/fonts/TTF on Arch, .../truetype/dejavu on Debian), or
+    under FONT_DIR."""
+    roots = [os.environ.get("FONT_DIR", ""), "/usr/share/fonts", os.path.expanduser("~/.local/share/fonts")]
+    for root in filter(None, roots):
+        hits = glob.glob(os.path.join(root, "**", name), recursive=True)
+        if hits:
+            return sorted(hits)[0]
+    sys.exit(f"render.py: can't find the font {name}; install it or set FONT_DIR")
+
 SIZE = 26
-FONTS = ["/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/TTF/DejaVuSansMono-Bold.ttf"]
-FALLBACK = ["/usr/share/fonts/TTF/DejaVuSans.ttf", "/usr/share/fonts/noto/NotoSansSymbols2-Regular.ttf", "/usr/share/fonts/noto/NotoSansMath-Regular.ttf"]
-EMOJI = "/usr/share/fonts/noto/NotoColorEmoji.ttf"  # a bitmap font: drawn at 109 px, then scaled
+FONTS = [font("DejaVuSansMono.ttf"), font("DejaVuSansMono-Bold.ttf")]
+FALLBACK = [font("DejaVuSans.ttf"), font("NotoSansSymbols2-Regular.ttf"), font("NotoSansMath-Regular.ttf")]
+EMOJI = font("NotoColorEmoji.ttf")  # a bitmap font: drawn at 109 px, then scaled
 BG, FG = (21, 19, 30), (220, 216, 235)
 
 reg = ImageFont.truetype(FONTS[0], SIZE)

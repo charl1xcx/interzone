@@ -1,14 +1,23 @@
 # social.py OUT.png
 #     The 1280×640 link preview (GitHub's "Social preview", og:image): the
 #     name and pitch on the left, the Server screenshot on the right.
-import sys
+import glob, os, sys
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 W, H = 1280, 640
 BG, FG, MUTED = (21, 19, 30), (220, 216, 235), (140, 134, 160)
 PURPLE, PINK, YELLOW = (157, 124, 252), (220, 122, 202), (250, 193, 101)
-MONO = "/usr/share/fonts/TTF/DejaVuSansMono.ttf"
-MONO_B = "/usr/share/fonts/TTF/DejaVuSansMono-Bold.ttf"
+def font(name):
+    """Finds a font file by name, as render.py does."""
+    roots = [os.environ.get("FONT_DIR", ""), "/usr/share/fonts", os.path.expanduser("~/.local/share/fonts")]
+    for root in filter(None, roots):
+        hits = glob.glob(os.path.join(root, "**", name), recursive=True)
+        if hits:
+            return sorted(hits)[0]
+    sys.exit(f"social.py: can't find the font {name}; install it or set FONT_DIR")
+
+MONO = font("DejaVuSansMono.ttf")
+MONO_B = font("DejaVuSansMono-Bold.ttf")
 
 img = Image.new("RGB", (W, H), BG)
 

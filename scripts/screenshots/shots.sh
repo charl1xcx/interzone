@@ -88,7 +88,9 @@ stop() {
 
 screen() { tmux capture-pane -t shot -p; }
 
-shows() { screen | grep -qF -- "$1"; }
+# Not "screen | grep -q": grep stops at the first match and, under
+# pipefail, tmux writing the rest can make it look like no match.
+shows() { [[ $(screen) == *"$1"* ]]; }
 
 # waitfor waits up to 10 s for text to appear on the screen.
 waitfor() {

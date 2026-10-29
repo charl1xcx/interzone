@@ -381,12 +381,14 @@ and build with `go build -mod=vendor`. The resulting binary is static and has
 no runtime dependencies besides `git`, `ssh` and Ansible (which interzone can
 install itself from a PyPI mirror).
 
+`make test` runs what CI runs: gofmt, `go vet` and `go test -race ./...`.
 `go test ./...` includes layout tests that draw the main screens at phone
 (46×40) and desktop (120×36) size and compare them with
 `internal/ui/testdata/layout`; after an intended change, accept the new
 drawings with `go test ./internal/ui -run Layout -update`. The README's
 screenshots are retaken with `scripts/screenshots/shots.sh all` (tmux, Python
-with Pillow), about 15 seconds, against a demo server that doesn't exist;
+with Pillow and fontTools, and the DejaVu and Noto symbol, math and colour
+emoji fonts), about 15 seconds, against a demo server that doesn't exist;
 `python3 scripts/screenshots/social.py docs/social-preview.png` redraws the
 link preview from them.
 
