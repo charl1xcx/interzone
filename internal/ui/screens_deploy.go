@@ -266,6 +266,7 @@ func (s *reviewScreen) view(w, h int) string {
 	status = []string{card("", strings.Split(strings.Join(status, "\n"), "\n"), cw, 0, tone)}
 	status = append(status, gap...)
 	status = append(status, s.checksView(lw-2)...)
+	status = append(append(status, gap...), portsView(s.cfg, lw-2)...)
 	summary = []string{card("", summary, cw, 0, cFaint)}
 
 	left := lipgloss.JoinVertical(lipgloss.Left, append(summary, append(gap, status...)...)...)
@@ -366,6 +367,25 @@ func (s *reviewScreen) checksView(w int) []string {
 			rows = append([]string{"  " + sGood.Render("✓") + "  " + sMuted.Render(fmt.Sprintf("%d server checks passed", passed)) + sFaint.Render("  (v for details)")}, rows...)
 		}
 		lines = append(lines, rows...)
+	}
+	return lines
+}
+
+// portsView lists the ports a firewall in front of the server must let in
+// for the components turned on.
+func portsView(c *config.Config, w int) []string {
+	lines := []string{rule("Ports a firewall in front must let in", min(w, 72))}
+	ports := c.Ports()
+	pw := 0
+	for _, p := range ports {
+		pw = max(pw, len(p.Port)+2)
+	}
+	for _, p := range ports {
+		if w < 60 || pw > w/2 { // the ports go under the name
+			lines = append(lines, "  "+sTitle.Render(p.For), "    "+sMuted.Render(p.Port))
+			continue
+		}
+		lines = append(lines, "  "+lipgloss.NewStyle().Width(pw).Render(sMuted.Render(p.Port))+sTitle.Render(truncate(p.For, max(8, w-pw-2))))
 	}
 	return lines
 }

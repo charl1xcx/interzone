@@ -176,7 +176,11 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
 - **Checks before it touches anything.** The Review screen logs into the
   server and checks root access, OS, CPU, Python, memory, disk and ports
   80/443 (and 8448 for Synapse and Dendrite), then resolves every DNS record the setup needs and compares
-  it with the server's addresses. Once you've deployed, it shows what
+  it with the server's addresses. It also lists the ports a firewall in
+  front of the server (your provider's, or a router) has to let in for the
+  components you've turned on: web and federation, Coturn, LiveKit for
+  Element Call and Matrix RTC, Jitsi and Postmoogle (`interzone check`
+  prints them too). Once you've deployed, it shows what
   changes in `vars.yml` since the last successful deploy (`x` switches to
   the whole file).
 - **Checks after deploying.** The playbook's self-check runs at the end and
