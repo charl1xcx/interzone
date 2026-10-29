@@ -3,6 +3,7 @@ package deploy
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -160,6 +161,7 @@ func (r *Runner) copyData(ctx context.Context) error {
 	}
 	if err := send.Start(); err != nil {
 		_ = recv.Process.Kill()
+		_ = recv.Wait()
 		return err
 	}
 	done := make(chan struct{})
@@ -175,21 +177,35 @@ func (r *Runner) copyData(ctx context.Context) error {
 			}
 		}
 	}()
-	sErr := send.Wait()
+	// The receiver first: send.Wait closes the pipe it's still reading.
+	// If it gave up (a full disk), nothing reads the sender any more, so
+	// stop it; otherwise take what's left after tar's end marker.
 	rErr := recv.Wait()
+	if rErr != nil {
+		_ = send.Process.Kill()
+	} else {
+		_, _ = io.Copy(io.Discard, data)
+	}
+	sErr := send.Wait()
 	close(done)
+	if rErr != nil {
+		// Either side can be the cause: a reader that failed first cuts
+		// the archive short too.
+		msg := "writing /matrix on the new server failed: " + lastLine(recvErr.String(), rErr)
+		if strings.TrimSpace(sendErr.String()) != "" {
+			msg += "; the old server said: " + lastLine(sendErr.String(), sErr)
+		}
+		return errors.New(msg)
+	}
 	if sErr != nil {
 		return fmt.Errorf("reading /matrix on the old server failed: %s", lastLine(sendErr.String(), sErr))
-	}
-	if rErr != nil {
-		return fmt.Errorf("writing /matrix on the new server failed: %s", lastLine(recvErr.String(), rErr))
 	}
 	r.note(StepCopyData, "copied "+HumanSize(cnt.n.Load())+" in total")
 
 	// From here on everything runs against the new server.
 	r.cfg.Target = nt
 	hosts := filepath.Join(r.cfg.PlaybookDir, "inventory", "hosts")
-	if err := os.WriteFile(hosts, []byte(r.cfg.HostsINI()), 0o600); err != nil {
+	if err := config.WriteSecret(hosts, []byte(r.cfg.HostsINI())); err != nil {
 		return err
 	}
 	r.note(StepCopyData, "the inventory now points at "+targetName(nt))
