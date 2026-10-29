@@ -110,7 +110,7 @@ func (s *roomsScreen) saveToken(t string) {
 func (s *roomsScreen) reload() tea.Cmd {
 	s.busy, s.err = true, nil
 	s.gen++
-	cfg, login, srv, gen := *s.cfg, s.login(), s.server, s.gen
+	cfg, login, srv, gen := *s.cfg.Clone(), s.login(), s.server, s.gen
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
@@ -122,7 +122,7 @@ func (s *roomsScreen) reload() tea.Cmd {
 // do runs a change, then reloads the list.
 func (s *roomsScreen) do(info string, fn func(ctx context.Context, c *config.Config, login *deploy.AdminLogin) error) tea.Cmd {
 	s.busy, s.err, s.info = true, nil, ""
-	cfg, login := *s.cfg, s.login()
+	cfg, login := *s.cfg.Clone(), s.login()
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()

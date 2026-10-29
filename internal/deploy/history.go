@@ -45,7 +45,7 @@ func RecordDeploy(c *config.Config, commit string) error {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
-	snap := *c
+	snap := c.Clone()
 	snap.PinnedCommit = ""
 	if err := snap.SaveFile(filepath.Join(dir, "config.json")); err != nil {
 		return err

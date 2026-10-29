@@ -95,7 +95,7 @@ func (s *tokensScreen) enter(c *config.Config) tea.Cmd {
 func (s *tokensScreen) reload() tea.Cmd {
 	s.busy, s.err = true, nil
 	s.gen++
-	cfg, srv, gen := *s.cfg, s.server, s.gen
+	cfg, srv, gen := *s.cfg.Clone(), s.server, s.gen
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
@@ -107,7 +107,7 @@ func (s *tokensScreen) reload() tea.Cmd {
 // do runs a change, then reloads the list.
 func (s *tokensScreen) do(info string, fn func(ctx context.Context, c *config.Config) error) tea.Cmd {
 	s.busy, s.err, s.info = true, nil, ""
-	cfg := *s.cfg
+	cfg := *s.cfg.Clone()
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()

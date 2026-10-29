@@ -136,7 +136,7 @@ func (s *updatesScreen) enter(c *config.Config) tea.Cmd {
 
 func (s *updatesScreen) check() tea.Cmd {
 	s.loading, s.err, s.ch = true, nil, nil
-	cfg := *s.cfg
+	cfg := *s.cfg.Clone()
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()

@@ -163,7 +163,7 @@ func (s *usersScreen) reload() tea.Cmd {
 		s.syncing = true
 	}
 	s.gen++
-	cfg, login, srv, gen := *s.cfg, s.login, s.server, s.gen
+	cfg, login, srv, gen := *s.cfg.Clone(), s.login, s.server, s.gen
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 		defer cancel()
@@ -223,7 +223,7 @@ func (s *usersScreen) loginForm() {
 
 func (s *usersScreen) run(op *userOp) tea.Cmd {
 	s.busy, s.info, s.password, s.err = true, "", "", nil
-	cfg, login := *s.cfg, s.login
+	cfg, login := *s.cfg.Clone(), s.login
 	return tea.Batch(s.spin.Tick, func() tea.Msg {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()

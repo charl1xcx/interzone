@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -281,8 +280,7 @@ func Start(ctx context.Context, cfg *config.Config, opts Options) <-chan Event {
 	// A migration and blackout mirror picks change the run's config; the
 	// caller applies those changes through events.
 	if opts.Action == ActionMigrate || opts.Action == ActionDryRun || cfg.Sources.Blackout {
-		cp := *cfg
-		cfg = &cp
+		cfg = cfg.Clone()
 	}
 	if opts.Action == ActionDryRun {
 		cfg.PlaybookDir = DryRunDir(cfg)
@@ -466,8 +464,7 @@ func (r *Runner) writeInventory(step Step) error {
 
 	// The playbook was just updated and may have renamed settings since the
 	// config was loaded; a copy, as the UI reads c while this runs.
-	fixed := *c
-	fixed.Values, fixed.Overrides = maps.Clone(c.Values), maps.Clone(c.Overrides)
+	fixed := c.Clone()
 	for _, n := range fixed.RenameOld(c.PlaybookDir) {
 		r.note(step, "renamed "+n)
 	}

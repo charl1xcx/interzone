@@ -177,6 +177,19 @@ func Fresh() *Config {
 	return c
 }
 
+// Clone is a copy that shares no maps or slices with c, for work in the
+// background while c is still being edited.
+func (c *Config) Clone() *Config {
+	cp := *c
+	cp.Components, cp.Values, cp.Overrides = maps.Clone(c.Components), maps.Clone(c.Values), maps.Clone(c.Overrides)
+	cp.FederateOnly, cp.FederateNever = slices.Clone(c.FederateOnly), slices.Clone(c.FederateNever)
+	if c.Deployed != nil {
+		d := *c.Deployed
+		cp.Deployed = &d
+	}
+	return &cp
+}
+
 // Load returns the saved configuration, or fresh answers on first run.
 // A file that can't be parsed is moved aside to <file>.broken-<time>
 // first, so its secrets aren't overwritten by the fresh ones on the next

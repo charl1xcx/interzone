@@ -202,7 +202,7 @@ func (s *reviewScreen) runChecks() tea.Cmd {
 	}
 	s.checking = true
 	s.gen++
-	cfg, gen := *s.cfg, s.gen
+	cfg, gen := *s.cfg.Clone(), s.gen
 	ctx, stop := context.WithTimeout(context.Background(), 40*time.Second)
 	s.stop = stop
 	s.stage, s.since = "the server", time.Now()
@@ -289,7 +289,7 @@ func (s *reviewScreen) update(msg tea.Msg) tea.Cmd {
 				s.setPreview()
 				return nil
 			}
-			cfg := *s.cfg
+			cfg := *s.cfg.Clone()
 			return func() tea.Msg {
 				ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 				defer cancel()

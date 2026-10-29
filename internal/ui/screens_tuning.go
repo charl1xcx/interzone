@@ -381,7 +381,7 @@ func (s *tuningScreen) key(k tea.KeyMsg) tea.Cmd {
 	if s.err != nil {
 		if k.String() == "f" && !s.fetching {
 			s.fetching = true
-			cfg := *s.cfg
+			cfg := *s.cfg.Clone()
 			return tea.Batch(s.spin.Tick, func() tea.Msg {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 				defer cancel()

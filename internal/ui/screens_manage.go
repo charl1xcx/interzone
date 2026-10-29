@@ -418,7 +418,7 @@ func (s *manageScreen) choose(id string) tea.Cmd {
 				}
 			}
 		}
-		cfg := *s.cfg
+		cfg := *s.cfg.Clone()
 		return tea.Batch(s.spin.Tick, func() tea.Msg {
 			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 			defer cancel()

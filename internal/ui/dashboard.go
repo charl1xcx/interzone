@@ -92,7 +92,7 @@ func (s *dashboardScreen) refresh() tea.Cmd {
 		return nil
 	}
 	s.loading = true
-	cfg, srv := *s.cfg, s.server
+	cfg, srv := *s.cfg.Clone(), s.server
 	certs := s.certsNow || s.st == nil || len(s.st.Certs) == 0 || time.Since(s.certsAt) > certsEvery
 	s.certsNow = false
 	return tea.Batch(s.spin.Tick, func() tea.Msg {

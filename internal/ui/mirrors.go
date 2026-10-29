@@ -100,7 +100,7 @@ func (s *mirrorsScreen) check() tea.Cmd {
 		return nil
 	}
 	s.loading = [3]bool{true, true, true}
-	cfg, srv := *s.cfg, s.server
+	cfg, srv := *s.cfg.Clone(), s.server
 	part := func(n int, fn func(r *mirrorsResult)) tea.Cmd {
 		return func() tea.Msg {
 			var r mirrorsResult

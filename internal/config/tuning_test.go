@@ -261,3 +261,13 @@ func TestLoadMovesBrokenFileAside(t *testing.T) {
 		t.Fatal("loaded nothing")
 	}
 }
+
+func TestCloneSharesNothing(t *testing.T) {
+	c := Default()
+	c.FederateOnly = []string{"a.org"}
+	cp := c.Clone()
+	cp.Components["x"], cp.Values["y"], cp.Overrides["z"], cp.FederateOnly[0] = true, "1", "2", "b.org"
+	if c.Components["x"] || c.Values["y"] != "" || c.Overrides["z"] != "" || c.FederateOnly[0] != "a.org" {
+		t.Errorf("clone shares state with the original: %+v", c)
+	}
+}
