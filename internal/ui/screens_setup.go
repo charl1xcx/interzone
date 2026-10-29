@@ -189,6 +189,9 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 
 	src := c.Sources
 	netMode := "online"
+	if src.IPFS {
+		netMode = "ipfs"
+	}
 	if src.Blackout {
 		netMode = "blackout"
 	} else {
@@ -214,9 +217,12 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 		textField("key", "SSH private key", t.SSHKey, "~/.ssh/id_ed25519", "Leave empty to use your SSH agent or default key."),
 		secretField("become", "sudo password", t.BecomePass, sudoHelp),
 
-		choiceField("net", "Network situation", []string{"online", "blackout"},
-			[]string{"Normal internet", "Blackout: in-country mirrors only"}, netMode,
-			"Blackout points every download at in-country mirrors. Before deploying, interzone checks them against the server and the images it needs and switches to another known mirror where one falls short."),
+		choiceField("net", "Network situation", []string{"online", "blackout", "ipfs"},
+			[]string{"Normal internet", "Blackout: in-country mirrors only", "IPFS: from interzone's swarm"}, netMode,
+			"Blackout points every download at in-country mirrors. Before deploying, interzone checks them against the server and the images it needs and switches to another known mirror where one falls short. IPFS fetches the playbook, images and packages from other servers in interzone's private IPFS swarm; the server only needs to reach one of them."),
+		choiceField("ipfsSeed", "Share what this server downloads", []string{"", "yes", "no"},
+			[]string{"Choose one", "Yes, seed it to other servers", "No, only download"}, src.IPFSSeed,
+			"Seeding keeps IPFS running after the deploy so other servers can fetch from this one. It listens on TCP port 4001 (open it in your firewall), and the swarm's members can see that this server holds Matrix software."),
 		textField("git", "Playbook git repository", src.PlaybookGit, config.DefaultPlaybookGit,
 			"Where matrix-docker-ansible-deploy is cloned from."),
 		textField("roles", "Git mirror for Ansible roles", src.RolesGitBase, "https://github.com/",
@@ -252,7 +258,12 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 		f.get(k).hidden = remote
 	}
 	online := func() bool { return f.value("net") != "blackout" }
-	f.get("registry").hidden = func() bool { return !f.get("useRegistry").on }
+	ipfs := func() bool { return f.value("net") == "ipfs" }
+	f.get("ipfsSeed").hidden = func() bool { return !ipfs() }
+	for _, k := range []string{"git", "roles", "useRegistry"} {
+		f.get(k).hidden = ipfs
+	}
+	f.get("registry").hidden = func() bool { return ipfs() || !f.get("useRegistry").on }
 	f.get("dockerpkg").hidden = online
 	f.get("apt").hidden = online
 	f.get("pypi").hidden = online
@@ -289,6 +300,9 @@ func (s *serverScreen) explainSSL() {
 	help := sslExplain[mode]
 	if mode == "letsencrypt" && s.form.value("net") == "blackout" {
 		help += " ⚠ You chose blackout mode: Let's Encrypt will fail without international internet."
+	}
+	if mode == "letsencrypt" && s.form.value("net") == "ipfs" {
+		help += " ⚠ IPFS doesn't help here: Let's Encrypt needs international internet."
 	}
 	s.form.get("ssl").help = help
 }
@@ -351,6 +365,8 @@ func (s *serverScreen) leaveSources(c *config.Config) {
 	f := s.form
 	c.Sources = config.Sources{
 		Blackout:         f.value("net") == "blackout",
+		IPFS:             f.value("net") == "ipfs",
+		IPFSVersion:      c.Sources.IPFSVersion, // the newest index seen; never go back
 		PlaybookGit:      f.value("git"),
 		RolesGitBase:     f.value("roles"),
 		UseRegistry:      f.get("useRegistry").on,
@@ -361,6 +377,9 @@ func (s *serverScreen) leaveSources(c *config.Config) {
 	}
 	if c.Sources.PlaybookGit == "" {
 		c.Sources.PlaybookGit = config.DefaultPlaybookGit
+	}
+	if c.Sources.IPFS {
+		c.Sources.IPFSSeed = f.value("ipfsSeed")
 	}
 	if !c.Sources.Blackout {
 		c.Sources.DockerPackageURL, c.Sources.APTMirror, c.Sources.PyPIIndex = "", "", ""
@@ -390,6 +409,7 @@ func (s *serverScreen) update(msg tea.Msg) tea.Cmd {
 		s.blackoutSources()
 	}
 	s.cfg.Sources.Blackout = s.form.value("net") == "blackout" // keeps the header badge live
+	s.cfg.Sources.IPFS = s.form.value("net") == "ipfs"
 	s.explainSSL()
 	return cmd
 }

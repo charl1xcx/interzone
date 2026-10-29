@@ -186,6 +186,8 @@ func (a *App) compactHeader(w int) string {
 	right := ""
 	if a.cfg.Sources.Blackout {
 		right = badge("BLACKOUT", cAmber)
+	} else if a.cfg.Sources.IPFS {
+		right = badge("IPFS", cPurple)
 	}
 	if hb := a.healthBadge(true); hb != "" {
 		right = strings.TrimSpace(hb + " " + right)

@@ -18,6 +18,7 @@
 │   ● example.org        ││                                                                                            │
 │                        ││      Network situation                                                                     │
 │                        ││       ◉ Normal internet    ○ Blackout: in-country mirrors only                             │
+│                        ││       ○ IPFS: from interzone's swarm                                                       │
 │                        ││                                                                                            │
 │                        ││      Playbook git repository                                                               │
 │                        ││      › https://itsjustadream.g0th.ir/spantaleev/matrix-docker-ansible-deploy               │
@@ -26,7 +27,6 @@
 │                        ││      › https://itsjustadream.g0th.ir/                                                      │
 │                        ││                                                                                            │
 │                        ││      ●  Pull container images from a mirror  on                                            │
-│                        ││                                                                                            │
 │                        ││     ▼ more below                                                                           │
 │                        ││                                                                                            │
 │ ◫ auto (wide)  ctrl+l  ││   Press ctrl+t to test that every download source is reachable from here.                  │

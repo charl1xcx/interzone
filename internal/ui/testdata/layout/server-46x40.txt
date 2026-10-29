@@ -19,6 +19,7 @@
     Network situation                         
      ◉ Normal internet                        
      ○ Blackout: in-country mirrors only      
+     ○ IPFS: from interzone's swarm           
                                               
     Playbook git repository                   
     › https://itsjustadream.g0th.ir/spant…    
@@ -31,7 +32,6 @@
                                               
     Container registry mirror                 
     › mechatok.g0th.ir/                       
-                                              
                                               
    ▼ more below                               
                                               

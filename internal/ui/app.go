@@ -408,6 +408,8 @@ func (a *App) header(w int) string {
 	mode := badge("ONLINE", cMint)
 	if a.cfg.Sources.Blackout {
 		mode = badge("BLACKOUT-READY", cAmber)
+	} else if a.cfg.Sources.IPFS {
+		mode = badge("IPFS", cPurple)
 	}
 	if hb := a.healthBadge(false); hb != "" {
 		mode = hb + "   " + mode
