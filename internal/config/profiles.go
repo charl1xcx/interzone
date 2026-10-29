@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 // interzone can manage several servers. Each one is a profile: a saved
@@ -73,6 +74,25 @@ func DataDir() string {
 		data = filepath.Join(data, ".local", "share")
 	}
 	return filepath.Join(data, "interzone")
+}
+
+// Reset makes interzone start from nothing: its config and data folders
+// (every server's answers, playbook copy, history and downloaded backups)
+// are moved aside, not deleted, and the new names returned.
+func Reset() ([]string, error) {
+	stamp := time.Now().Format("20060102-150405")
+	var moved []string
+	for _, d := range []string{Dir(), DataDir()} {
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			continue
+		}
+		to := d + ".old-" + stamp
+		if err := os.Rename(d, to); err != nil {
+			return moved, err
+		}
+		moved = append(moved, to)
+	}
+	return moved, nil
 }
 
 // NewProfile returns fresh answers for another server, with its own playbook

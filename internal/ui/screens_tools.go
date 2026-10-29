@@ -511,6 +511,7 @@ type serversScreen struct {
 	cursor  int
 	form    *form // naming a new server
 	confirm bool  // forgetting one
+	reset   bool  // asking before starting from nothing
 	err     string
 	imp     *importState // taking over a server set up by hand (import.go)
 }
@@ -531,7 +532,9 @@ func (s *serversScreen) typing() bool {
 	}
 	return s.form != nil && s.form.typing()
 }
-func (s *serversScreen) handlesEsc() bool     { return s.form != nil || s.confirm || s.imp != nil }
+func (s *serversScreen) handlesEsc() bool {
+	return s.form != nil || s.confirm || s.reset || s.imp != nil
+}
 func (s *serversScreen) leave(*config.Config) {}
 func (s *serversScreen) keys() [][2]string {
 	switch {
@@ -541,12 +544,14 @@ func (s *serversScreen) keys() [][2]string {
 		return [][2]string{{"enter", "set up this server"}, {"esc", "cancel"}}
 	case s.confirm:
 		return [][2]string{{"x", "forget it"}, {"esc", "cancel"}}
+	case s.reset:
+		return [][2]string{{"R", "start fresh"}, {"esc", "cancel"}}
 	}
-	return [][2]string{{"↑↓", "select"}, {"enter", "switch to it"}, {"n", "add a server"}, {"i", "import one"}, {"x", "forget"}}
+	return [][2]string{{"↑↓", "select"}, {"enter", "switch to it"}, {"n", "add a server"}, {"i", "import one"}, {"x", "forget"}, {"R", "start fresh"}}
 }
 
 func (s *serversScreen) enter(c *config.Config) tea.Cmd {
-	s.cfg, s.form, s.confirm, s.err, s.imp = c, nil, false, "", nil
+	s.cfg, s.form, s.confirm, s.reset, s.err, s.imp = c, nil, false, false, "", nil
 	s.list = config.Profiles()
 	if len(s.list) == 0 { // nothing saved yet: the answers so far are the default server
 		s.list = []config.Profile{{Name: config.DefaultProfile, Domain: c.Domain}}
@@ -590,8 +595,28 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		return nil
 	}
+	if s.reset {
+		s.reset = false
+		if k.String() != "R" {
+			return nil
+		}
+		moved, err := config.Reset()
+		if err != nil {
+			s.err = err.Error()
+			return nil
+		}
+		note := "✓ starting fresh"
+		if len(moved) > 0 {
+			note += "; the old setup is in " + strings.Join(moved, " and ")
+		}
+		return func() tea.Msg {
+			return switchServerMsg{name: config.DefaultProfile, cfg: config.Fresh(), fresh: true, note: note}
+		}
+	}
 	s.err = ""
 	switch k.String() {
+	case "R":
+		s.reset = true
 	case "enter":
 		p := s.list[s.cursor]
 		if p.Name == config.Active() {
@@ -675,6 +700,13 @@ func (s *serversScreen) view(w, h int) string {
 		out += "\n\n" + confirmView(w, sWarn.Render("Forget "+s.list[s.cursor].Name+"?"),
 			sSub.Render("Only interzone's saved answers are deleted. Nothing changes on the server itself."), "",
 			keyLink("x")+sMuted.Render(" again to forget   ")+keyLink("esc")+sMuted.Render(" cancel"))
+	}
+	if s.reset {
+		out += "\n\n" + confirmView(w, sWarn.Render("Start interzone fresh?"),
+			sSub.Render("interzone forgets every server here: answers, playbook copies, history, downloaded backups, theme and layout. "+
+				"Nothing is deleted: its folders are moved aside, so they can be put back. "+
+				"The servers keep running; to manage one again, import it under Servers."), "",
+			keyLink("R")+sMuted.Render(" again to start fresh   ")+keyLink("esc")+sMuted.Render(" cancel"))
 	}
 	if s.err != "" {
 		out += "\n\n" + sBad.Render("✗ "+s.err)

@@ -154,7 +154,7 @@ func (s *usersScreen) click(id string) (tea.Cmd, bool) {
 }
 
 func (s *serversScreen) click(id string) (tea.Cmd, bool) {
-	if s.form != nil || s.confirm || s.imp != nil {
+	if s.form != nil || s.confirm || s.reset || s.imp != nil {
 		return nil, false
 	}
 	return listClick(id, &s.cursor, len(s.list), s.update)

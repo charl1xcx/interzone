@@ -372,7 +372,8 @@ link preview from them.
 
 ```sh
 ./interzone           # start the wizard (or Manage, once installed; esc there leads to Welcome)
-./interzone --reset   # forget saved answers
+./interzone --reset   # start fresh (or R on the Servers screen): every server's answers,
+                      # playbook copies and history are moved aside to *.old-DATE, not deleted
 ./interzone -no-mouse # leave the mouse to the terminal
 ./interzone -layout compact # phone layout, whatever the size (or wide, or auto)
 ./interzone -theme nord     # colours for one run (ctrl+y switches and remembers them)

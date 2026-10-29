@@ -38,7 +38,7 @@ func main() {
 	}
 
 	showVersion := flag.Bool("version", false, "print the version and exit")
-	reset := flag.Bool("reset", false, "forget saved answers and start fresh")
+	reset := flag.Bool("reset", false, "start fresh: move interzone's config and data folders aside")
 	theme := flag.String("theme", "", "the colours for this run: "+strings.Join(ui.ThemeNames(), ", ")+"; ctrl+y in the app switches and remembers them")
 	layout := flag.String("layout", "", "auto, compact (phones, narrow or portrait terminals) or wide; the default is the last one picked in the app, else auto")
 	noMouse := flag.Bool("no-mouse", false, "don't take the mouse, so the terminal can select text without shift")
@@ -59,10 +59,17 @@ func main() {
 		return
 	}
 
-	cfg, loaded := config.Load()
 	if *reset {
-		cfg, loaded = config.Fresh(), false
+		moved, err := config.Reset()
+		for _, d := range moved {
+			fmt.Fprintln(os.Stderr, "interzone: moved aside to", d)
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "interzone: couldn't reset:", err)
+			os.Exit(1)
+		}
 	}
+	cfg, loaded := config.Load()
 
 	opts := []tea.ProgramOption{tea.WithAltScreen()}
 	if !*noMouse {
