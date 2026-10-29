@@ -62,6 +62,46 @@ func TestShot(t *testing.T) {
 			f.get("room").input.SetValue("#alerts:example.org")
 		}},
 	}
+	// The wiki's component pages: each category's tab, and its settings.
+	for i, ids := range [][]string{
+		{"coturn", "exim", "ddclient"},
+		{"element", "cinny", "sable", "fluffychat"},
+		{"mas", "ketesa", "shared-secret-auth", "ldap-auth"},
+		{"s3-provider"},
+		{"double-puppet", "bridges-e2ee", "telegram", "whatsapp", "signal", "postmoogle"},
+		{"reminder-bot", "honoroit", "baibot", "draupnir"},
+		{"monitoring", "alertmanager-receiver", "borg"},
+		{"element-call", "jitsi", "etherpad", "ntfy", "sygnal"},
+	} {
+		slug := strings.ToLower(strings.NewReplacer(" & ", "-", " ", "-").Replace(catalog.Categories[i]))
+		tick := func(a *App) {
+			a.cfg.Components = map[string]bool{"element": true, "mas": true}
+			for _, id := range ids {
+				a.cfg.Components[id] = true
+			}
+		}
+		shots = append(shots, struct {
+			name string
+			open func(*App)
+		}{"wiki-comp-" + slug, func(a *App) {
+			tick(a)
+			a.jump(a.index("Components"))
+			a.cur().(*componentsScreen).cat = i
+		}}, struct {
+			name string
+			open func(*App)
+		}{"wiki-set-" + slug, func(a *App) {
+			tick(a)
+			a.jump(a.index("Settings"))
+			f := a.cur().(*settingsScreen).form
+			for j, fl := range f.fields { // the category's first field, or else its first address
+				if strings.HasPrefix(fl.key, ids[0]+".") || fl.key == "host."+ids[0] {
+					f.focusOn(j)
+					break
+				}
+			}
+		}})
+	}
 	for _, s := range shots {
 		a := demoApp(t, 120, 36)
 		a.cfg.Sources.Blackout = true // like the other shots
