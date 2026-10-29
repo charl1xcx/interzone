@@ -320,8 +320,8 @@ func (s *reviewScreen) checksView(w int) []string {
 			dnsW = max(dnsW, min(34, len(f.Name)+2))
 		}
 	}
-	collapsed := map[string]string{"Server": "%d server checks passed", "Ports": "%d ports get through", "Federation": "%d federation checks passed"}
-	for _, g := range []string{"Server", "DNS", "Ports", "Federation"} {
+	collapsed := map[string]string{"Server": "%d server checks passed", "Ports": "%d ports get through", "Federation": "%d federation checks passed", "Clients": "%d app checks passed"}
+	for _, g := range []string{"Server", "DNS", "Ports", "Federation", "Clients"} {
 		passed := 0
 		var rows []string
 		for _, f := range s.checks {

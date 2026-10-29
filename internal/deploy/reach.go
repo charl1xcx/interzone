@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,7 +24,8 @@ func reachChecks(ctx context.Context, c *config.Config) []Finding {
 	if c.Domain == "" {
 		return nil
 	}
-	return append(portChecks(ctx, c), federationChecks(ctx, c)...)
+	out := append(portChecks(ctx, c), federationChecks(ctx, c)...)
+	return append(out, clientChecks(ctx, c)...)
 }
 
 // portChecks connects to every TCP port Ports lists, at the homeserver's
@@ -82,24 +84,9 @@ func federationChecks(ctx context.Context, c *config.Config) []Finding {
 	add := func(name string, l Level, format string, a ...any) {
 		out = append(out, Finding{Group: "Federation", Name: name, Level: l, Detail: fmt.Sprintf(format, a...)})
 	}
-	client := &http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{Proxy: http.ProxyFromEnvironment}}
 	get := func(url string, v any) error {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return err
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			return errors.New(netReason(err))
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			return errors.New("answered " + resp.Status)
-		}
-		if json.NewDecoder(resp.Body).Decode(v) != nil {
-			return errors.New("didn't answer JSON")
-		}
-		return nil
+		_, err := getJSON(ctx, url, false, v)
+		return err
 	}
 
 	// shortcut: SRV records aren't looked up; the playbook delegates with .well-known.
@@ -130,6 +117,102 @@ func federationChecks(ctx context.Context, c *config.Config) []Finding {
 		add("Federation API", Fail, "%s answers as %q, not %s", at, keys.Name, c.Domain)
 	default:
 		add("Federation API", Pass, "%s answers as %s, with a trusted certificate", at, c.Domain)
+	}
+	return out
+}
+
+// getJSON GETs url and decodes its JSON answer into v.
+func getJSON(ctx context.Context, url string, insecure bool, v any) (http.Header, error) {
+	client := &http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{Proxy: http.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure}}}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New(netReason(err))
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return resp.Header, errors.New("answered " + resp.Status)
+	}
+	if json.NewDecoder(resp.Body).Decode(v) != nil {
+		return resp.Header, errors.New("didn't answer JSON")
+	}
+	return resp.Header, nil
+}
+
+// clientChecks looks at the server as apps do: /.well-known/matrix/client
+// sends them to the homeserver, and Element X needs more than older apps:
+// sliding sync, OAuth 2.0 logins (MAS), and for calls Matrix RTC.
+func clientChecks(ctx context.Context, c *config.Config) []Finding {
+	if !c.Installed() {
+		return nil
+	}
+	var out []Finding
+	add := func(name string, l Level, format string, a ...any) {
+		out = append(out, Finding{Group: "Clients", Name: name, Level: l, Detail: fmt.Sprintf(format, a...)})
+	}
+	scheme, insecure := "https://", c.SSL.Mode == "selfsigned"
+	if c.SSL.Mode == "none" {
+		scheme = "http://"
+	}
+	var wk struct {
+		Homeserver struct {
+			BaseURL string `json:"base_url"`
+		} `json:"m.homeserver"`
+		Auth *struct {
+			Issuer string `json:"issuer"`
+		} `json:"org.matrix.msc2965.authentication"`
+		Foci []json.RawMessage `json:"org.matrix.msc4143.rtc_foci"`
+	}
+	where := scheme + c.Domain + "/.well-known/matrix/client"
+	base := scheme + c.HostName()
+	switch h, err := getJSON(ctx, where, insecure, &wk); {
+	case err != nil:
+		add("Well-known", Warn, "%s %s; apps then need %s typed in instead of %s", where, err, c.HostName(), c.Domain)
+	case wk.Homeserver.BaseURL == "":
+		add("Well-known", Fail, "%s has no m.homeserver.base_url", where)
+	default:
+		base = strings.TrimRight(wk.Homeserver.BaseURL, "/")
+		if h.Get("Access-Control-Allow-Origin") == "" {
+			add("Well-known", Warn, "%s sends apps to %s, but without the CORS header web apps need", where, base)
+		} else {
+			add("Well-known", Pass, "sends apps to %s", base)
+		}
+	}
+
+	var versions struct {
+		Unstable map[string]bool `json:"unstable_features"`
+	}
+	if _, err := getJSON(ctx, base+"/_matrix/client/versions", insecure, &versions); err != nil {
+		add("Client API", Fail, "%s/_matrix/client/versions %s", base, err)
+		return out
+	}
+	add("Client API", Pass, "%s answers", base)
+
+	if versions.Unstable["org.matrix.simplified_msc3575"] {
+		add("Element X sync", Pass, "sliding sync is on")
+	} else {
+		add("Element X sync", Fail, "the homeserver doesn't offer sliding sync, which Element X needs")
+	}
+	var meta map[string]any
+	if wk.Auth != nil && wk.Auth.Issuer != "" {
+		add("Element X login", Pass, "OAuth 2.0 logins through %s", wk.Auth.Issuer)
+	} else if _, err := getJSON(ctx, base+"/_matrix/client/v1/auth_metadata", insecure, &meta); err == nil {
+		add("Element X login", Pass, "OAuth 2.0 logins")
+	} else {
+		add("Element X login", Warn, "no OAuth 2.0 logins: Element X needs the Matrix Authentication Service (MAS) on Components")
+	}
+	rtc := c.Components["matrix-rtc"] || c.Components["element-call"]
+	switch {
+	case len(wk.Foci) > 0:
+		add("Element X calls", Pass, "the well-known names a call server")
+	case rtc:
+		add("Element X calls", Fail, "Matrix RTC is on, but the well-known names no call server; deploy again")
+	default:
+		add("Element X calls", Warn, "calls need the Matrix RTC stack or Element Call on Components")
 	}
 	return out
 }

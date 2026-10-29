@@ -25,7 +25,7 @@ const (
 
 // Finding is the outcome of one pre-deploy check.
 type Finding struct {
-	Group   string // "Server", "DNS", "Ports" or "Federation"
+	Group   string // "Server", "DNS", "Ports", "Federation" or "Clients"
 	Name    string
 	Service string // DNS: what the hostname serves; Ports: what the port is for
 	Level   Level

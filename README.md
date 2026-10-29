@@ -188,7 +188,11 @@ or the [Telegram group](https://t.me/+6UwIu9F4gZQxNjM0).
   which get through and which a firewall seems to drop (UDP can't be
   tested this way), and once the server is installed it checks federation
   the way a federation tester does: `/.well-known/matrix/server`, then the
-  server's signing keys over a trusted certificate. Once you've deployed, it shows what
+  server's signing keys over a trusted certificate. It looks at the
+  server as apps do too: `/.well-known/matrix/client` (with the CORS
+  header web apps need) and the client API it points to, and whether
+  Element X will work: sliding sync, OAuth 2.0 logins through MAS, and a
+  call server in the well-known when Matrix RTC is on. Once you've deployed, it shows what
   changes in `vars.yml` since the last successful deploy (`x` switches to
   the whole file).
 - **Checks after deploying.** The playbook's self-check runs at the end and
