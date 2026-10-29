@@ -84,6 +84,13 @@ func errorView(err error) string {
 	return sBad.Render("✗ "+err.Error()) + "\n\n" + sMuted.Render("Press ") + keyLink("r") + sMuted.Render(" to try again or esc to go back.")
 }
 
+// confirmKeys is the last line of a confirmView: the key that does it
+// and esc. y and enter do it too, and so does a key that asked, pressed
+// again; Review's deploy alone takes y only, its enter having just asked.
+func confirmKeys(key, verb string) string {
+	return mark("key:"+key, keyChip(key)+sMuted.Render(" "+verb)) + "   " + mark("key:esc", keyChip("esc")+sMuted.Render(" cancel"))
+}
+
 func confirmView(w int, lines ...string) string {
 	return sPanel.BorderForeground(cAmber).Padding(0, 2).Width(min(w, maxFormWidth) - 2).Render(strings.Join(lines, "\n"))
 }
@@ -334,7 +341,7 @@ func (s *historyScreen) view(w, h int) string {
 			sWarn.Render("Roll back to "+d.Time.Local().Format("2006-01-02 15:04")+"?"),
 			sSub.Render("The playbook goes back to "+d.Commit[:min(10, len(d.Commit))]+" and your answers to the ones used then (today's are kept in config.before-rollback.json). The database is backed up first."),
 			sSub.Render("Newer homeserver versions may have changed the database in ways an older one can't read; if it fails to start, restore the backup taken now with Manage › Restore."),
-			"", keyLink("enter")+sMuted.Render(" again to roll back   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			"", confirmKeys("enter", "roll back"))
 	}
 	return out
 }
@@ -411,7 +418,7 @@ func (s *restoreScreen) view(w, h int) string {
 		out += "\n\n" + confirmView(w,
 			sWarn.Render("Replace the database of "+s.cfg.Domain+" with the dump from "+b.Time.Local().Format("2006-01-02 15:04")+"?"),
 			sSub.Render("Every service stops, the current database is dumped to "+deploy.BackupDir()+" first, then emptied and loaded from this file. Messages sent since the dump are lost."),
-			"", keyLink("enter")+sMuted.Render(" again to restore   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			"", confirmKeys("enter", "restore"))
 	}
 	return out
 }
@@ -597,7 +604,7 @@ func (s *serversScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	if s.reset {
 		s.reset = false
-		if k.String() != "R" {
+		if k := k.String(); k != "R" && k != "enter" && k != "y" {
 			return nil
 		}
 		moved, err := config.Reset()
@@ -699,14 +706,14 @@ func (s *serversScreen) view(w, h int) string {
 	if s.confirm {
 		out += "\n\n" + confirmView(w, sWarn.Render("Forget "+s.list[s.cursor].Name+"?"),
 			sSub.Render("Only interzone's saved answers are deleted. Nothing changes on the server itself."), "",
-			keyLink("x")+sMuted.Render(" again to forget   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			confirmKeys("x", "forget"))
 	}
 	if s.reset {
 		out += "\n\n" + confirmView(w, sWarn.Render("Start interzone fresh?"),
 			sSub.Render("interzone forgets every server here: answers, playbook copies, history, downloaded backups, theme and layout. "+
 				"Nothing is deleted: its folders are moved aside, so they can be put back. "+
 				"The servers keep running; to manage one again, import it under Servers."), "",
-			keyLink("R")+sMuted.Render(" again to start fresh   ")+keyLink("esc")+sMuted.Render(" cancel"))
+			confirmKeys("R", "start fresh"))
 	}
 	if s.err != "" {
 		out += "\n\n" + sBad.Render("✗ "+s.err)

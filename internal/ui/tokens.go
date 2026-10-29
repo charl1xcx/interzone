@@ -302,14 +302,11 @@ func (s *tokensScreen) footer(w int) string {
 	if !s.confirm || !ok {
 		return status
 	}
-	yes := func(verb string) string {
-		return mark("key:enter", keyChip("enter")+sMuted.Render(" "+verb)) + "   " + mark("key:esc", keyChip("esc")+sMuted.Render(" cancel"))
-	}
 	if t.RevokedAt != nil {
-		return confirmView(w, sWarn.Render("Let "+t.Token+" work again?"), "", yes("restore"))
+		return confirmView(w, sWarn.Render("Let "+t.Token+" work again?"), "", confirmKeys("enter", "restore"))
 	}
 	return confirmView(w, sWarn.Render("Revoke "+t.Token+"?"),
-		sSub.Render("Nobody can sign up with it any more; accounts made with it stay."), "", yes("revoke"))
+		sSub.Render("Nobody can sign up with it any more; accounts made with it stay."), "", confirmKeys("enter", "revoke"))
 }
 
 func (s *tokensScreen) listView(w, h int, inline bool) string {

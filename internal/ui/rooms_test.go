@@ -12,11 +12,19 @@ func TestRoomsConfirmAndHistory(t *testing.T) {
 	a := demoApp(t, 120, 36)
 	openRooms(a)
 	rs := a.cur().(*roomsScreen)
-	rs.update(runes("x"))
-	if rs.confirm != "delete" || !strings.Contains(rs.footer(100), "Delete Lounge?") {
-		t.Fatalf("confirm %q: %q", rs.confirm, rs.footer(100))
+	rs.update(runes("x")) // deleting can't be undone: the word is typed
+	if rs.confirm != "delete" || rs.form == nil || !strings.Contains(rs.view(100, 30), "Delete Lounge?") {
+		t.Fatalf("confirm %q: %q", rs.confirm, rs.view(100, 30))
 	}
-	rs.update(tea.KeyMsg{Type: tea.KeyEsc})
+	rs.update(runes("y"))
+	if cmd := rs.deleteRoom(); cmd != nil || rs.err == nil || rs.busy {
+		t.Error("y deleted the room")
+	}
+	rs.form.get("sure").input.SetValue("Delete")
+	if cmd := rs.deleteRoom(); cmd == nil || rs.form != nil {
+		t.Error("typing delete didn't delete")
+	}
+	rs.busy = false
 	rs.update(tea.KeyMsg{Type: tea.KeyDown})
 	rs.update(tea.KeyMsg{Type: tea.KeyDown})
 	rs.update(tea.KeyMsg{Type: tea.KeyDown})

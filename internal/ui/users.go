@@ -603,18 +603,15 @@ func (s *usersScreen) footer(w int) string {
 	if s.mode != usersConfirm || s.op == nil {
 		return strings.Join(status, "\n")
 	}
-	yes := func(verb string) string {
-		return mark("key:enter", keyChip("enter")+sMuted.Render(" "+verb)) + "   " + mark("key:esc", keyChip("esc")+sMuted.Render(" cancel"))
-	}
 	switch {
 	case s.op.body["deactivated"] == true:
 		return confirmView(w, sWarn.Render("Deactivate "+s.op.user+"?"),
-			sSub.Render("They are signed out everywhere and can't sign in again until reactivated."), "", yes("deactivate"))
+			sSub.Render("They are signed out everywhere and can't sign in again until reactivated."), "", confirmKeys("enter", "deactivate"))
 	case s.op.signOut:
 		return confirmView(w, sWarn.Render("Sign "+s.op.user+" out everywhere?"),
-			sSub.Render("Every phone, browser and app they use is signed out; their password stays the same."), "", yes("sign out"))
+			sSub.Render("Every phone, browser and app they use is signed out; their password stays the same."), "", confirmKeys("enter", "sign out"))
 	}
-	return confirmView(w, sWarn.Render(strings.ToUpper(s.op.desc[:1])+s.op.desc[1:]+"?"), "", yes("yes"))
+	return confirmView(w, sWarn.Render(strings.ToUpper(s.op.desc[:1])+s.op.desc[1:]+"?"), "", confirmKeys("enter", "yes"))
 }
 
 // stats is the strip of totals: tiles on a wide terminal, a line on a

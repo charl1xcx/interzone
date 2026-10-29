@@ -68,6 +68,8 @@ func (s *roomsScreen) activeForm() *form    { return s.form }
 
 func (s *roomsScreen) keys() [][2]string {
 	switch {
+	case s.form != nil && s.confirm == "delete":
+		return [][2]string{{"enter", "delete the room"}, {"esc", "cancel"}}
 	case s.form != nil:
 		return [][2]string{{"enter", "delete history"}, {"esc", "cancel"}}
 	case s.confirm != "":
@@ -155,6 +157,21 @@ func (s *roomsScreen) purge() tea.Cmd {
 		})
 }
 
+func (s *roomsScreen) deleteRoom() tea.Cmd {
+	r, ok := s.current()
+	if strings.TrimSpace(strings.ToLower(s.form.value("sure"))) != "delete" {
+		s.err = fmt.Errorf("type the word delete, or press esc to keep the room")
+		return nil
+	}
+	s.form, s.confirm = nil, ""
+	if !ok {
+		return nil
+	}
+	return s.do(r.Title()+" is being deleted", func(ctx context.Context, c *config.Config, login *deploy.AdminLogin) error {
+		return deploy.DeleteRoom(ctx, c, login, r.ID)
+	})
+}
+
 func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 	switch m := msg.(type) {
 	case roomsMsg:
@@ -180,6 +197,9 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 	case spinner.TickMsg:
 		return spinning(s.busy, &s.spin, m)
 	case formDoneMsg:
+		if s.form != nil && s.confirm == "delete" {
+			return s.deleteRoom()
+		}
 		if s.form != nil {
 			return s.purge()
 		}
@@ -191,7 +211,7 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 	}
 	if s.form != nil {
 		if k.String() == "esc" {
-			s.form, s.err = nil, nil
+			s.form, s.err, s.confirm = nil, nil, ""
 			return nil
 		}
 		return s.form.Update(msg)
@@ -200,15 +220,9 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 		r, ok := s.current()
 		switch k.String() {
 		case "enter", "y":
-			what := s.confirm
 			s.confirm = ""
 			if !ok {
 				return nil
-			}
-			if what == "delete" {
-				return s.do(r.Title()+" is being deleted", func(ctx context.Context, c *config.Config, login *deploy.AdminLogin) error {
-					return deploy.DeleteRoom(ctx, c, login, r.ID)
-				})
 			}
 			info := map[bool]string{true: r.Title() + " is blocked", false: r.Title() + " can be joined again"}[!r.Blocked]
 			return s.do(info, func(ctx context.Context, c *config.Config, login *deploy.AdminLogin) error {
@@ -235,9 +249,12 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 		if ok {
 			s.confirm = "block"
 		}
-	case "x":
+	case "x": // can't be undone: the word is typed, not a key pressed twice
 		if ok {
-			s.confirm = "delete"
+			s.err, s.info = nil, ""
+			sure := textField("sure", "Type delete to confirm", "", "delete", "")
+			sure.required = true
+			s.form, s.confirm = newForm(sure), "delete"
 		}
 	case "h":
 		if ok {
@@ -264,6 +281,10 @@ func (s *roomsScreen) view(w, h int) string {
 	if s.form != nil {
 		r, _ := s.current()
 		head := sSub.Render("Delete old messages in "+r.Title()) + "\n"
+		if s.confirm == "delete" {
+			head = confirmView(w, sWarn.Render("Delete "+r.Title()+"?"),
+				sSub.Render(fmt.Sprintf("Its %d people on this server are made to leave, its messages are removed from this server, and it's blocked so it can't be joined again. This can't be undone.", r.Local))) + "\n"
+		}
 		if s.err != nil {
 			head += sBad.Render("✗ "+s.err.Error()) + "\n"
 		}
@@ -313,19 +334,11 @@ func (s *roomsScreen) footer(w int) string {
 	if s.confirm == "" || !ok {
 		return status
 	}
-	yes := func(verb string) string {
-		return mark("key:enter", keyChip("enter")+sMuted.Render(" "+verb)) + "   " + mark("key:esc", keyChip("esc")+sMuted.Render(" cancel"))
-	}
-	switch {
-	case s.confirm == "delete":
-		return confirmView(w, sWarn.Render("Delete "+r.Title()+"?"),
-			sSub.Render(fmt.Sprintf("Its %d people on this server are made to leave, its messages are removed from this server, and it's blocked so it can't be joined again. This can't be undone.", r.Local)),
-			"", yes("delete"))
-	case r.Blocked:
-		return confirmView(w, sWarn.Render("Unblock "+r.Title()+"?"), "", yes("unblock"))
+	if r.Blocked {
+		return confirmView(w, sWarn.Render("Unblock "+r.Title()+"?"), "", confirmKeys("enter", "unblock"))
 	}
 	return confirmView(w, sWarn.Render("Block "+r.Title()+"?"),
-		sSub.Render("Nobody on this server can join it any more; who's in it stays."), "", yes("block"))
+		sSub.Render("Nobody on this server can join it any more; who's in it stays."), "", confirmKeys("enter", "block"))
 }
 
 func (s *roomsScreen) listView(w, h int, inline bool) string {
