@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -663,7 +662,6 @@ type deployScreen struct {
 	vp      viewport.Model
 	follow  bool
 	spin    spinner.Model
-	bar     progress.Model
 }
 
 func newDeployScreen() *deployScreen {
@@ -673,7 +671,6 @@ func newDeployScreen() *deployScreen {
 	return &deployScreen{
 		spin: sp,
 		vp:   viewport.New(0, 0),
-		bar:  progress.New(progress.WithGradient("#9D7CFF", "#3EF0B0"), progress.WithoutPercentage()),
 	}
 }
 
@@ -719,7 +716,8 @@ func (s *deployScreen) title() string {
 	}
 	return "Deploy"
 }
-func (s *deployScreen) typing() bool { return false }
+func (s *deployScreen) typing() bool    { return false }
+func (s *deployScreen) animating() bool { return s.running }
 func (s *deployScreen) keys() [][2]string {
 	if s.running {
 		return [][2]string{{"↑↓", "scroll log"}, {"end", "follow"}, {"ctrl+c", "abort"}}
@@ -981,12 +979,12 @@ func (s *deployScreen) view(w, h int) string {
 			nDone++
 		}
 	}
-	s.bar.Width = max(10, w-40)
+	barW := max(10, w-40)
 	if narrow {
-		s.bar.Width = max(10, w-2)
+		barW = max(10, w-2)
 	}
 	stats := []string{
-		s.bar.ViewAs(float64(nDone) / float64(len(s.plan))),
+		flowBar(float64(nDone)/float64(len(s.plan)), barW, s.running),
 		"",
 		sMuted.Render("elapsed  ") + sTitle.Render(s.elapsed.Round(time.Second).String()),
 		sMuted.Render("tasks    ") + sTitle.Render(fmt.Sprint(s.tasks)),

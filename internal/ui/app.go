@@ -70,6 +70,7 @@ type App struct {
 
 	health    *deploy.Health // the header's dot (health.go)
 	healthGen int
+	animOn    bool // a frame tick is on its way (anim.go)
 }
 
 func New(cfg *config.Config, loaded bool) *App {
@@ -123,7 +124,7 @@ func (a *App) index(name string) int {
 // wizard is the screens shown in the stepper, Welcome and Manage excluded.
 func (a *App) wizard() []screen { return a.screens[1:a.index("Manage")] }
 
-func (a *App) Init() tea.Cmd { return tea.Batch(a.cur().enter(a.cfg), a.checkHealth()) }
+func (a *App) Init() tea.Cmd { return tea.Batch(a.cur().enter(a.cfg), a.checkHealth(), a.animate()) }
 
 func (a *App) cur() screen { return a.screens[a.step] }
 
@@ -160,6 +161,16 @@ func (a *App) jump(n int) tea.Cmd {
 type ownedMsg interface{ owner() string }
 
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if _, ok := msg.(animTickMsg); ok {
+		animFrame++
+		a.animOn = false
+		return a, a.animate()
+	}
+	m, cmd := a.update(msg)
+	return m, tea.Batch(cmd, a.animate())
+}
+
+func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.w, a.h = m.Width, m.Height

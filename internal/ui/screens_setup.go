@@ -71,7 +71,7 @@ func (s *welcomeScreen) view(w, h int) string {
 	feature := func(icon, title, text string) string {
 		return sPink.Render(icon) + "  " + sTitle.Render(title) + "\n   " + wrap(sMuted, "   ", text)
 	}
-	brand := gradientLines(strings.TrimPrefix(logo, "\n"))
+	brand := gradientLinesAt(strings.TrimPrefix(logo, "\n"), float64(animFrame)*0.03)
 	if lipgloss.Width(brand) > w || plain {
 		brand = gradient("◢◤ interzone")
 	}
