@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -28,7 +29,10 @@ func main() {
 		}
 		if cmd, ok := cli.Commands[os.Args[1]]; ok {
 			if err := cmd(os.Args[2:]); err != nil {
-				if !errors.Is(err, cli.ErrFailed) {
+				var pe *fs.PathError
+				if errors.As(err, &pe) && errors.Is(err, fs.ErrNotExist) {
+					fmt.Fprintln(os.Stderr, "interzone: there's nothing at", pe.Path)
+				} else if !errors.Is(err, cli.ErrFailed) {
 					fmt.Fprintln(os.Stderr, "interzone:", err)
 				}
 				os.Exit(1)

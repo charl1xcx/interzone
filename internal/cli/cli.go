@@ -67,6 +67,10 @@ var ErrFailed = errors.New("failed")
 func configFlag(name string, args []string) (*config.Config, error) {
 	fs := flag.NewFlagSet(name, flag.ExitOnError)
 	file := fs.String("config", "", "answers file (default: the wizard's saved answers)")
+	fs.Usage = func() {
+		fmt.Fprintf(fs.Output(), "Usage: interzone %s [options]\n\nRun 'interzone help' for what it does.\n\nOptions:\n", name)
+		fs.PrintDefaults()
+	}
 	_ = fs.Parse(args)
 	c, _, err := loadConfig(*file)
 	return c, err

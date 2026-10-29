@@ -94,6 +94,10 @@ func Servers(args []string) error {
 func SelfUpdate(args []string) error {
 	fs := flag.NewFlagSet("self-update", flag.ExitOnError)
 	force := fs.Bool("force", false, "reinstall even if this is the newest release")
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "Usage: interzone self-update [options]\n\nReplaces this binary with the newest release.\n\nOptions:")
+		fs.PrintDefaults()
+	}
 	_ = fs.Parse(args)
 	c, ok := config.Load()
 	if !ok {
