@@ -45,8 +45,8 @@ func TestMASUpdate(t *testing.T) {
 		{map[string]any{"deactivated": false}, [][]string{{"unlock-user", "--reactivate", "bob"}}, false},
 		{map[string]any{"admin": true}, [][]string{{"promote-admin", "bob"}}, false},
 		{map[string]any{"admin": false}, [][]string{{"demote-admin", "bob"}}, false},
-		{map[string]any{"password": "pw", "logout_devices": true}, [][]string{{"set-password", "--ignore-complexity", "bob", "pw"}, {"kill-sessions", "bob"}}, true},
-		{map[string]any{"password": "pw", "admin": true}, [][]string{{"register-user", "--yes", "--ignore-password-complexity", "--password", "pw", "--admin", "bob"}}, true},
+		{map[string]any{"password": "pw", "logout_devices": true}, [][]string{{"set-password", "--ignore-complexity", "--", "bob", "pw"}, {"kill-sessions", "bob"}}, true},
+		{map[string]any{"password": "pw", "admin": true}, [][]string{{"register-user", "--yes", "--ignore-password-complexity", "--password=pw", "--admin", "--", "bob"}}, true},
 	} {
 		calls := fakeMAS(t, "")
 		if err := UpdateUser(context.Background(), masConfig(), &AdminLogin{}, "@bob:example.org", tc.body); err != nil {

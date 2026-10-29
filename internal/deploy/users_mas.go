@@ -140,7 +140,8 @@ func masUpdate(ctx context.Context, c *config.Config, userID string, body map[st
 		_, err := masRun(ctx, c, false, "unlock-user", "--reactivate", user)
 		return err
 	case body["logout_devices"] != nil:
-		if _, err := masRun(ctx, c, true, "set-password", "--ignore-complexity", user, pw); err != nil {
+		// "--" and "=": a password starting with "-" isn't an option.
+		if _, err := masRun(ctx, c, true, "set-password", "--ignore-complexity", "--", user, pw); err != nil {
 			return err
 		}
 		_, err := masRun(ctx, c, false, "kill-sessions", user)
@@ -150,7 +151,7 @@ func masUpdate(ctx context.Context, c *config.Config, userID string, body map[st
 		if admin {
 			flag = "--admin"
 		}
-		_, err := masRun(ctx, c, true, "register-user", "--yes", "--ignore-password-complexity", "--password", pw, flag, user)
+		_, err := masRun(ctx, c, true, "register-user", "--yes", "--ignore-password-complexity", "--password="+pw, flag, "--", user)
 		return err
 	case setAdmin:
 		cmd := "demote-admin"

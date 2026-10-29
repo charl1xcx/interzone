@@ -331,6 +331,13 @@ func (c *Config) Missing() []string {
 	if c.Target.Mode == "ssh" && c.Target.Host == "" {
 		out = append(out, "Server: SSH host")
 	}
+	// Ansible runs every value through Jinja: "{{" or "{%" fails the
+	// deploy, and "{#…#}" quietly drops part of the password.
+	for _, p := range [][2]string{{"Server: sudo password", c.Target.BecomePass}, {"Admin: password", c.AdminPassword}} {
+		if strings.Contains(p[1], "{{") || strings.Contains(p[1], "{%") || strings.Contains(p[1], "{#") {
+			out = append(out, p[0]+" can't contain {{, {% or {#")
+		}
+	}
 	if c.SSL.Mode == "custom" && (c.SSL.CertPath == "" || c.SSL.KeyPath == "") {
 		out = append(out, "Server: certificate and key paths")
 	}

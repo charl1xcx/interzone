@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -269,5 +270,18 @@ func TestCloneSharesNothing(t *testing.T) {
 	cp.Components["x"], cp.Values["y"], cp.Overrides["z"], cp.FederateOnly[0] = true, "1", "2", "b.org"
 	if c.Components["x"] || c.Values["y"] != "" || c.Overrides["z"] != "" || c.FederateOnly[0] != "a.org" {
 		t.Errorf("clone shares state with the original: %+v", c)
+	}
+}
+
+func TestMissingTemplatePasswords(t *testing.T) {
+	c := Default()
+	c.Domain = "example.org"
+	c.AdminPassword = "a{#b#}c"
+	if !slices.ContainsFunc(c.Missing(), func(s string) bool { return strings.HasPrefix(s, "Admin: password") }) {
+		t.Errorf("a password Jinja would change passed: %v", c.Missing())
+	}
+	c.AdminPassword = "plain{x}"
+	if slices.ContainsFunc(c.Missing(), func(s string) bool { return strings.HasPrefix(s, "Admin: password") }) {
+		t.Errorf("a plain password was refused")
 	}
 }
