@@ -211,7 +211,10 @@ type need struct{ distro, version string }
 // from one (Arch installs it from its own repositories). why is set when
 // the OS can't use a mirror at all.
 func serverNeeds(facts map[string]string) (os []need, docker *need, why string) {
-	ids := strings.Fields(facts["osid"] + " ")
+	ids := strings.Fields(facts["osid"])
+	if len(ids) == 0 { // no /etc/os-release
+		return nil, nil, "interzone doesn't know where " + orUnknown(facts["os"]) + " keeps its packages"
+	}
 	ver, code, arch := facts["ver"], facts["codename"], facts["arch"]
 	major, _, _ := strings.Cut(ver, ".")
 	id := ids[0]

@@ -797,6 +797,9 @@ func (r *Runner) exec(ctx context.Context, step Step, dir, name string, args ...
 	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = dir
 	cmd.Env = r.env
+	// An aborted run's leftover children (ssh's control master) mustn't
+	// keep Wait waiting for the output to close.
+	cmd.WaitDelay = 10 * time.Second
 	pr, pw := io.Pipe()
 	cmd.Stdout = pw
 	cmd.Stderr = pw
@@ -808,6 +811,10 @@ func (r *Runner) exec(ctx context.Context, step Step, dir, name string, args ...
 		defer close(done)
 		sc := bufio.NewScanner(pr)
 		sc.Buffer(make([]byte, 64*1024), 1024*1024)
+		sc.Split(longLines)
+		// Anything the scanner can't take must still be read, or the
+		// command blocks writing it.
+		defer io.Copy(io.Discard, pr)
 		for sc.Scan() {
 			line := strings.TrimRight(sc.Text(), " *")
 			if strings.TrimSpace(line) == "" {
@@ -830,6 +837,19 @@ func (r *Runner) exec(ctx context.Context, step Step, dir, name string, args ...
 	pw.Close()
 	<-done
 	return err
+}
+
+// longLines is bufio.ScanLines, except that a line longer than the buffer
+// (Ansible's failure dumps can be) comes in pieces instead of stopping the
+// scan.
+func longLines(data []byte, atEOF bool) (int, []byte, error) {
+	if n, tok, err := bufio.ScanLines(data, atEOF); n > 0 || err != nil || atEOF {
+		return n, tok, err
+	}
+	if len(data) >= 1024*1024 {
+		return len(data), data, nil
+	}
+	return 0, nil, nil
 }
 
 func redact(args []string) []string {

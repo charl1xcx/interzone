@@ -168,6 +168,7 @@ func TestServerNeeds(t *testing.T) {
 		{map[string]string{"osid": "linuxmint ubuntu debian", "codename": "xia", "ubuntu_codename": "noble", "arch": "x86_64"}, "ubuntu:noble", "ubuntu:noble", false},
 		{map[string]string{"osid": "cachyos arch"}, "archlinux:", "", false},
 		{map[string]string{"osid": "ol rhel fedora", "ver": "9.4"}, "", "", true},
+		{map[string]string{"os": "macOS"}, "", "", true},
 	} {
 		osn, docker, why := serverNeeds(tc.facts)
 		var got []string
