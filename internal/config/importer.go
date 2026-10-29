@@ -523,7 +523,7 @@ func readHosts(path string, c *Config) error {
 		o := map[string]string{}
 		for _, f := range fields[1:] {
 			if k, val, ok := strings.Cut(f, "="); ok {
-				o[k] = unquote(val)
+				o[k] = val
 			}
 		}
 		if host == "" || fields[0] == c.HostName() {
@@ -566,51 +566,54 @@ func readHosts(path string, c *Config) error {
 	return nil
 }
 
-// splitHostLine splits an INI inventory line on spaces outside quotes.
+// splitHostLine splits an INI inventory line the way Ansible does (a POSIX
+// shell split): quotes group and are removed, \ escapes outside '...'.
 func splitHostLine(line string) []string {
 	var out []string
 	var cur strings.Builder
 	var quote rune
+	word, esc := false, false
 	for _, r := range line {
 		switch {
-		case quote != 0:
+		case esc:
+			cur.WriteRune(r)
+			esc = false
+		case quote == '\'':
 			if r == quote {
 				quote = 0
+			} else {
+				cur.WriteRune(r)
 			}
-			cur.WriteRune(r)
+		case quote == '"':
+			switch r {
+			case '"':
+				quote = 0
+			case '\\':
+				esc = true
+			default:
+				cur.WriteRune(r)
+			}
 		case r == '\'' || r == '"':
-			quote = r
-			cur.WriteRune(r)
+			quote, word = r, true
+		case r == '\\':
+			esc, word = true, true
 		case r == ' ' || r == '\t':
-			if cur.Len() > 0 {
+			if word {
 				out = append(out, cur.String())
 				cur.Reset()
+				word = false
 			}
-		case r == '#':
-			if cur.Len() == 0 {
-				return out // a comment
-			}
-			cur.WriteRune(r)
+		case r == '#' && !word:
+			return out // a comment
 		default:
 			cur.WriteRune(r)
+			word = true
 		}
 	}
-	if cur.Len() > 0 {
+	if word {
 		out = append(out, cur.String())
 	}
 	return out
-}
-
-// unquote undoes the quoting of an inventory value, including the
-// doubled ” that HostsINI writes for a quote inside single quotes.
-func unquote(s string) string {
-	switch {
-	case len(s) >= 2 && s[0] == '\'' && s[len(s)-1] == '\'':
-		return strings.ReplaceAll(s[1:len(s)-1], "''", "'")
-	case len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"':
-		return s[1 : len(s)-1]
-	}
-	return s
 }
 
 // SuggestName picks a server name for an import: the first server if it

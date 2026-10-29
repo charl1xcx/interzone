@@ -109,6 +109,12 @@ func indent(s, pad string) string {
 	return strings.Join(lines, "\n")
 }
 
+// iniQuote quotes a value for an INI inventory line, which Ansible splits
+// like a shell does. shortcut: a value that reads as a number, list or
+// {{ template }} is still converted by Ansible; a YAML host_vars file would
+// keep it as typed, if a password like that ever matters.
+func iniQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
+
 // Quote renders s as a single-quoted YAML scalar.
 func Quote(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
 
@@ -376,19 +382,19 @@ func (c *Config) HostsINI() string {
 			parts = append(parts, "ansible_become=true", "ansible_become_user=root")
 		}
 	} else {
-		parts = append(parts, "ansible_host="+t.Host, "ansible_ssh_user="+t.User)
+		parts = append(parts, "ansible_host="+iniQuote(t.Host), "ansible_ssh_user="+iniQuote(t.User))
 		if t.Port != "" && t.Port != "22" {
-			parts = append(parts, "ansible_port="+t.Port)
+			parts = append(parts, "ansible_port="+iniQuote(t.Port))
 		}
 		if t.SSHKey != "" {
-			parts = append(parts, "ansible_ssh_private_key_file="+t.SSHKey)
+			parts = append(parts, "ansible_ssh_private_key_file="+iniQuote(t.SSHKey))
 		}
 		if t.User != "root" {
 			parts = append(parts, "ansible_become=true", "ansible_become_user=root")
 		}
 	}
 	if t.BecomePass != "" {
-		parts = append(parts, "ansible_become_password="+Quote(t.BecomePass))
+		parts = append(parts, "ansible_become_password="+iniQuote(t.BecomePass))
 	}
 	b.WriteString(strings.Join(parts, " ") + "\n")
 	return b.String()
