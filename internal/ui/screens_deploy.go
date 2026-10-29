@@ -314,7 +314,7 @@ func (s *reviewScreen) confirmLines(w int) []string {
 		what = sWarn.Render("Update "+c.Domain+" on "+where+"?") + "\n" +
 			sSub.Render("Services restart as they're updated, so the server is unreachable for a minute or two. It usually takes 5 to 15 minutes.")
 	}
-	lines := []string{what, ""}
+	var lines []string // between what it does and the keys
 	switch {
 	case s.imported:
 		lines = append(lines, sMuted.Render(fmt.Sprintf("vars.yml: %d variable(s) differ from the imported one.", len(s.changes))))
@@ -334,7 +334,10 @@ func (s *reviewScreen) confirmLines(w int) []string {
 	if s.checking || s.stage == "stopped" {
 		lines = append(lines, sWarn.Render("! The checks haven't finished."))
 	}
-	lines = append(lines, "", keyLink("y")+sMuted.Render(" deploy now   ")+keyLink("esc")+sMuted.Render(" not yet"))
+	if len(lines) > 0 {
+		lines = append([]string{""}, lines...)
+	}
+	lines = append(append([]string{what}, lines...), "", keyLink("y")+sMuted.Render(" deploy now   ")+keyLink("esc")+sMuted.Render(" not yet"))
 	for i, l := range lines {
 		lines[i] = lipgloss.NewStyle().Width(min(w, maxFormWidth) - 6).Render(l)
 	}
