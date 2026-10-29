@@ -4,13 +4,13 @@
    a–z      shortcuts                           
                                                 
  Anywhere                                       
+   ctrl+k   go to a screen or action            
    ctrl+b   the menu                            
    ctrl+s   save answers                        
    ctrl+l   layout: auto (compact)              
    ctrl+y   theme: interzone                    
    q        quit, when not typing               
    ctrl+c   quit                                
-                                                
                                                 
                                                 
                                                 

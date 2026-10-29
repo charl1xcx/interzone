@@ -6,6 +6,8 @@
                                               
                                               
  Anywhere                                     
+   ctrl+k   go to a screen or action          
+                                              
    ctrl+b   the menu                          
                                               
    ctrl+s   save answers                      
@@ -17,8 +19,6 @@
    q        quit, when not typing             
                                               
    ctrl+c   quit                              
-                                              
-                                              
                                               
                                               
                                               

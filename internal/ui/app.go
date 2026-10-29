@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	zone "github.com/lrstanley/bubblezone"
@@ -56,13 +57,16 @@ type App struct {
 	layout        string               // auto, compact or wide (layout.go)
 	menuOpen      bool                 // the compact layout shows the menu
 	sheetOpen     bool                 // the compact layout lists every key (⋯)
-	menuTop       int                  // how far the compact menu is scrolled
-	sideFocus     bool                 // the wide layout's keys are on the sidebar (menukeys.go)
-	menuSel       string               // the menu entry selected from the keyboard
-	menuKeys      bool                 // the selection is shown: the menu was reached by key
-	menuCols      int                  // tiles across in the compact menu, as last drawn
-	menuFollow    bool                 // scroll the compact menu to the selection
-	menuFocusLine int                  // the selection's line in the compact menu, or -1
+	gotoOpen      bool                 // ctrl+k's go-to box is up (goto.go)
+	gotoIn        textinput.Model
+	gotoSel       int
+	menuTop       int    // how far the compact menu is scrolled
+	sideFocus     bool   // the wide layout's keys are on the sidebar (menukeys.go)
+	menuSel       string // the menu entry selected from the keyboard
+	menuKeys      bool   // the selection is shown: the menu was reached by key
+	menuCols      int    // tiles across in the compact menu, as last drawn
+	menuFollow    bool   // scroll the compact menu to the selection
+	menuFocusLine int    // the selection's line in the compact menu, or -1
 
 	health    *deploy.Health // the header's dot (health.go)
 	healthGen int
@@ -203,6 +207,13 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, tea.Batch(cmd, func() tea.Msg { return startDeployMsg{m.opts} })
 	case tea.KeyMsg:
 		a.status = ""
+		if a.gotoOpen {
+			return a.gotoKey(m)
+		}
+		if m.String() == "ctrl+k" {
+			a.openGoto()
+			return a, nil
+		}
 		if a.sheetOpen {
 			a.sheetOpen = false
 			if m.String() == "esc" || m.String() == "q" {
@@ -347,7 +358,9 @@ func (a *App) View() (out string) {
 	title := sTitle.Render(a.cur().title())
 	contentH := max(3, bodyH-2*padY-2)
 	var content string
-	if a.sheetOpen {
+	if a.gotoOpen {
+		title, content = sTitle.Render("Go to")+sMuted.Render("  enter goes · esc closes"), a.gotoView(inner, contentH)
+	} else if a.sheetOpen {
 		title, content = sTitle.Render("Keys")+sMuted.Render("  any key closes this"), a.sheetView(inner, contentH)
 	} else {
 		content = a.screenView(inner, contentH)

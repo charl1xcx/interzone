@@ -118,6 +118,8 @@ func (a *App) compactView() string {
 	switch {
 	case a.menuOpen:
 		content = a.menuScrolled(a.menuTiles(inner)+"\n"+a.menuLink("app:layout", "◫", a.layoutName(), "")+"     "+a.menuLink("app:theme", "◐", themeName, ""), bodyH)
+	case a.gotoOpen:
+		content = sTitle.Render("Go to") + "\n\n" + a.gotoView(inner, bodyH-2)
 	case a.sheetOpen:
 		content = a.sheetView(inner, bodyH)
 	default:
@@ -189,6 +191,8 @@ func (a *App) compactHeader(w int) string {
 	switch {
 	case a.menuOpen:
 		where = sAccent.Render("Menu")
+	case a.gotoOpen:
+		where = sAccent.Render("Go to")
 	case a.sheetOpen:
 		where = sAccent.Render("Keys")
 	case a.step == 0:
@@ -245,7 +249,7 @@ type barButton struct {
 func (a *App) compactBar(w int) string {
 	var bs []barButton
 	switch {
-	case a.menuOpen || a.sheetOpen:
+	case a.menuOpen || a.sheetOpen || a.gotoOpen:
 		bs = append(bs, barButton{"key:esc", "✕ close", false})
 	default:
 		if a.step > 0 {
@@ -347,7 +351,7 @@ func (a *App) sheetLines(inner int) ([]string, int) {
 	}
 	mine := len(lines)
 	lines = append(lines, "", sSection.Render("Anywhere"))
-	anywhere := [][2]string{{"ctrl+b", "the menu"}, {"esc", "back"}, {"?", "these keys"}, {"ctrl+s", "save answers"},
+	anywhere := [][2]string{{"ctrl+k", "go to a screen or action"}, {"ctrl+b", "the menu"}, {"esc", "back"}, {"?", "these keys"}, {"ctrl+s", "save answers"},
 		{"ctrl+l", "layout: " + a.layoutName()}, {"ctrl+y", "theme: " + themeName}, {"q", "quit, when not typing"}, {"ctrl+c", "quit"}}
 	if a.compact() {
 		anywhere = slices.DeleteFunc(anywhere, func(k [2]string) bool { return k[0] == "esc" || k[0] == "?" })

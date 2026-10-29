@@ -3,19 +3,19 @@
 │ ▸ Setup                ││                                                                                            │
 │                        ││   Keys  any key closes this                                                                │
 │ ▾ Manage example.org   ││                                                                                            │
-│ ▌ ⌂ Overview           ││   On this screen                               P        Upgrade Postgres                   │
-│   @ Users              ││     ↑↓       select                            C        Compress Synapse's state           │
-│   # Rooms              ││     enter    run                               d        Server dashboard                   │
-│   ▦ Dashboard          ││     a–z      shortcuts                         l        View logs                          │
-│   ↻ Updates            ││     u        Update the server                 f        Fine-tune the roles                │
-│   ◷ Backups            ││     c        Check services                    $        Database shell                     │
-│   ⚑ Alerts             ││     r        Restart all services              x        Run playbook tags                  │
-│   ↺ Restore            ││     n        See what an update brings         w        Change the setup                   │
-│   ↶ Rollback           ││     i        Check container images            v        Move to another server             │
-│   ✎ Fine-tune          ││     A        Alerts                            o        Other servers                      │
-│   ⚒ Maintenance        ││     p        Start, stop or reinstall serv…    X        Uninstall everything               │
-│   ⇢ Move server        ││     U        Update interzone                                                              │
-│   ▤ Servers            ││     a        Add a user                      Anywhere                                      │
+│ ▌ ⌂ Overview           ││   On this screen                               C        Compress Synapse's state           │
+│   @ Users              ││     ↑↓       select                            d        Server dashboard                   │
+│   # Rooms              ││     enter    run                               l        View logs                          │
+│   ▦ Dashboard          ││     a–z      shortcuts                         f        Fine-tune the roles                │
+│   ↻ Updates            ││     u        Update the server                 $        Database shell                     │
+│   ◷ Backups            ││     c        Check services                    x        Run playbook tags                  │
+│   ⚑ Alerts             ││     r        Restart all services              w        Change the setup                   │
+│   ↺ Restore            ││     n        See what an update brings         v        Move to another server             │
+│   ↶ Rollback           ││     i        Check container images            o        Other servers                      │
+│   ✎ Fine-tune          ││     A        Alerts                            X        Uninstall everything               │
+│   ⚒ Maintenance        ││     p        Start, stop or reinstall serv…                                                │
+│   ⇢ Move server        ││     U        Update interzone                Anywhere                                      │
+│   ▤ Servers            ││     a        Add a user                        ctrl+k   go to a screen or action           │
 │                        ││     m        Manage users                      ctrl+b   the menu                           │
 │ ▸ Mirrors              ││     R        Manage rooms                      esc      back                               │
 │                        ││     b        Back up the database              ?        these keys                         │
@@ -24,7 +24,7 @@
 │ ▾ Servers              ││     z        Roll back                         ctrl+y   theme: interzone                   │
 │   ● example.org        ││     D        Disk space                        q        quit, when not typing              │
 │                        ││     V        Vacuum the database               ctrl+c   quit                               │
-│                        ││                                                                                            │
+│                        ││     P        Upgrade Postgres                                                              │
 │                        ││                                                                                            │
 │                        ││                                                                                            │
 │                        ││                                                                                            │

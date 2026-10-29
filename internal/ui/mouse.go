@@ -207,6 +207,13 @@ func (a *App) tap(ids []string) (tea.Model, tea.Cmd) {
 			cycleTheme()
 			return a, nil
 		}
+		if n, ok := strings.CutPrefix(id, "goto:"); ok && a.gotoOpen {
+			a.gotoSel, _ = strconv.Atoi(n)
+			return a.gotoKey(tea.KeyMsg{Type: tea.KeyEnter})
+		}
+		if a.gotoOpen && !strings.HasPrefix(id, "key:") {
+			continue
+		}
 		if (a.menuOpen || a.sheetOpen) && !strings.HasPrefix(id, "side:") && !strings.HasPrefix(id, "key:") {
 			continue // the screen under the menu isn't shown
 		}
