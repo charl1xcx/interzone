@@ -55,6 +55,10 @@ func TestOverridesRendered(t *testing.T) {
 	c.Overrides = map[string]string{
 		"matrix_synapse_max_upload_size_mb": "200",
 		"matrix_synapse_extra_listeners":    "- port: 9000\n  type: http",
+		"matrix_one_item_list":              "- a",
+		"matrix_one_key_map":                "a: b",
+		"matrix_flow_list":                  "[a, b]",
+		"matrix_unindented_block":           "|\nline one\nline two",
 	}
 	out := c.VarsYAML("", "", "")
 	var vars map[string]any
@@ -66,6 +70,18 @@ func TestOverridesRendered(t *testing.T) {
 	}
 	if l, ok := vars["matrix_synapse_extra_listeners"].([]any); !ok || len(l) != 1 {
 		t.Errorf("listeners = %#v", vars["matrix_synapse_extra_listeners"])
+	}
+	if l, ok := vars["matrix_one_item_list"].([]any); !ok || len(l) != 1 {
+		t.Errorf("one-item list = %#v", vars["matrix_one_item_list"])
+	}
+	if m, ok := vars["matrix_one_key_map"].(map[string]any); !ok || m["a"] != "b" {
+		t.Errorf("one-key map = %#v", vars["matrix_one_key_map"])
+	}
+	if l, ok := vars["matrix_flow_list"].([]any); !ok || len(l) != 2 {
+		t.Errorf("flow list = %#v", vars["matrix_flow_list"])
+	}
+	if vars["matrix_unindented_block"] != "line one\nline two\n" {
+		t.Errorf("block = %q", vars["matrix_unindented_block"])
 	}
 	if strings.Count(out, "matrix_synapse_max_upload_size_mb:") != 1 {
 		t.Errorf("override written more than once:\n%s", out)
@@ -185,5 +201,63 @@ func TestRoles(t *testing.T) {
 	}
 	if w := byName["playbook-wide"].Vars; len(w) != 1 || w[0].Name != "matrix_playbook_only" {
 		t.Errorf("playbook-wide = %+v", w)
+	}
+}
+
+func TestWriteSecret(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(p, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "link.json")
+	if err := os.Symlink(p, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteSecret(link, []byte("new")); err != nil {
+		t.Fatal(err)
+	}
+	if fi, err := os.Lstat(link); err != nil || fi.Mode()&os.ModeSymlink == 0 {
+		t.Errorf("link replaced: %v %v", fi, err)
+	}
+	fi, err := os.Stat(p)
+	if b, _ := os.ReadFile(p); err != nil || string(b) != "new" || fi.Mode().Perm() != 0o600 {
+		t.Errorf("got %q, mode %v, %v", b, fi.Mode(), err)
+	}
+	if m, _ := filepath.Glob(filepath.Join(dir, ".*")); len(m) > 0 {
+		t.Errorf("left behind %v", m)
+	}
+}
+
+func TestBlockIndentsPastedBody(t *testing.T) {
+	w := &yamlWriter{seen: map[string]bool{}}
+	w.block("borg_ssh_key", "|\n-----BEGIN KEY-----\nabc\n-----END KEY-----")
+	var vars map[string]string
+	if err := yaml.Unmarshal([]byte(w.b.String()), &vars); err != nil {
+		t.Fatalf("not YAML: %v\n%s", err, w.b.String())
+	}
+	if vars["borg_ssh_key"] != "-----BEGIN KEY-----\nabc\n-----END KEY-----\n" {
+		t.Errorf("got %q", vars["borg_ssh_key"])
+	}
+}
+
+func TestLoadMovesBrokenFileAside(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("INTERZONE_SERVER", "")
+	if err := os.MkdirAll(Dir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(Path(), []byte(`{"Domain":"example.org","GenericSecret":"ab`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := Load(); ok {
+		t.Fatal("broken file loaded")
+	}
+	if m, _ := filepath.Glob(Path() + ".broken-*"); len(m) != 1 {
+		t.Errorf("not moved aside: %v", m)
+	}
+	// A missing file is a first run: nothing to move.
+	if _, ok := Load(); ok {
+		t.Fatal("loaded nothing")
 	}
 }

@@ -4,12 +4,15 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -175,9 +178,17 @@ func Fresh() *Config {
 }
 
 // Load returns the saved configuration, or fresh answers on first run.
+// A file that can't be parsed is moved aside to <file>.broken-<time>
+// first, so its secrets aren't overwritten by the fresh ones on the next
+// save.
 func Load() (*Config, bool) {
 	c, err := LoadFile(Path())
 	if err != nil {
+		var se *json.SyntaxError
+		var te *json.UnmarshalTypeError
+		if errors.As(err, &se) || errors.As(err, &te) || errors.Is(err, io.ErrUnexpectedEOF) {
+			_ = os.Rename(Path(), Path()+".broken-"+time.Now().Format("20060102-150405"))
+		}
 		return Fresh(), false
 	}
 	return c, true
@@ -217,7 +228,7 @@ func (c *Config) SaveFile(file string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(file, b, 0o600)
+	return WriteSecret(file, b)
 }
 
 // Installed reports whether a previous run wrote this server's inventory.
@@ -241,8 +252,6 @@ func (c *Config) RegistrationOpen() bool {
 	return false
 }
 
-// UsesMAS reports whether the server's accounts live in MAS: ticked, or
-// turned on in Fine-tune.
 // FederationPort is where other servers reach this one. Conduit and its
 // forks serve federation on 443 next to the client API.
 func (c *Config) FederationPort() string {
@@ -253,6 +262,8 @@ func (c *Config) FederationPort() string {
 	return "8448"
 }
 
+// UsesMAS reports whether the server's accounts live in MAS: ticked, or
+// turned on in Fine-tune.
 func (c *Config) UsesMAS() bool {
 	return c.Homeserver == "synapse" && (c.Components["mas"] || c.Overrides["matrix_authentication_service_enabled"] == "true")
 }
@@ -300,6 +311,9 @@ func (c *Config) Missing() []string {
 	var out []string
 	if c.Domain == "" {
 		out = append(out, "Server: base domain")
+	} else if !ValidHost(c.Domain) {
+		// It becomes paths in the inventory, so nothing but a hostname.
+		out = append(out, "Server: base domain "+c.Domain+" isn't a hostname like example.com")
 	}
 	if c.Target.Mode == "ssh" && c.Target.Host == "" {
 		out = append(out, "Server: SSH host")

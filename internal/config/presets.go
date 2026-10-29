@@ -48,7 +48,7 @@ func writePresets(ps []catalog.Preset) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(presetsPath(), b, 0o600)
+	return WriteSecret(presetsPath(), b)
 }
 
 // Presets lists the built-in presets, as the user changed them, then the

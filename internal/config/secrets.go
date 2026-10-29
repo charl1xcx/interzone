@@ -14,6 +14,32 @@ import (
 	"time"
 )
 
+// WriteSecret writes a file that holds secrets: owner-only even when an
+// older copy wasn't, and atomically, so a crash or a full disk leaves the
+// old file rather than half of the new one.
+func WriteSecret(path string, b []byte) error {
+	if real, err := filepath.EvalSymlinks(path); err == nil {
+		path = real // a linked inventory stays linked
+	}
+	f, err := os.CreateTemp(filepath.Dir(path), "."+filepath.Base(path)+".*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f.Name()) // after the rename there's nothing there
+	if _, err := f.Write(b); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), path)
+}
+
 const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 // RandomPassword returns n characters that are safe to drop into YAML and shells.

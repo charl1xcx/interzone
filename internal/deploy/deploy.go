@@ -477,7 +477,7 @@ func (r *Runner) writeInventory(step Step) error {
 		filepath.Join(inv, "hosts"):        c.HostsINI(),
 	}
 	for path, body := range files {
-		if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		if err := config.WriteSecret(path, []byte(body)); err != nil {
 			return err
 		}
 		r.note(step, "wrote "+path)

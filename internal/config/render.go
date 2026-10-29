@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
+
 	"interzone/internal/catalog"
 )
 
@@ -62,7 +64,7 @@ func (w *yamlWriter) override(key, value string) {
 	}
 	w.seen[key] = true
 	value = strings.TrimRight(value, "\n ")
-	if !strings.Contains(value, "\n") {
+	if !strings.Contains(value, "\n") && !blockCollection(value) {
 		fmt.Fprintf(&w.b, "%s: %s  # changed in interzone's Fine-tune screen\n", key, value)
 		return
 	}
@@ -72,6 +74,17 @@ func (w *yamlWriter) override(key, value string) {
 		return
 	}
 	fmt.Fprintf(&w.b, "%s:\n%s\n", key, indent(value, "  "))
+}
+
+// blockCollection reports whether a one-line value is a block list or
+// mapping, like "- a" or "a: b", which can't follow the key on its line.
+func blockCollection(value string) bool {
+	var n yaml.Node
+	if yaml.Unmarshal([]byte(value), &n) != nil || len(n.Content) == 0 {
+		return false
+	}
+	v := n.Content[0]
+	return (v.Kind == yaml.SequenceNode || v.Kind == yaml.MappingNode) && v.Style&yaml.FlowStyle == 0
 }
 
 // indentKeep indents a block scalar's body unless it already is.
@@ -93,7 +106,7 @@ func (w *yamlWriter) block(key, body string) {
 	body = strings.TrimRight(body, "\n ")
 	if strings.HasPrefix(body, "|") || strings.HasPrefix(body, ">") {
 		head, rest, _ := strings.Cut(body, "\n")
-		fmt.Fprintf(&w.b, "%s: %s\n%s\n", key, head, rest)
+		fmt.Fprintf(&w.b, "%s: %s\n%s\n", key, head, indentKeep(rest))
 		return
 	}
 	fmt.Fprintf(&w.b, "%s:\n%s\n", key, indent(body, "  "))

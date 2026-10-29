@@ -195,6 +195,8 @@ func TestImportRefusesWithoutSecrets(t *testing.T) {
 		"generic":  "matrix_domain: example.org\npostgres_connection_password: x\n",
 		"postgres": "matrix_domain: example.org\nmatrix_homeserver_generic_secret_key: x\n",
 		"vault":    "$ANSIBLE_VAULT;1.1;AES256\n6162\n",
+		"path":     "matrix_domain: ../../../../tmp/pwn\nmatrix_homeserver_generic_secret_key: g\npostgres_connection_password: p\n",
+		"url":      "matrix_domain: https://example.org\nmatrix_homeserver_generic_secret_key: g\npostgres_connection_password: p\n",
 	} {
 		if _, err := ImportMDAD(mdadLayout(t, vars, ""), nil); err == nil {
 			t.Errorf("%s: imported", name)

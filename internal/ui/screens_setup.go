@@ -316,7 +316,12 @@ func mirrorHint(kind config.MirrorKind) string {
 
 func (s *serverScreen) leave(c *config.Config) {
 	f := s.form
-	c.Domain = strings.ToLower(f.value("domain"))
+	c.Domain = strings.ToLower(strings.TrimSpace(f.value("domain")))
+	// A pasted link: keep only the name.
+	for _, p := range []string{"https://", "http://"} {
+		c.Domain = strings.TrimPrefix(c.Domain, p)
+	}
+	c.Domain = strings.TrimRight(c.Domain, "/")
 	// People often type the homeserver's own name; the base domain is what
 	// follows "matrix." (but "matrix.org" itself is a base domain).
 	if rest, ok := strings.CutPrefix(c.Domain, "matrix."); ok && strings.Contains(rest, ".") {

@@ -1,7 +1,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"maps"
 	"os"
 	"os/exec"
@@ -271,7 +273,8 @@ func (v *varsFile) valueYAML(key string) string {
 // mapVars fills c from the variables interzone has answers for.
 func (im *Import) mapVars(c *Config, v *varsFile) error {
 	domain, ok := v.str("matrix_domain")
-	if !ok || domain == "" || strings.Contains(domain, "{{") {
+	domain = strings.ToLower(domain)
+	if !ok || !ValidHost(domain) {
 		return fmt.Errorf("%s doesn't set matrix_domain to a plain domain name", im.VarsFile)
 	}
 	c.Domain = domain
@@ -648,6 +651,8 @@ func (im *Import) Save(name string) error {
 	}
 	if c, err := LoadFile(ProfilePath(name)); err == nil && (name != DefaultProfile || c.Domain != "") {
 		return fmt.Errorf("there is already a server called %s", name)
+	} else if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("there is already a server called %s, and its answers can't be read: %w", name, err)
 	}
 	c := im.Config
 	c.PlaybookDir = filepath.Join(DataDir(), "servers", name, "matrix-docker-ansible-deploy")
@@ -682,7 +687,7 @@ func (im *Import) copyPlaybook(c *Config) error {
 			err = os.MkdirAll(filepath.Dir(want), 0o700)
 		}
 		if err == nil {
-			err = os.WriteFile(want, b, 0o600)
+			err = WriteSecret(want, b)
 		}
 		if err != nil {
 			return err
@@ -748,7 +753,7 @@ func (im *Import) Update(name string) error {
 		c.AdminToken = old.AdminToken
 	}
 	if b, err := os.ReadFile(path); err == nil {
-		if err := os.WriteFile(path+".before-import", b, 0o600); err != nil {
+		if err := WriteSecret(path+".before-import", b); err != nil {
 			return err
 		}
 	}
@@ -767,9 +772,18 @@ func (im *Import) keep(name string, c *Config) error {
 	if err := os.MkdirAll(keep, 0o700); err != nil {
 		return err
 	}
-	for _, f := range []string{im.VarsFile, im.HostsFile} {
-		if b, err := os.ReadFile(f); err == nil {
-			_ = os.WriteFile(filepath.Join(keep, filepath.Base(f)), b, 0o600)
+	// Under fixed names, as ImportedVars reads them back: the vars file
+	// could have been called anything.
+	for f, as := range map[string]string{im.VarsFile: "vars.yml", im.HostsFile: "hosts"} {
+		if f == "" {
+			continue
+		}
+		b, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		if err := WriteSecret(filepath.Join(keep, as), b); err != nil {
+			return err
 		}
 	}
 	return c.SaveFile(ProfilePath(name))
