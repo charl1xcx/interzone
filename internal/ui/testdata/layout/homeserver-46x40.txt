@@ -5,7 +5,7 @@
    Minimal chat      Synapse · 4 components   
    Friends & family  Synapse · 6 components   
    Bridge hub        Synapse · 11 components  
-   Public community  Synapse · 9 components   
+   Public community  Synapse · 8 components   
    Lightweight       Tuwunel · 3 components   
                                               
  Or only the homeserver, and pick the         

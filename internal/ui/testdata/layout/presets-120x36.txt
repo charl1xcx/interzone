@@ -17,7 +17,7 @@
 │ ▾ Servers              ││     │ Calls  • Element Call                                                          │     │
 │   ● example.org        ││     ╰────────────────────────────────────────────────────────────────────────────────╯     │
 │                        ││     Bridge hub        Synapse · 11 components                                              │
-│                        ││     Public community  Synapse · 9 components                                               │
+│                        ││     Public community  Synapse · 8 components                                               │
 │                        ││     Lightweight       Tuwunel · 3 components                                               │
 │                        ││                                                                                            │
 │                        ││   Or only the homeserver, and pick the components yourself                                 │

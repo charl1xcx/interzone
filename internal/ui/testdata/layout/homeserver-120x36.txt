@@ -7,7 +7,7 @@
 │   ○ Settings           ││     Minimal chat      Synapse · 4 components                                               │
 │   ○ Review             ││     Friends & family  Synapse · 6 components                                               │
 │   ○ Deploy             ││     Bridge hub        Synapse · 11 components                                              │
-│                        ││     Public community  Synapse · 9 components                                               │
+│                        ││     Public community  Synapse · 8 components                                               │
 │ ▸ Manage example.org   ││     Lightweight       Tuwunel · 3 components                                               │
 │                        ││                                                                                            │
 │ ▸ Mirrors              ││   Or only the homeserver, and pick the components yourself                                 │
