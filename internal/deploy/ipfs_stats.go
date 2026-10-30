@@ -6,6 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
+	"net/netip"
+	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -26,6 +29,7 @@ type HostStats struct {
 	Parts     []string // what it hosts, from PartNames
 	Last      string   // ipfs-follow's last log line
 	Mirror    string   // the container, when the node is interzone-mirror's entry node
+	selfNames []string // host names the node announces, looked up into Self
 
 	Peers            int
 	RepoSize         int64
@@ -39,7 +43,17 @@ type HostStats struct {
 	DataReceived     int64
 	Published        string // when the newest publish the node knows was made
 	PublishedParts   []HostPart
-	Wanted, Received int64 // of the parts it hosts: their size, and how much is here
+	Wanted, Received int64        // of the parts it hosts: their size, and how much is here
+	Self             []netip.Addr // the node's public addresses, as it announces them
+	PeerList         []Peer       // the peers it's connected to, up to 24: each is asked for its ledger
+}
+
+// Peer is a node the hosting node is connected to, with what bitswap has
+// exchanged with it.
+type Peer struct {
+	ID         string
+	Addr       netip.Addr
+	Sent, Recv int64
 }
 
 // HostPart is one part of the newest publish on the node.
@@ -63,12 +77,42 @@ func ReadHostStats(ctx context.Context, t config.Target) (*HostStats, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s", lastLine(stderr.String(), err))
 	}
-	return parseHostStats(string(out)), nil
+	s := parseHostStats(string(out))
+	// A name the node announces (the mirror's PUBLIC_HOST), or failing all
+	// else the server's own, says where it is.
+	names := s.selfNames
+	if t.Mode == "ssh" {
+		names = append(names, t.Host)
+	}
+	for _, n := range names {
+		if len(s.Self) > 0 {
+			break
+		}
+		if a, err := netip.ParseAddr(n); err == nil {
+			s.Self = append(s.Self, a)
+			continue
+		}
+		ips, _ := net.DefaultResolver.LookupNetIP(ctx, "ip", n)
+		s.Self = append(s.Self, ips...)
+	}
+	return s, nil
+}
+
+// findMirrorNode sets c to interzone-mirror's IPFS container, if the
+// machine has one, running or not.
+const findMirrorNode = `c=$(docker ps -a --filter label=com.docker.compose.service=ipfs --format '{{.Names}} {{.Image}}' 2>/dev/null | awk '$2 ~ /kubo/ {print $1; exit}')`
+
+// LocalMirrorNode is the name of interzone-mirror's IPFS container on this
+// machine, if one runs; asked without sudo, as docker's group allows.
+func LocalMirrorNode(ctx context.Context) string {
+	out, _ := exec.CommandContext(ctx, "sh", "-c", findMirrorNode+`
+[ -n "$c" ] && docker inspect -f '{{.State.Running}}' "$c" | grep -q true && echo "$c"`).Output()
+	return strings.TrimSpace(string(out))
 }
 
 // mirrorStatsScript finds interzone-mirror's compose service ipfs (see its
 // IPFS.md), which publishes every part, and reads it like a hosting node.
-const mirrorStatsScript = `c=$(docker ps -a --filter label=com.docker.compose.service=ipfs --format '{{.Names}} {{.Image}}' 2>/dev/null | awk '$2 ~ /kubo/ {print $1; exit}')
+const mirrorStatsScript = findMirrorNode + `
 if [ -n "$c" ]; then
 echo installed yes
 echo mirror $c
@@ -98,6 +142,11 @@ ipfs() { runuser -u ` + ipfsUser + ` -- env IPFS_PATH=` + ipfsRepo + ` ` + ipfsB
 const ipfsStatsScript = `echo peers $(ipfs swarm peers | wc -l)
 echo repo $(ipfs repo stat --size-only --enc=json)
 echo bw $(ipfs stats bw)
+echo self $(ipfs id -f '<addrs>')
+ipfs swarm peers | head -24 | while read -r a; do
+  l=$(ipfs bitswap ledger --enc=json "${a##*/}" </dev/null)
+  echo peer $a $(echo "$l" | grep -oE '"Sent":[0-9]+' | cut -d: -f2) $(echo "$l" | grep -oE '"Recv":[0-9]+' | cut -d: -f2)
+done
 echo bitswap "{$(ipfs stats bitswap --enc=json | grep -oE '"(BlocksSent|DataSent|BlocksReceived|DataReceived)":[0-9]+' | paste -sd,)}"
 # The newest publish: ipfs-follow pins its root directly, the mirror's
 # publish recursively.
@@ -175,6 +224,35 @@ func parseHostStats(out string) *HostStats {
 			var x struct{ Created string }
 			_ = json.Unmarshal([]byte(v), &x)
 			s.Published = x.Created
+		case "self":
+			for _, a := range strings.Fields(v) {
+				f := strings.Split(a, "/") // /ip4/<ip>/tcp/4001/p2p/<id>, /dns4/<name>/…
+				if len(f) < 3 {
+					continue
+				}
+				switch f[1] {
+				case "ip4", "ip6":
+					if ip, err := netip.ParseAddr(f[2]); err == nil && ip.IsGlobalUnicast() && !ip.IsPrivate() && !slices.Contains(s.Self, ip) {
+						s.Self = append(s.Self, ip)
+					}
+				case "dns", "dns4", "dns6":
+					if !slices.Contains(s.selfNames, f[2]) {
+						s.selfNames = append(s.selfNames, f[2])
+					}
+				}
+			}
+		case "peer": // /ip4/<ip>/tcp/4001/p2p/<id> sent recv
+			f := strings.Fields(v)
+			parts := strings.Split(f[0], "/")
+			if len(parts) < 3 {
+				continue
+			}
+			ip, _ := netip.ParseAddr(parts[2])
+			p := Peer{ID: parts[len(parts)-1], Addr: ip}
+			if len(f) == 3 {
+				p.Sent, p.Recv = num(f[1]), num(f[2])
+			}
+			s.PeerList = append(s.PeerList, p)
 		case "mirror":
 			s.Mirror = v
 		case "root":

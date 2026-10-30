@@ -40,6 +40,13 @@ type hostStatsMsg struct {
 }
 type hostTickMsg struct{ n int }
 
+// hostFrameMsg moves the swarm map's pulses on.
+type hostFrameMsg struct{}
+
+func (hostFrameMsg) owner() string { return "Host" }
+
+const hostFrame = 100 * time.Millisecond
+
 func (hostStatsMsg) owner() string { return "Host" }
 func (hostTickMsg) owner() string  { return "Host" }
 
@@ -63,6 +70,50 @@ type hostScreen struct {
 	statsFor string    // the target the stats are of
 	ticks    int       // the newest tick asked for; older ones are dropped
 	in, out  []float64 // recent rates, bytes a second
+
+	ledger    map[string][2]int64 // each peer's bitswap sent and received, at ledgerAt
+	ledgerAt  time.Time
+	rates     map[string]peerRate
+	phase     float64 // seconds into the map's animation
+	animating bool    // a hostFrameMsg is on its way
+}
+
+// mirrorHere says the form's target runs interzone-mirror's node, which
+// already hosts everything.
+func (s *hostScreen) mirrorHere() bool {
+	return s.stats != nil && s.stats.Mirror != "" && s.statsFor == targetKey(s.target())
+}
+
+// moving says whether data is moving with any peer, so the map animates.
+func (s *hostScreen) moving() bool {
+	for _, r := range s.rates {
+		if r.in+r.out > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *hostScreen) frame() tea.Cmd {
+	if s.animating || !s.visible || !s.moving() {
+		return nil
+	}
+	s.animating = true
+	return tea.Tick(hostFrame, func(time.Time) tea.Msg { return hostFrameMsg{} })
+}
+
+// readLedgers turns the peers' bitswap totals into rates since the last reading.
+func (s *hostScreen) readLedgers(st *deploy.HostStats, now time.Time) {
+	secs := now.Sub(s.ledgerAt).Seconds()
+	next := map[string][2]int64{}
+	s.rates = map[string]peerRate{}
+	for _, p := range st.PeerList {
+		next[p.ID] = [2]int64{p.Sent, p.Recv}
+		if was, ok := s.ledger[p.ID]; ok && secs > 0 {
+			s.rates[p.ID] = peerRate{in: max(0, float64(p.Recv-was[1])/secs), out: max(0, float64(p.Sent-was[0])/secs)}
+		}
+	}
+	s.ledger, s.ledgerAt = next, now
 }
 
 func newHostScreen() *hostScreen {
@@ -97,6 +148,9 @@ func (s *hostScreen) activeForm() *form { return s.form }
 func (s *hostScreen) keys() [][2]string {
 	if s.running {
 		return [][2]string{{"ctrl+x", "stop"}, {"↑↓", "scroll"}}
+	}
+	if s.mirrorHere() {
+		return [][2]string{{"↑↓", "move"}}
 	}
 	return [][2]string{{"enter", "start hosting"}, {"↑↓", "move"}}
 }
@@ -208,7 +262,7 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 	case hostStatsMsg:
 		s.polling = false
 		if m.target != s.statsFor {
-			s.in, s.out = nil, nil
+			s.in, s.out, s.ledger, s.rates = nil, nil, nil, nil
 		}
 		if m.target != targetKey(s.target()) {
 			return s.tick(0) // the form moved on meanwhile
@@ -220,10 +274,15 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 		}
 		s.in = append(s.in, m.stats.RateIn)[max(0, len(s.in)+1-hostHistory):]
 		s.out = append(s.out, m.stats.RateOut)[max(0, len(s.out)+1-hostHistory):]
+		s.readLedgers(m.stats, time.Now())
 		if !s.visible {
 			return nil
 		}
-		return s.tick(5 * time.Second)
+		return tea.Batch(s.tick(5*time.Second), s.frame())
+	case hostFrameMsg:
+		s.animating = false
+		s.phase += hostFrame.Seconds()
+		return s.frame()
 	case hostTickMsg:
 		if s.visible && m.n == s.ticks {
 			return s.poll()
@@ -244,6 +303,10 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		if m.String() == "enter" {
+			if s.mirrorHere() {
+				s.err = fmt.Errorf("%s already hosts everything here: interzone-mirror's node, below", map[bool]string{true: "this machine", false: s.target().Host}[s.target().Mode != "ssh"])
+				return nil
+			}
 			return s.start()
 		}
 		s.err = nil
@@ -282,12 +345,22 @@ func (s *hostScreen) view(w, h int) string {
 		status = append(status, strings.Split(sMuted.Width(min(w, maxFormWidth)).Render("  "+l), "\n")...)
 	}
 	status = append(status, s.statsView(w)...)
+	// The swarm map, below the numbers, if it still leaves the form 8 rows.
+	if room := h - lipgloss.Height(intro) - len(status) - 3 - 8 - 1; s.statsActive() && room >= 12 {
+		status = append(status, "")
+		status = append(status, swarmMap(s.stats, s.rates, s.phase, min(w, maxFormWidth), min(room, 24))...)
+	}
 	bottom := strings.Join(status, "\n")
 	formH := max(6, h-lipgloss.Height(intro)-lipgloss.Height(bottom)-3)
 	if s.running || s.done {
 		formH = min(formH, 6)
 	}
 	return intro + "\n\n" + s.form.View(w, formH) + "\n\n" + bottom
+}
+
+// statsActive says the form's target runs a node, so there's a swarm to draw.
+func (s *hostScreen) statsActive() bool {
+	return s.stats != nil && s.stats.Installed && s.stats.Active && s.statsFor == targetKey(s.target())
 }
 
 // statsView is the hosting node's numbers, when the form's target hosts.

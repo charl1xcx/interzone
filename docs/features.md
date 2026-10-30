@@ -91,6 +91,16 @@ The short list is in the [README](../README.md).
   shows the swarm that it holds Matrix software, like a sharing server.
   To stop: `systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs`.
 
+  Below the numbers, when the window is tall enough, a map of Iran shows
+  the node and each peer it's connected to, placed by IP address without
+  going online (Iranian addresses at their town, others on the map's edge
+  toward their country), with pulses running along each link as data moves
+  in or out. The node only knows its own links: the dotted lines between
+  peers are a guess. A machine that runs
+  [interzone-mirror](https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)'s
+  IPFS node shows that node here, and interzone won't set up a second one
+  on it: Host refuses, and an IPFS deploy to it uses the mirror's node.
+
   The swarm is private: its key ships with interzone, which keeps the
   public IPFS network out but isn't a secret. Its entry node is at
   infamous.g0th.ir (TCP 4001, or WebSocket on yeule.g0th.ir:443). The
