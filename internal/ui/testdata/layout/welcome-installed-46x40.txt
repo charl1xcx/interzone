@@ -15,7 +15,7 @@
     or Dendrite.                              
                                               
  ⊕  Opt into anything                         
-    79 bridges, bots, clients and services    
+    63 bridges, bots, clients and services    
     from the playbook.                        
                                               
  ⇅  Works in a blackout                       

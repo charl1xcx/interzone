@@ -13,7 +13,7 @@
 │ ▾ Servers              ││    ╭─────────────────────────╮ ╭─────────────────────────╮ ╭──────────────────────────╮    │
 │   ● example.org        ││    │ ◆  Pick any homeserver  │ │ ⊕  Opt into anything    │ │ ⇅  Works in a blackout   │    │
 │                        ││    │                         │ │                         │ │                          │    │
-│                        ││    │ Synapse, Continuwuity,  │ │ 79 bridges, bots,       │ │ Git, container, Docker,  │    │
+│                        ││    │ Synapse, Continuwuity,  │ │ 63 bridges, bots,       │ │ Git, container, Docker,  │    │
 │                        ││    │ Tuwunel, Conduit or     │ │ clients and services    │ │ OS package and PyPI      │    │
 │                        ││    │ Dendrite.               │ │ from the playbook.      │ │ mirrors inside the       │    │
 │                        ││    │                         │ │                         │ │ country.                 │    │
