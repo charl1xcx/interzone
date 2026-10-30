@@ -30,8 +30,11 @@ func (s *hostScreen) mapView(w, h int) string {
 	if w >= 84 {
 		sw := clampInt(w*38/100, 34, 50)
 		node := s.nodeRows(st, sw)
-		return lipgloss.JoinHorizontal(lipgloss.Top, join(swarmMap(sc, w-sw-2, h)), "  ",
-			join(append(node, s.peerRows(st, sw, h-len(node))...)))
+		rows, side := swarmMap(sc, w-sw-2, h), append(node, s.peerRows(st, sw, h-len(node))...)
+		for i := range min(len(rows), len(side)) { // the map's rows are all its width
+			rows[i] += "  " + side[i]
+		}
+		return join(rows)
 	}
 	mh := max(12, h*3/5)
 	below := h - mh - 1

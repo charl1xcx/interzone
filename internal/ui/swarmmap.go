@@ -2,12 +2,15 @@ package ui
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"net/netip"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/lucasb-eyer/go-colorful"
 
 	"interzone/internal/deploy"
@@ -113,9 +116,20 @@ func (c *mapCanvas) style(col ac, bold bool) int {
 	return len(c.palette) - 1
 }
 
+type mixKey struct {
+	a, b ac
+	t    float64
+}
+
+var mixed = map[mixKey]ac{} // blending is slow, and a frame asks for the same few thousands of times
+
 // mix is a between a and b: t 0 is a, 1 is b, in both of a theme's shades.
 func mix(a, b ac, t float64) ac {
 	t = math.Round(math.Max(0, math.Min(1, t))*8) / 8 // 9 steps, so the palette stays small
+	k := mixKey{a, b, t}
+	if m, ok := mixed[k]; ok {
+		return m
+	}
 	blend := func(x, y string) string {
 		cx, err1 := colorful.Hex(x)
 		cy, err2 := colorful.Hex(y)
@@ -124,7 +138,8 @@ func mix(a, b ac, t float64) ac {
 		}
 		return cx.BlendLab(cy, t).Clamped().Hex()
 	}
-	return ac{Light: blend(a.Light, b.Light), Dark: blend(a.Dark, b.Dark)}
+	mixed[k] = ac{Light: blend(a.Light, b.Light), Dark: blend(a.Dark, b.Dark)}
+	return mixed[k]
 }
 
 // project turns lon/lat into dot coordinates.
@@ -200,20 +215,26 @@ func (c *mapCanvas) label(cx, cy int, s string, layer, style int) bool {
 }
 
 func (c *mapCanvas) render() []string {
+	// Each style's codes, from rendering a stand-in once: Render per run is slow.
+	wrap := make([][2]string, len(c.palette))
+	for i, st := range c.palette {
+		before, after, _ := strings.Cut(st.Render("\x00"), "\x00")
+		wrap[i] = [2]string{before, after}
+	}
 	rows := make([]string, c.h)
 	for y := range c.h {
-		var b strings.Builder
-		run, runStyle := "", -1
+		var b, run strings.Builder
+		runStyle := -1
 		flush := func() {
-			if run == "" {
+			if run.Len() == 0 {
 				return
 			}
 			if runStyle < 0 {
-				b.WriteString(run)
+				b.WriteString(run.String())
 			} else {
-				b.WriteString(c.palette[runStyle].Render(run))
+				b.WriteString(wrap[runStyle][0] + run.String() + wrap[runStyle][1])
 			}
-			run = ""
+			run.Reset()
 		}
 		for x := range c.w {
 			cell := c.cells[y*c.w+x]
@@ -228,7 +249,7 @@ func (c *mapCanvas) render() []string {
 				flush()
 				runStyle = st
 			}
-			run += ch
+			run.WriteString(ch)
 		}
 		flush()
 		rows[y] = b.String()
@@ -327,18 +348,25 @@ func (c *mapCanvas) placeAddr(a netip.Addr) (*mapNode, string) {
 	return &mapNode{x: x, y: y, abroad: true, edge: arrow, label: "?"}, "?"
 }
 
-// swarmMap draws a scene in w×h cells: the map, then two rows of legend.
-func swarmMap(sc mapScene, w, h int) []string {
-	h -= 2
-	if !sc.big {
-		// As wide as the map needs at this height, if the width allows.
-		gw, gh := (mapLonMax-mapLonMin)*mapKx, mapLatMax-mapLatMin
-		w = min(w, int(math.Ceil(float64(4*h)*gw/gh/2)))
-	}
-	c := newMapCanvas(w, h)
-	st := sc.st
-	breath := (1 + math.Sin(sc.phase*2*math.Pi/3)) / 2 // 0 to 1, every 3 seconds
+var land struct {
+	key string
+	c   *mapCanvas
+}
 
+// landCanvas is a canvas with the land drawn, which doesn't move: it is
+// drawn once for a size and theme and copied for each frame.
+func landCanvas(w, h int, big bool) *mapCanvas {
+	key := fmt.Sprint(w, h, big, cFaint, cMuted, cPurple, cPink, cMint)
+	if land.key != key {
+		land.key, land.c = key, drawLand(w, h, big)
+	}
+	b := land.c
+	return &mapCanvas{w: b.w, h: b.h, cells: slices.Clone(b.cells), palette: slices.Clone(b.palette),
+		styles: maps.Clone(b.styles), scale: b.scale, ox: b.ox, oy: b.oy}
+}
+
+func drawLand(w, h int, big bool) *mapCanvas {
+	c := newMapCanvas(w, h)
 	// The land: Iran filled with a light texture, its provinces, its
 	// neighbours, and its border coloured along the theme's ramp.
 	fill := c.style(cFaint, false)
@@ -357,7 +385,7 @@ func swarmMap(sc mapScene, w, h int) []string {
 			c.line(x0, y0, x1, y1, step, layer, col(float64(i)/float64(len(r))))
 		}
 	}
-	if sc.big {
+	if big {
 		prov := c.style(mix(cFaint, cMuted, 0.25), false)
 		for _, p := range geo.Provinces {
 			ring(p.Ring, 2, layerProvince, func(float64) int { return prov })
@@ -378,6 +406,21 @@ func swarmMap(sc mapScene, w, h int) []string {
 			ring(s.Ring, 1, layerNeighbour, func(float64) int { return neighbour })
 		}
 	}
+
+	return c
+}
+
+// swarmMap draws a scene in w×h cells: the map, then two rows of legend.
+func swarmMap(sc mapScene, w, h int) []string {
+	h -= 2
+	if !sc.big {
+		// As wide as the map needs at this height, if the width allows.
+		gw, gh := (mapLonMax-mapLonMin)*mapKx, mapLatMax-mapLatMin
+		w = min(w, int(math.Ceil(float64(4*h)*gw/gh/2)))
+	}
+	c := landCanvas(w, h, sc.big)
+	st := sc.st
+	breath := (1 + math.Sin(sc.phase*2*math.Pi/3)) / 2 // 0 to 1, every 3 seconds
 
 	// Where the node is, and its peers, grouped by town or country.
 	var self *mapNode
@@ -592,6 +635,9 @@ func swarmMap(sc mapScene, w, h int) []string {
 		truncate(key(cPurple, "◆", "this node")+"  "+key(cMuted, "●", "peer")+"  "+key(cMint, "⠒", "coming in")+"  "+
 			key(cPink, "⠒", "going out")+"  "+key(cAmber, "⠂⠂", "guessed links"), w),
 		truncate(sFaint.Render(geo.Credit+" · borders by Natural Earth"), w))
+	for _, i := range []int{len(rows) - 2, len(rows) - 1} {
+		rows[i] += strings.Repeat(" ", max(0, w-ansi.StringWidth(rows[i])))
+	}
 	return rows
 }
 
