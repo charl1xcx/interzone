@@ -28,7 +28,7 @@ import (
 // node to every other), and the legend says so.
 //
 // The big map (interzone-mirror's node, mapScene.big) adds provinces,
-// cities and seas, a radar sweeping from the node, a breathing glow, and
+// cities and seas, sonar pings spreading from the node, a breathing glow, and
 // ripples where peers come and go.
 
 // The part of the world Iran is fitted into, in degrees, and its middle.
@@ -46,7 +46,7 @@ const (
 	layerFill = iota + 1
 	layerProvince
 	layerNeighbour
-	layerRadar
+	layerSonar
 	layerBorder
 	layerCity
 	layerGuess
@@ -287,7 +287,7 @@ type mapNode struct {
 	edge   string // the arrow an abroad marker points with
 	peers  int
 	rate   peerRate
-	lit    float64 // how brightly the radar lights it, 0 to 1
+	lit    float64 // how brightly the sonar lights it, 0 to 1
 }
 
 // edgePoint is where the line from Iran's middle toward x, y leaves the
@@ -476,20 +476,28 @@ func swarmMap(sc mapScene, w, h int) []string {
 		}
 	}
 
-	// The radar: a beam turning round the node every 6 seconds, fading
-	// behind; a peer it passes lights up and dims again.
+	// The sonar: every 4 seconds a ping spreads from the node, a dotted
+	// ring fading as it grows; a peer lights up as it reaches it, and dims.
 	if sc.big {
-		const turn = 6.0
-		angle := math.Mod(sc.phase/turn, 1) * 2 * math.Pi
-		reach := math.Hypot(float64(2*w), float64(4*h))
-		for i, fade := range []float64{0.35, 0.55, 0.72, 0.86} {
-			a := angle - float64(i)*0.07
-			col := c.style(mix(cPurple, cFaint, fade), false)
-			c.line(self.x, self.y, self.x+math.Cos(a)*reach, self.y+math.Sin(a)*reach, 2, layerRadar, col)
+		const every = 4.0
+		reach := math.Hypot(float64(2*w), float64(4*h)) * 0.6
+		frac := math.Mod(sc.phase/every, 1)
+		rad := frac * reach                      // dots
+		for i, lag := range []float64{0, 2, 5} { // the ping, and fainter echoes behind it
+			r := rad - lag
+			if r <= 1 {
+				continue
+			}
+			col := c.style(mix(cPurple, cFaint, frac*0.8+float64(i)*0.15), i == 0 && frac < 0.4)
+			for a := 0.0; a < 2*math.Pi; a += 0.8 / r {
+				c.dotf(self.x+math.Cos(a)*r, self.y+math.Sin(a)*r, layerSonar, col)
+			}
 		}
 		for _, n := range nodes {
-			behind := math.Mod(angle-math.Atan2(n.y-self.y, n.x-self.x)+4*math.Pi, 2*math.Pi) // radians since the beam passed
-			n.lit = math.Max(0, 1-behind/1.2)
+			since := rad - math.Hypot(n.x-self.x, n.y-self.y) // dots since the ping passed
+			if since >= 0 {
+				n.lit = math.Max(0, 1-since/(reach*0.3))
+			}
 		}
 	}
 
@@ -623,7 +631,7 @@ func swarmMap(sc mapScene, w, h int) []string {
 		sea := c.style(mix(cPurple, cFaint, 0.5), false)
 		for _, l := range geo.Seas {
 			x, y := c.project(l.Lon, l.Lat)
-			c.put(int(x)/2-len([]rune(l.Name))/2, int(y)/4, l.Name, layerRadar, sea)
+			c.put(int(x)/2-len([]rune(l.Name))/2, int(y)/4, l.Name, layerSonar, sea)
 		}
 	}
 

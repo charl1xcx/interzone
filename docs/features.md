@@ -99,7 +99,7 @@ The short list is in the [README](../README.md).
   peers are a guess. A machine that runs
   [interzone-mirror](https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)'s
   IPFS node needs no setting up, so on that machine Host is a big map
-  instead: provinces, cities and seas, a radar sweeping out from the node,
+  instead: provinces, cities and seas, sonar pings spreading from the node,
   comets along the links, and a ripple wherever a peer comes (mint) or goes
   (red). Beside it are the node's numbers, each peer's town, network
   (TCI, MCI, Irancell…), latency and traffic, and who came and went. `s`
