@@ -9,11 +9,13 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
 	"interzone/internal/config"
 	"interzone/internal/deploy"
+	"interzone/internal/geo"
 	"interzone/internal/ipfs"
 )
 
@@ -80,7 +82,11 @@ type hostScreen struct {
 	phase     float64      // seconds into the map's animation
 	animating bool         // a hostFrameMsg is on its way
 
-	showForm bool // on a machine running interzone-mirror's node, s shows the form over the map
+	showForm bool       // on a machine running interzone-mirror's node, s shows the form over the map
+	home     *geo.Place // where the user says this machine is, if they did
+	placing  bool       // the user is picking home
+	placeIn  textinput.Model
+	placeSel int
 }
 
 // hostComing is a peer joining or leaving the swarm.
@@ -94,7 +100,9 @@ type hostComing struct {
 // this machine, which needs no setting up.
 func (s *hostScreen) mapMode() bool { return !s.showForm && localMirror.Load() }
 
-func (s *hostScreen) handlesEsc() bool { return s.showForm && localMirror.Load() && !s.running }
+func (s *hostScreen) handlesEsc() bool {
+	return s.placing || s.showForm && localMirror.Load() && !s.running
+}
 
 // mirrorHere says the form's target runs interzone-mirror's node, which
 // already hosts everything.
@@ -173,7 +181,11 @@ func newHostScreen() *hostScreen {
 	for _, k := range []string{"host", "user", "port", "key"} {
 		f.get(k).hidden = remote
 	}
-	return &hostScreen{form: f, spin: newSpinner()}
+	in := textinput.New()
+	in.Prompt = sAccent.Render("› ")
+	in.Placeholder = "a town, e.g. Bushehr"
+	in.PlaceholderStyle = sFaint
+	return &hostScreen{form: f, spin: newSpinner(), home: loadHome(), placeIn: in}
 }
 
 func (s *hostScreen) name() string { return "Host" }
@@ -183,14 +195,17 @@ func (s *hostScreen) title() string {
 	}
 	return "Host interzone's files over IPFS"
 }
-func (s *hostScreen) typing() bool      { return !s.running && !s.mapMode() }
+func (s *hostScreen) typing() bool      { return !s.running && (!s.mapMode() || s.placing) }
 func (s *hostScreen) activeForm() *form { return s.form }
 func (s *hostScreen) keys() [][2]string {
 	if s.running {
 		return [][2]string{{"ctrl+x", "stop"}, {"↑↓", "scroll"}}
 	}
+	if s.mapMode() && s.placing {
+		return [][2]string{{"enter", "pick"}, {"↑↓", "choose"}, {"esc", "cancel"}}
+	}
 	if s.mapMode() {
-		return [][2]string{{"s", "set up hosting elsewhere"}}
+		return [][2]string{{"l", "where this node is"}, {"s", "set up hosting elsewhere"}}
 	}
 	back := [][2]string{}
 	if localMirror.Load() {
@@ -357,6 +372,14 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		if s.mapMode() {
+			if s.placing {
+				return s.placeKey(m)
+			}
+			if m.String() == "l" {
+				s.placing, s.placeSel = true, 0
+				s.placeIn.SetValue("")
+				return s.placeIn.Focus()
+			}
 			if m.String() == "s" {
 				s.showForm = true
 				return s.tick(0)

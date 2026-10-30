@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/charmbracelet/x/ansi"
 
 	"interzone/internal/deploy"
@@ -51,5 +53,28 @@ func TestReadLedgers(t *testing.T) {
 	}
 	if len(s.ripples) != 2 || len(s.peerHist["b"]) != 1 {
 		t.Fatalf("ripples %+v, history %+v", s.ripples, s.peerHist)
+	}
+}
+
+func TestHostPlace(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	localMirror.Store(true)
+	defer localMirror.Store(false)
+	s := newHostScreen()
+	s.update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l")})
+	for _, r := range "bushe" {
+		s.update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+	}
+	s.update(tea.KeyMsg{Type: tea.KeyEnter})
+	if s.placing || s.home == nil || s.home.Town != "Bushehr" {
+		t.Fatalf("picked %+v, still picking %v", s.home, s.placing)
+	}
+	if p := loadHome(); p == nil || *p != *s.home {
+		t.Fatalf("saved %+v", p)
+	}
+	s.update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("l")})
+	s.update(tea.KeyMsg{Type: tea.KeyEnter}) // nothing typed: back to the address
+	if s.home != nil || loadHome() != nil {
+		t.Fatal("not cleared")
 	}
 }

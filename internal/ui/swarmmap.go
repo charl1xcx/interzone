@@ -73,7 +73,8 @@ type mapScene struct {
 	rates   map[string]peerRate
 	phase   float64 // seconds into the animation
 	ripples []ripple
-	big     bool // the full-screen map: details and every animation
+	big     bool       // the full-screen map: details and every animation
+	home    *geo.Place // where the user says the node is, over its address's place
 }
 
 type mapCell struct {
@@ -380,7 +381,13 @@ func swarmMap(sc mapScene, w, h int) []string {
 
 	// Where the node is, and its peers, grouped by town or country.
 	var self *mapNode
+	if sc.home != nil {
+		self = c.place(*sc.home, "you")
+	}
 	for _, a := range st.Self {
+		if self != nil {
+			break
+		}
 		if p, ok := geo.Locate(a); ok {
 			self = c.place(p, "you")
 			break

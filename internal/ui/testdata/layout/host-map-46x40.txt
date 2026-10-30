@@ -24,6 +24,7 @@
  IP locations by DB-IP.com · borders by Natu… 
                                               
  ◆ The node ───────────────────────────────── 
+ in Tehran TCI, by its address · l if not     
  ● sharing · 4 peers, 1 came to it            
  ↓ ▁▅█                      195 KB/s          
  ↑ ▃█▆                      2.9 MB/s          
@@ -36,5 +37,4 @@
  ◆ 4 peers ────────────────────────────────── 
  place     network      ms traffic  now       
  and 4 more                                   
-                                              
        ‹ back             ≡ menu          ⋯  

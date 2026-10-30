@@ -104,6 +104,10 @@ The short list is in the [README](../README.md).
   (red). Beside it are the node's numbers, each peer's town, network
   (TCI, MCI, Irancell…), latency and traffic, and who came and went. `s`
   shows the form, to host on another server, and esc returns to the map.
+  Places come from the address, and DB-IP puts a provider it can't place
+  at its head office, often Tehran; interzone moves such ranges of
+  regional providers to their province, and `l` sets the node's town by
+  hand (enter with nothing typed goes back to the address's).
   interzone won't set up a second node there: Host refuses, and an IPFS
   deploy to it uses the mirror's node.
 

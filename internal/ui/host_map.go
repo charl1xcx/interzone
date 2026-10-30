@@ -4,11 +4,15 @@ import (
 	"cmp"
 	"fmt"
 	"net/netip"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"interzone/internal/config"
 	"interzone/internal/deploy"
 	"interzone/internal/geo"
 )
@@ -21,7 +25,7 @@ func (s *hostScreen) mapView(w, h int) string {
 	if st == nil || s.statsFor != targetKey(s.target()) {
 		st = &deploy.HostStats{}
 	}
-	sc := mapScene{st: st, rates: s.rates, phase: s.phase, ripples: s.ripples, big: true}
+	sc := mapScene{st: st, rates: s.rates, phase: s.phase, ripples: s.ripples, big: true, home: s.home}
 	join := func(rows []string) string { return strings.Join(rows, "\n") }
 	if w >= 84 {
 		sw := clampInt(w*38/100, 34, 50)
@@ -44,8 +48,17 @@ func (s *hostScreen) mapView(w, h int) string {
 
 // nodeRows is the node's numbers, for the big map.
 func (s *hostScreen) nodeRows(st *deploy.HostStats, w int) []string {
+	if s.placing {
+		return s.placeRows(w)
+	}
 	rows := []string{sectionHeading("The node", w)}
 	line := func(l string) { rows = append(rows, truncate(l, w)) }
+	if s.home != nil {
+		line(sMuted.Render("in ") + s.home.Town + sFaint.Render(", "+s.home.Province+", as you said · l changes"))
+	} else if len(st.Self) > 0 {
+		where, isp := peerWhere(st.Self[0])
+		line(sMuted.Render("in ") + where + sFaint.Render(" "+isp+", by its address · l if not"))
+	}
 	switch {
 	case s.stats == nil:
 		line(sMuted.Render("reading interzone-mirror's node…"))
@@ -163,3 +176,67 @@ func sparkOf(vals []float64, w int) string {
 }
 
 func publishDate(p string) string { return strings.NewReplacer("T", " ", "Z", " UTC").Replace(p) }
+
+// homeFile keeps where the user says this machine's node is, as
+// "town<TAB>province", since an address's town can be wrong: DB-IP puts
+// providers it can't place at their head office.
+func homeFile() string { return filepath.Join(config.Dir(), "host-place") }
+
+func loadHome() *geo.Place {
+	b, _ := os.ReadFile(homeFile())
+	town, prov, _ := strings.Cut(strings.TrimSpace(string(b)), "\t")
+	for _, p := range geo.Find(town, 50) {
+		if p.Town == town && p.Province == prov {
+			return &p
+		}
+	}
+	return nil
+}
+
+// placeKey is a key while the user picks where the node is: typing
+// searches the towns, enter takes the chosen one (or, with nothing typed,
+// goes back to the address's place), esc leaves it as it was.
+func (s *hostScreen) placeKey(m tea.KeyMsg) tea.Cmd {
+	found := geo.Find(s.placeIn.Value(), 6)
+	switch m.String() {
+	case "esc":
+		s.placing = false
+	case "up":
+		s.placeSel = max(0, s.placeSel-1)
+	case "down":
+		s.placeSel = min(max(0, len(found)-1), s.placeSel+1)
+	case "enter":
+		s.placing = false
+		if s.placeIn.Value() == "" {
+			s.home = nil
+			_ = os.Remove(homeFile())
+		} else if len(found) > 0 {
+			p := found[min(s.placeSel, len(found)-1)]
+			s.home = &p
+			_ = os.MkdirAll(config.Dir(), 0o700)
+			_ = os.WriteFile(homeFile(), []byte(p.Town+"\t"+p.Province+"\n"), 0o600)
+		}
+	default:
+		var cmd tea.Cmd
+		s.placeIn, cmd = s.placeIn.Update(m)
+		s.placeSel = 0
+		return cmd
+	}
+	return nil
+}
+
+// placeRows is the town picker, in place of the node's numbers.
+func (s *hostScreen) placeRows(w int) []string {
+	rows := []string{sectionHeading("Where is this node?", w), s.placeIn.View()}
+	for i, p := range geo.Find(s.placeIn.Value(), 6) {
+		l := "  " + p.Town + sFaint.Render(", "+p.Province)
+		if i == s.placeSel {
+			l = sAccent.Render("› "+p.Town) + sFaint.Render(", "+p.Province)
+		}
+		rows = append(rows, truncate(l, w))
+	}
+	if s.placeIn.Value() == "" {
+		rows = append(rows, truncate(sFaint.Render("type a town; enter with none goes back to its address's"), w))
+	}
+	return rows
+}

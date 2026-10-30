@@ -4,26 +4,26 @@
 │                        ││   interzone-mirror's IPFS swarm                                                            │
 │ ▸ Manage example.org   ││                                                                                            │
 │                        ││   ⢄ ⣀⣀⣀⡠⢄⣐⢌⠐⣀⣠⠔⠑⢄       ⠱⡅ ⠈⢂ ⠑⣀⡇⣀⣘⠄     ⠨⢁⡀⣀⡀        ◆ The node ───────────────────────   │
-│ ▸ Mirrors              ││    ⢹⠁  ⢱⠂ ⠁     ⠈⠢⣀      ⠗⠒⠠⠴⠃                ⢣       ● sharing · 4 peers, 1 came to it    │
-│                        ││    ⠐⠲⢤⢀ ⢭⠂   ⢀   ⡆⠉⠁    ⠈⢄⠤                    ⠣⡀     ↓ ▁▅█                  195 KB/s      │
-│ ▸ Test                 ││     ⢰⠎⠙⠵⡹⡌⢧⣤⣒⠍⢔ Caspian Sea⠄                    ⠈⠢⠠⡀  ↑ ▃█▆                  2.9 MB/s      │
-│                        ││     ⠈⣃⠄⡨⠌⠉⠝⠑⡤⠈⢴Ardabil     ⢸     ⢀ ⡀               ⠈  in all ↓ 6.0 GB  ↑ 40.0 GB           │
-│ ▾ Host                 ││      ⢧ ⣥ ⠌Tabriz⣂          ⢸ ⠠⠂⠞⠫⡅⠉⠝⡲⣤⣀⣀⡀             swarm gave 38.0 GB, got 1.0 GB       │
-│ ▌ · Host for IPFS      ││   ⠒⠒⠐⠼⣦⠐⠤⢀⠤⠄⡔⠐⠗⠞⢤⠙⠍⢧⣀⠤⢄⡀  ⣀⣰⠏⠉⠄⢠⢧ ⣄⣀⠄⢌⠄ ⠕⢤            disk 19.0 GB used, 80.0 GB free      │
-│                        ││    ◂DE⠼⡦⣀⣖⣰⣯⡆⢤ ⠄⠡⡅⡖●Tehran ×2⠄⠁⠅⠈⠌⡇⠄⠉⠍ ⠄⠠Mashhad   ⢀  published 0000-00-00 00:00:00 UTC    │
-│ ▾ Servers              ││     ⠐  ⠈⠑⡖⠄ ⠌⠽⠯⠯⡍⣺⡶⠾⣟◆you⠷⠍ ⠄ ⠄ ⠄ ⠥⠄⠄ ⠄ ⠄ ⠄ ⢽⢀⡀ ⣠⠊⠉⠁  ✓images ✓packages ✓git ✓programs     │
-│   ● example.org        ││      ⠈⢀ ⡤⠟⢢⡄⢚⡴⠇⡄⠸⣇⢣⡄⣏⢽⠯⢆⠜⠄ ⠄ ⠄ ⠄⠠⠎⠃⠅⠆⠄ ⠄ ⠄ ⢄⠏  ⠉⠁                                          │
-│                        ││        ⢸⢏ ⡄⢐⡴⠛⡄⠨⡅ ⠌⠨⢵⠛⡯⠍⠖⠒⠖⠒⠖⠒⠔⡒⠇ ⢄⠁⠄ ⠤⠄⠔⣀⠤⠓          ◆ 4 peers ────────────────────────   │
-│                        ││         ⠱⢄⠈⠯⡉⠄ ⠌⠚⠝⠢⠔⠈⠆⢯⠭⠄⠄ ⠄ ⠄⡐⠄ ⠄ ⠆⡆⠄⠐⠄ ⠄⠘⢧          place    network      ms now         │
-│                        ││          ⠋⢢⢄⡌⢂⠇⠁⠆⢾⡅⡀⠤⢁⢼Isfahan⠄ ⠄ ⠄ ⠌⡔⠅⠐Birjand       Tehran   Respina      41 1.9 MB/s    │
-│                        ││            ⠠⠑⣆ ⠄ ⠌⠠⠄⠈⢤⠘⡥⠍⡮ ⠄⠠Yazd⠤⠠⣄ ⡜ ⠄ ⠄ ⢴          DE       abroad      120 977 KB/s    │
-│                        ││             ⠐⣇⠄⠄Ahvaz⣣⠯⡏⠮⠹⠥ ⠄⢀⣄⣈⠄ ⠄ ⠍⠁⠆⢄⠄ ⠄⠘⡖⢰        local ne…              – idle        │
-│                        ││   ⢄          ⠸⣀⢄⣤⠄⠉⠆ ⡎⢞⢼⠅⠥⠱⠥⠐⡅ ⠄ ⠄⢀Kerman⠖⠂⢆⣆⠜        Tehran   TCI          18 idle        │
-│                        ││    ⠑⢄      ⡰⠒⢓⣾⠲⠋⠃⠙⡈⠌⠄⠄⠜⣬Shiraz ⠄ ⠄ ⠄ ⠄ ⡇ ⠄⠠Zahedan⢀                                       │
-│                        ││      ⠙⠒⠤⠤⠤⠴⠥⢄⠉⡄ ⠐   ⣥⠄⢁⠔⡇⠅⠡⠌⠄⠭⡀⠄⢀⠄ ⠄ ⠄ ⠄⡂⠄ ⠌⠙⡆ ⠉⠉⠉⠉⠁  ◆ Comings and goings ─────────────   │
-│                        ││             ⠈⠒⠚⡄ ⠈⢀ ⠈⢆⠄⢊⣵⠨⠌⠄⠥ ⠍⠌⢼⣀⠤ ⠄ ⠄⡢⠅ ⠄ ⠄⠈⠖⢤⡀     14:06 − left US abroad               │
-│                        ││                ⠨⢄  ⠠ ⠈⠒⠢⢾⡌⠄⢬⢀⡥⡨⠇ ⠄⠈⢆ ⠄ ⠄ ⠄ ⠄ ⠄ ⠄⡇     14:05 + came Tehran TCI              │
-│                        ││                  ⠑⢄ ⠐   ⠘⡟⠱⣊⣅⠈⢄⣸⡶Bandar Abbas ⠄ ⠍⡇                                         │
+│ ▸ Mirrors              ││    ⢹⠁  ⢱⠂ ⠁     ⠈⠢⣀      ⠗⠒⠠⠴⠃                ⢣       in Tehran TCI, by its address · l…   │
+│                        ││    ⠐⠲⢤⢀ ⢭⠂   ⢀   ⡆⠉⠁    ⠈⢄⠤                    ⠣⡀     ● sharing · 4 peers, 1 came to it    │
+│ ▸ Test                 ││     ⢰⠎⠙⠵⡹⡌⢧⣤⣒⠍⢔ Caspian Sea⠄                    ⠈⠢⠠⡀  ↓ ▁▅█                  195 KB/s      │
+│                        ││     ⠈⣃⠄⡨⠌⠉⠝⠑⡤⠈⢴Ardabil     ⢸     ⢀ ⡀               ⠈  ↑ ▃█▆                  2.9 MB/s      │
+│ ▾ Host                 ││      ⢧ ⣥ ⠌Tabriz⣂          ⢸ ⠠⠂⠞⠫⡅⠉⠝⡲⣤⣀⣀⡀             in all ↓ 6.0 GB  ↑ 40.0 GB           │
+│ ▌ · Host for IPFS      ││   ⠒⠒⠐⠼⣦⠐⠤⢀⠤⠄⡔⠐⠗⠞⢤⠙⠍⢧⣀⠤⢄⡀  ⣀⣰⠏⠉⠄⢠⢧ ⣄⣀⠄⢌⠄ ⠕⢤            swarm gave 38.0 GB, got 1.0 GB       │
+│                        ││    ◂DE⠼⡦⣀⣖⣰⣯⡆⢤ ⠄⠡⡅⡖●Tehran ×2⠄⠁⠅⠈⠌⡇⠄⠉⠍ ⠄⠠Mashhad   ⢀  disk 19.0 GB used, 80.0 GB free      │
+│ ▾ Servers              ││     ⠐  ⠈⠑⡖⠄ ⠌⠽⠯⠯⡍⣺⡶⠾⣟◆you⠷⠍ ⠄ ⠄ ⠄ ⠥⠄⠄ ⠄ ⠄ ⠄ ⢽⢀⡀ ⣠⠊⠉⠁  published 0000-00-00 00:00:00 UTC    │
+│   ● example.org        ││      ⠈⢀ ⡤⠟⢢⡄⢚⡴⠇⡄⠸⣇⢣⡄⣏⢽⠯⢆⠜⠄ ⠄ ⠄ ⠄⠠⠎⠃⠅⠆⠄ ⠄ ⠄ ⢄⠏  ⠉⠁     ✓images ✓packages ✓git ✓programs     │
+│                        ││        ⢸⢏ ⡄⢐⡴⠛⡄⠨⡅ ⠌⠨⢵⠛⡯⠍⠖⠒⠖⠒⠖⠒⠔⡒⠇ ⢄⠁⠄ ⠤⠄⠔⣀⠤⠓                                               │
+│                        ││         ⠱⢄⠈⠯⡉⠄ ⠌⠚⠝⠢⠔⠈⠆⢯⠭⠄⠄ ⠄ ⠄⡐⠄ ⠄ ⠆⡆⠄⠐⠄ ⠄⠘⢧          ◆ 4 peers ────────────────────────   │
+│                        ││          ⠋⢢⢄⡌⢂⠇⠁⠆⢾⡅⡀⠤⢁⢼Isfahan⠄ ⠄ ⠄ ⠌⡔⠅⠐Birjand       place    network      ms now         │
+│                        ││            ⠠⠑⣆ ⠄ ⠌⠠⠄⠈⢤⠘⡥⠍⡮ ⠄⠠Yazd⠤⠠⣄ ⡜ ⠄ ⠄ ⢴          Tehran   Respina      41 1.9 MB/s    │
+│                        ││             ⠐⣇⠄⠄Ahvaz⣣⠯⡏⠮⠹⠥ ⠄⢀⣄⣈⠄ ⠄ ⠍⠁⠆⢄⠄ ⠄⠘⡖⢰        DE       abroad      120 977 KB/s    │
+│                        ││   ⢄          ⠸⣀⢄⣤⠄⠉⠆ ⡎⢞⢼⠅⠥⠱⠥⠐⡅ ⠄ ⠄⢀Kerman⠖⠂⢆⣆⠜        local ne…              – idle        │
+│                        ││    ⠑⢄      ⡰⠒⢓⣾⠲⠋⠃⠙⡈⠌⠄⠄⠜⣬Shiraz ⠄ ⠄ ⠄ ⠄ ⡇ ⠄⠠Zahedan⢀  Tehran   TCI          18 idle        │
+│                        ││      ⠙⠒⠤⠤⠤⠴⠥⢄⠉⡄ ⠐   ⣥⠄⢁⠔⡇⠅⠡⠌⠄⠭⡀⠄⢀⠄ ⠄ ⠄ ⠄⡂⠄ ⠌⠙⡆ ⠉⠉⠉⠉⠁                                       │
+│                        ││             ⠈⠒⠚⡄ ⠈⢀ ⠈⢆⠄⢊⣵⠨⠌⠄⠥ ⠍⠌⢼⣀⠤ ⠄ ⠄⡢⠅ ⠄ ⠄⠈⠖⢤⡀     ◆ Comings and goings ─────────────   │
+│                        ││                ⠨⢄  ⠠ ⠈⠒⠢⢾⡌⠄⢬⢀⡥⡨⠇ ⠄⠈⢆ ⠄ ⠄ ⠄ ⠄ ⠄ ⠄⡇     14:06 − left US abroad               │
+│                        ││                  ⠑⢄ ⠐   ⠘⡟⠱⣊⣅⠈⢄⣸⡶Bandar Abbas ⠄ ⠍⡇    14:05 + came Tehran TCI              │
 │                        ││                   ⢨⢢⢀⠌⢀  ⣣⠈⠄⠨⠉⠈⠅⢈⠆⠈⡇ ⠥⡄⡆ ⠄ ⠄ ⢄⠔⠋⠉⠁                                         │
 │                        ││                   ⠈⢎⠎⠠⡃⠠ ⢸ ⠅ ⠡⢀⠵⠑⡏⠄⠈⠘⠒⠒⠪⠤⢠⣤⣄⠄⣸⢀⣀⣀⣀⡠⢄                                       │
 │                        ││                     ⢣⣠⠃ ⠐⠐⡇⠨ ⡨⠅⠠Gulf of Oman⠁⠁                                             │
@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││   IP locations by DB-IP.com · borders by Natural Ea…                                       │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- s set up hosting elsewhere   ·   esc back   ·   ? all keys   ·   ctrl+c quit                                           
+ l where this node is   ·   s set up hosting elsewhere   ·   esc back   ·   ? all keys   ·   ctrl+c quit                
