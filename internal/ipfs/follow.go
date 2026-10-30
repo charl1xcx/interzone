@@ -9,18 +9,55 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
 
+// PartNames are the parts of a publish, in the order they're fetched.
+var PartNames = []string{"oci", "packages", "git", "bin"}
+
+// Parts reads which parts to host: names from PartNames, comma-separated,
+// or "all", or "images" (oci).
+func Parts(spec string) ([]string, error) {
+	switch spec {
+	case "all":
+		return PartNames, nil
+	case "images":
+		return []string{"oci"}, nil
+	}
+	var names []string
+	for _, n := range strings.Split(spec, ",") {
+		if !slices.Contains(PartNames, n) {
+			return nil, fmt.Errorf("parts are all, images, or some of %s, not %q", strings.Join(PartNames, ","), spec)
+		}
+		if !slices.Contains(names, n) {
+			names = append(names, n)
+		}
+	}
+	return names, nil
+}
+
+// resolveTries and resolveWait are how often, and how far apart, Follow
+// looks the name up before giving up until the next run.
+var resolveTries, resolveWait = 10, 30 * time.Second
+
+// stall is how long a fetch may go without a new block before Follow gives
+// up, so a publish the swarm can't serve whole doesn't hold the node forever.
+var stall = 20 * time.Minute
+
 // Follow keeps a hosting node's copy of the newest publish: it resolves
 // the IPNS name on the node at api, checks the index's signature, pins
-// what parts asks for ("all", or "images": the OCI layout) with the index
-// itself, then unpins what the last run pinned and collects it. state is
-// a file remembering that, and the newest version seen, so an older
-// publish is never taken over a newer one.
+// the parts asked for (see Parts) with the index itself, then unpins what
+// the last run pinned and collects it. state is a file remembering that,
+// and the newest version seen, so an older publish is never taken over a
+// newer one.
 func Follow(ctx context.Context, api, parts, state string, log func(string)) error {
 	c := apiClient{base: strings.TrimRight(api, "/") + "/api/v0/"}
+	names, err := Parts(parts)
+	if err != nil {
+		return err
+	}
 	var last struct {
 		Version int64    `json:"version"`
 		Pins    []string `json:"pins"`
@@ -29,9 +66,21 @@ func Follow(ctx context.Context, api, parts, state string, log func(string)) err
 		_ = json.Unmarshal(b, &last)
 	}
 
+	// A node that just started has no peers yet and fails at once; retry.
 	var res struct{ Path string }
-	if err := c.call(ctx, &res, "name/resolve", "arg", "/ipns/"+Name, "recursive", "true", "timeout", "5m"); err != nil {
-		return fmt.Errorf("resolving the publish: %w", err)
+	for try := 1; ; try++ {
+		err := c.call(ctx, &res, "name/resolve", "arg", "/ipns/"+Name, "recursive", "true", "timeout", "5m")
+		if err == nil {
+			break
+		}
+		if try == resolveTries {
+			return fmt.Errorf("resolving the publish: %w", err)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(resolveWait):
+		}
 	}
 	root, ok := strings.CutPrefix(res.Path, "/ipfs/")
 	if !ok || !cidRe.MatchString(root) {
@@ -55,21 +104,17 @@ func Follow(ctx context.Context, api, parts, state string, log func(string)) err
 
 	// The root's own block and the index, so peers can find their way in.
 	pins := []string{root + "/index.json", root + "/index.json.sig"}
-	switch parts {
-	case "all":
-		pins = append(pins, idx.Parts.Packages, idx.Parts.OCI, idx.Parts.Git, idx.Parts.Bin)
-	case "images":
-		pins = append(pins, idx.Parts.OCI)
-	default:
-		return fmt.Errorf("parts must be all or images, not %q", parts)
+	cids := map[string]string{"packages": idx.Parts.Packages, "oci": idx.Parts.OCI, "git": idx.Parts.Git, "bin": idx.Parts.Bin}
+	for _, n := range names {
+		pins = append(pins, cids[n])
 	}
-	log(fmt.Sprintf("hosting the publish of %s (%s)", idx.Created, parts))
+	log(fmt.Sprintf("hosting the publish of %s (%s)", idx.Created, strings.Join(names, ", ")))
 	if err := c.call(ctx, nil, "pin/add", "arg", root, "recursive", "false"); err != nil {
 		return fmt.Errorf("pinning %s: %w", root, err)
 	}
 	for _, p := range pins {
 		log("fetching " + p)
-		if err := c.call(ctx, nil, "pin/add", "arg", p); err != nil {
+		if err := c.pin(ctx, p); err != nil {
 			return fmt.Errorf("pinning %s: %w", p, err)
 		}
 	}
@@ -137,6 +182,43 @@ func (c apiClient) call(ctx context.Context, out any, cmd string, args ...string
 		return err
 	}
 	return json.NewDecoder(res.Body).Decode(out)
+}
+
+// pin pins path recursively, giving up once no block has arrived for stall.
+func (c apiClient) pin(ctx context.Context, path string) error {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	stalled := fmt.Errorf("nothing arrived for %s; the swarm doesn't have all of it now", stall)
+	t := time.AfterFunc(stall, func() { cancel(stalled) })
+	defer t.Stop()
+	res, err := c.do(ctx, "pin/add", "arg", path, "progress", "true")
+	if err != nil {
+		if context.Cause(ctx) == stalled {
+			return stalled
+		}
+		return err
+	}
+	defer res.Body.Close()
+	dec, last := json.NewDecoder(res.Body), -1
+	for {
+		var m struct{ Progress int }
+		err := dec.Decode(&m)
+		switch {
+		case err == io.EOF:
+			if e := res.Trailer.Get("X-Stream-Error"); e != "" {
+				return fmt.Errorf("%s", e)
+			}
+			return nil
+		case err != nil && context.Cause(ctx) == stalled:
+			return stalled
+		case err != nil:
+			return err
+		}
+		if m.Progress != last {
+			last = m.Progress
+			t.Reset(stall)
+		}
+	}
 }
 
 func (c apiClient) cat(ctx context.Context, path string, limit int64) ([]byte, error) {

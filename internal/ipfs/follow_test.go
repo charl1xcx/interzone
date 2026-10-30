@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 // fakeNode answers the few RPC calls Follow makes, from one signed index.
@@ -19,11 +20,17 @@ type fakeNode struct {
 	root          string
 	index, sig    string
 	pinned, unpin []string
+	stuck         string
+	unresolved    int // name lookups to fail first
 }
 
 func (n *fakeNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	n.mu.Lock()
-	defer n.mu.Unlock()
+	if strings.TrimPrefix(r.URL.Path, "/api/v0/") == "pin/add" && r.URL.Query().Get("arg") == n.stuck {
+		n.mu.Unlock() // so the test can go on while this hangs
+	} else {
+		defer n.mu.Unlock()
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "POST only", 405)
 		return
@@ -31,6 +38,11 @@ func (n *fakeNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	arg := r.URL.Query().Get("arg")
 	switch strings.TrimPrefix(r.URL.Path, "/api/v0/") {
 	case "name/resolve":
+		if n.unresolved > 0 {
+			n.unresolved--
+			http.Error(w, `{"Message":"could not resolve name"}`, 500)
+			return
+		}
 		w.Write([]byte(`{"Path":"/ipfs/` + n.root + `"}`))
 	case "cat":
 		switch arg {
@@ -42,6 +54,12 @@ func (n *fakeNode) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"Message":"no link"}`, 500)
 		}
 	case "pin/add":
+		if arg == n.stuck {
+			w.Write([]byte(`{"Progress":1}` + "\n"))
+			w.(http.Flusher).Flush()
+			<-r.Context().Done() // the swarm never has the rest
+			return
+		}
 		n.pinned = append(n.pinned, arg)
 	case "pin/rm":
 		n.unpin = append(n.unpin, arg)
@@ -62,7 +80,9 @@ func TestFollow(t *testing.T) {
 			"parts":{"packages":"` + cid(c) + `","oci":"` + cid("o") + `","git":"` + cid(c) + `","bin":"` + cid(c) + `"}}`
 		return s, base64.StdEncoding.EncodeToString(ed25519.Sign(priv, []byte(s)))
 	}
-	node := &fakeNode{root: cid("r")}
+	defer func(d time.Duration) { resolveWait = d }(resolveWait)
+	resolveWait = time.Millisecond
+	node := &fakeNode{root: cid("r"), unresolved: 2} // a node that just started
 	node.index, node.sig = index("5", "p")
 	srv := httptest.NewServer(node)
 	defer srv.Close()
@@ -96,5 +116,27 @@ func TestFollow(t *testing.T) {
 	node.sig = base64.StdEncoding.EncodeToString(make([]byte, 64))
 	if err := Follow(ctx, srv.URL, "all", state, log); err == nil || len(node.pinned) > 0 {
 		t.Errorf("an unsigned publish was taken: %v %v", err, node.pinned)
+	}
+
+	// A publish the swarm can't serve whole is given up on.
+	defer func(d time.Duration) { stall = d }(stall)
+	stall = 200 * time.Millisecond
+	node.index, node.sig = index("8", "z")
+	node.stuck = cid("z")
+	if err := Follow(ctx, srv.URL, "packages,git", state, log); err == nil || !strings.Contains(err.Error(), "nothing arrived") {
+		t.Errorf("a stalled fetch: %v", err)
+	}
+}
+
+func TestParts(t *testing.T) {
+	for spec, want := range map[string]string{"all": "oci,packages,git,bin", "images": "oci", "git,oci,git": "git,oci"} {
+		if got, err := Parts(spec); err != nil || strings.Join(got, ",") != want {
+			t.Errorf("Parts(%q) = %v, %v", spec, got, err)
+		}
+	}
+	for _, bad := range []string{"", "oci,", "everything"} {
+		if _, err := Parts(bad); err == nil {
+			t.Errorf("Parts(%q) passed", bad)
+		}
 	}
 }
