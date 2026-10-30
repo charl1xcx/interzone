@@ -209,7 +209,19 @@ The short list is in the [README](../README.md).
   records, the signing keys and which homeserver software and version
   answer, the client API and its spec versions, ways to log in,
   `/.well-known/matrix/support`, and what Element X needs (sliding sync,
-  OAuth 2.0 logins, a call server).
+  OAuth 2.0 logins, a call server). It also checks the way there: each
+  name's addresses and whether Iran's filter answers for them
+  (10.10.34.x), where each server is (a town and network in Iran, else a
+  country), whether IPv4 and IPv6 both connect, and how long the name,
+  connection, TLS and answer take. Each certificate shows its issuer, days
+  left and TLS version, with a warning if TLS 1.0/1.1 still work, and
+  whether HSTS is sent. And the server itself: whether sign-ups are
+  closed, need a token, email or captcha, or are open to anyone; how many
+  public rooms it lists; spaces, threads and authenticated media; and
+  whether its software is older than what the playbook installs now.
+  `ctrl+o` copies the results (and saves them to `test-results.txt` in
+  the config folder) to paste into a support chat; `ctrl+r` tests again
+  every 30 seconds while you fix something.
 - **Manage an existing server:** update, run the self-check, restart, add
   users (Synapse/Dendrite), or many at once from a CSV file
   (`username[,password][,admin]` a line; missing passwords are generated

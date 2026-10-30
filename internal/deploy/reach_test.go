@@ -99,6 +99,11 @@ func TestProbeServer(t *testing.T) {
 			fmt.Fprint(w, `{"flows": [{"type": "m.login.password"}, {"type": "m.login.sso"}]}`)
 		case "/_matrix/client/v1/auth_metadata":
 			fmt.Fprint(w, `{}`)
+		case "/_matrix/client/v3/register":
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprint(w, `{"flows": [{"stages": ["m.login.recaptcha", "m.login.terms"]}, {"stages": ["m.login.registration_token"]}]}`)
+		case "/_matrix/client/v3/publicRooms":
+			fmt.Fprint(w, `{"chunk": [{}], "total_room_count_estimate": 7}`)
 		default:
 			http.NotFound(w, r)
 		}
@@ -108,18 +113,59 @@ func TestProbeServer(t *testing.T) {
 	defer func() { rootCAs = nil }()
 
 	name := ServerName("@alice:" + strings.TrimPrefix(srv.URL, "https://"))
-	got := ProbeServer(context.Background(), name)
+	pb := t.TempDir()
+	os.MkdirAll(filepath.Join(pb, "roles/custom/matrix-synapse/defaults"), 0o755)
+	os.WriteFile(filepath.Join(pb, "roles/custom/matrix-synapse/defaults/main.yml"), []byte("matrix_synapse_version: v1.163.2\n"), 0o644)
+	got := ProbeServer(context.Background(), name, pb)
 	var lines []string
 	for _, f := range got {
 		lines = append(lines, fmt.Sprintf("%d %s: %s", f.Level, f.Name, f.Detail))
 	}
 	all := strings.Join(lines, "\n")
 	for _, want := range []string{"0 Delegation: the name has a port", "0 Federation API: " + name + " answers as " + name,
-		"0 Software: Synapse 1.140.0", "0 Well-known: sends apps to " + srv.URL, "spec up to v1.12", "0 Logins: password, sso",
-		"0 Element X sync", "0 Element X login", "0 Element X calls", "0 Support: no /.well-known/matrix/support"} {
+		"0 Well-known: sends apps to " + srv.URL, "spec up to v1.12", "0 Logins: password, sso",
+		"0 Element X sync", "0 Element X login", "0 Element X calls", "0 Support: no /.well-known/matrix/support",
+		"1 Software: Synapse 1.140.0: older than 1.163.2", "1 DNS: 127.0.0.1 → 127.0.0.1 (this computer)",
+		"0 IPv4 and IPv6: " + name + ": IPv4 connects, no IPv6 address", "0 Speed: connected", "0 Certificate: " + name + ": TLS 1.3",
+		"0 HSTS: not sent", "0 Sign-ups: open, with a captcha", "0 Public rooms: 7 rooms", "0 Features: ✗ spaces  ✗ threads  ✓ authenticated media"} {
 		if !strings.Contains(all, want) {
 			t.Errorf("no %q in\n%s", want, all)
 		}
+	}
+}
+
+// Sign-up is told apart by what the easiest way in asks for.
+func TestSignUps(t *testing.T) {
+	for body, want := range map[string]string{
+		`{"flows": [{"stages": ["m.login.dummy"]}]}`:                            "1 open to anyone",
+		`{"flows": [{"stages": ["m.login.terms", "m.login.dummy"]}]}`:           "1 open to anyone",
+		`{"flows": [{"stages": ["m.login.registration_token"]}]}`:               "0 with a sign-up token only",
+		`{"flows": [{"stages": ["m.login.email.identity", "m.login.terms"]}]}`:  "0 open, with an email address, agreeing to terms",
+		`{"errcode": "M_FORBIDDEN", "error": "Registration has been disabled"}`: "0 closed",
+	} {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.Contains(body, "flows") {
+				w.WriteHeader(http.StatusUnauthorized)
+			} else {
+				w.WriteHeader(http.StatusForbidden)
+			}
+			fmt.Fprint(w, body)
+		}))
+		f := signUps(context.Background(), srv.URL)
+		srv.Close()
+		if got := fmt.Sprintf("%d %s", f.Level, f.Detail); !strings.HasPrefix(got, want) {
+			t.Errorf("%s: %q, want %q", body, got, want)
+		}
+	}
+}
+
+// A name Iran's filter blocks resolves to its own address.
+func TestFiltered(t *testing.T) {
+	if f, _ := lookupHost(context.Background(), "10.10.34.36"); f.Level != Fail || !strings.Contains(f.Detail, "filter") {
+		t.Errorf("%+v", f)
+	}
+	if cmpVersions("1.9.0", "1.10.0") >= 0 || cmpVersions("1.163.2", "1.163.2") != 0 || cmpVersions("1.164", "1.163.2") <= 0 {
+		t.Error("cmpVersions")
 	}
 }
 

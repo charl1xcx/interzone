@@ -8,13 +8,19 @@
 │                        ││   ▌  One or more, split by spaces or commas: a server name, a user ID like                 │
 │ ▾ Test                 ││   ▌  @alice:example.org, or a URL.                                                         │
 │ ▌ · Test servers       ││                                                                                            │
-│   ✗ example.org        ││   ✗ example.org  1 failed, 1 warning                                                       │
-│   · matrix.org         ││     Federation                                                                             │
+│   ✗ example.org        ││   ✗ example.org  1 failed, 2 warnings                                                      │
+│   · matrix.org         ││     Network                                                                                │
+│                        ││     ✓  DNS               matrix.example.org → 192.0.2.1 (Tehran, Asiatech)                 │
+│ ▸ Host                 ││     !  IPv4 and IPv6     matrix.example.org:443: IPv4 connects, IPv6 timed out             │
+│                        ││     TLS                                                                                    │
+│ ▾ Servers              ││     ✓  Certificate       matrix.example.org:443: TLS 1.3, Let's Encrypt R11, 62 days       │
+│   ● example.org        ││                          left                                                              │
+│                        ││     Federation                                                                             │
 │                        ││     ✓  Delegation        /.well-known/matrix/server sends servers to                       │
-│ ▸ Host                 ││                          matrix.example.org:443                                            │
+│                        ││                          matrix.example.org:443                                            │
 │                        ││     ✓  Federation API    matrix.example.org:443 answers as example.org, with a trusted     │
-│ ▾ Servers              ││                          certificate                                                       │
-│   ● example.org        ││     ✓  Software          Synapse 1.140.0                                                   │
+│                        ││                          certificate                                                       │
+│                        ││     ✓  Software          Synapse 1.140.0                                                   │
 │                        ││     Clients                                                                                │
 │                        ││     !  Well-known        https://example.org/.well-known/matrix/client sends apps to       │
 │                        ││                          https://matrix.example.org, but without the CORS header web       │
@@ -22,15 +28,9 @@
 │                        ││     ✓  Client API        https://matrix.example.org answers, spec up to v1.12              │
 │                        ││     ✗  Element X sync    the homeserver doesn't offer sliding sync, which Element X        │
 │                        ││                          needs                                                             │
-│                        ││                                                                                            │
-│                        ││   ⠋ matrix.org  testing…                                                                   │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│                        ││     Server                                                                                 │
+│ ◫ auto (wide)  ctrl+l  ││     ↓ 2 more · ↑↓ scroll                                                                   │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- enter test   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                                                            
+ enter test   ·   ctrl+o copy   ·   ctrl+r watch   ·   ↑↓ scroll   ·   esc back   ·   ctrl+c quit                       

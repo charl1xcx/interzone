@@ -223,13 +223,37 @@ func openTest(a *App) {
 	ps := a.cur().(*probeScreen)
 	ps.form.get("servers").input.SetValue("example.org, matrix.org")
 	ps.results = []probeResult{{name: "example.org", done: true, findings: []deploy.Finding{
+		{Group: "Network", Name: "DNS", Detail: "matrix.example.org → 192.0.2.1 (Tehran, Asiatech)"},
+		{Group: "Network", Name: "IPv4 and IPv6", Level: deploy.Warn, Detail: "matrix.example.org:443: IPv4 connects, IPv6 timed out"},
+		{Group: "TLS", Name: "Certificate", Detail: "matrix.example.org:443: TLS 1.3, Let's Encrypt R11, 62 days left"},
 		{Group: "Federation", Name: "Delegation", Detail: "/.well-known/matrix/server sends servers to matrix.example.org:443"},
 		{Group: "Federation", Name: "Federation API", Detail: "matrix.example.org:443 answers as example.org, with a trusted certificate"},
 		{Group: "Federation", Name: "Software", Detail: "Synapse 1.140.0"},
 		{Group: "Clients", Name: "Well-known", Level: deploy.Warn, Detail: "https://example.org/.well-known/matrix/client sends apps to https://matrix.example.org, but without the CORS header web apps need"},
 		{Group: "Clients", Name: "Client API", Detail: "https://matrix.example.org answers, spec up to v1.12"},
 		{Group: "Clients", Name: "Element X sync", Level: deploy.Fail, Detail: "the homeserver doesn't offer sliding sync, which Element X needs"},
+		{Group: "Server", Name: "Sign-ups", Detail: "with a sign-up token only"},
 	}}, {name: "matrix.org"}}
+}
+
+// ctrl+o copies the finished servers' results as text.
+func TestProbeCopy(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	var copied string
+	toClipboard = func(s string) { copied = s }
+	defer func() { toClipboard = termenv.Copy }()
+	a := demoApp(t, 120, 36)
+	openTest(a)
+	ps := a.cur().(*probeScreen)
+	ps.update(tea.KeyMsg{Type: tea.KeyCtrlO})
+	b, err := os.ReadFile(filepath.Join(config.Dir(), "test-results.txt"))
+	if got := string(b); err != nil || !strings.Contains(got, "  TLS\n    ✓ Certificate: matrix.example.org:443") ||
+		!strings.Contains(got, "✗ Element X sync") || strings.Contains(got, "matrix.org,") {
+		t.Errorf("%v:\n%s", err, got)
+	}
+	if !strings.HasPrefix(ps.note, "copied") || copied != string(b) {
+		t.Error(ps.note)
+	}
 }
 
 func openUsers(a *App) {

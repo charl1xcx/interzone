@@ -68,14 +68,15 @@ func federationChecks(ctx context.Context, c *config.Config) []Finding {
 	if !c.Federation || !c.Installed() {
 		return nil
 	}
-	return federationProbe(ctx, c.Domain)
+	out, _ := federationProbe(ctx, c.Domain)
+	return out
 }
 
 // federationProbe finds where other servers would reach domain, as the
 // spec has them do (a port in the name, else /.well-known/matrix/server,
 // else an SRV record, else port 8448), and asks it for its signing keys
 // and software.
-func federationProbe(ctx context.Context, domain string) []Finding {
+func federationProbe(ctx context.Context, domain string) ([]Finding, fedResult) {
 	var out []Finding
 	add := func(name string, l Level, format string, a ...any) {
 		out = append(out, Finding{Group: "Federation", Name: name, Level: l, Detail: fmt.Sprintf(format, a...)})
@@ -120,7 +121,7 @@ func federationProbe(ctx context.Context, domain string) []Finding {
 	switch _, err := fetchJSON(ctx, "https://"+at+"/_matrix/key/v2/server", false, dial, &keys); {
 	case err != nil:
 		add("Federation API", Fail, "https://%s %s; other servers can't reach this one", at, err)
-		return out
+		return out, fedResult{at: at, dial: dial}
 	case keys.Name != domain:
 		add("Federation API", Fail, "%s answers as %q, not %s", at, keys.Name, domain)
 	case len(keys.Verify) == 0:
@@ -138,8 +139,11 @@ func federationProbe(ctx context.Context, domain string) []Finding {
 	} else {
 		add("Software", Pass, "%s %s", v.Server.Name, v.Server.Version)
 	}
-	return out
+	return out, fedResult{at, dial, v.Server.Name, v.Server.Version}
 }
+
+// fedResult is where federation reaches a server, and what answers there.
+type fedResult struct{ at, dial, software, version string }
 
 // lookupFedSRV is the SRV record federation uses, or the older one.
 func lookupFedSRV(ctx context.Context, domain string) (string, bool) {
@@ -162,19 +166,11 @@ func getJSON(ctx context.Context, url string, insecure bool, v any) (http.Header
 // fetchJSON is getJSON connecting to dial (host:port) instead of the URL's
 // host, as SRV delegation does: the certificate is still checked for it.
 func fetchJSON(ctx context.Context, url string, insecure bool, dial string, v any) (http.Header, error) {
-	tr := &http.Transport{Proxy: http.ProxyFromEnvironment, TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure, RootCAs: rootCAs}}
-	if dial != "" {
-		tr.Proxy = nil
-		tr.DialContext = func(ctx context.Context, network, _ string) (net.Conn, error) {
-			return (&net.Dialer{}).DialContext(ctx, network, dial)
-		}
-	}
-	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.Do(req)
+	resp, err := httpClient(insecure, dial).Do(req)
 	if err != nil {
 		return nil, errors.New(netReason(err))
 	}
@@ -188,12 +184,26 @@ func fetchJSON(ctx context.Context, url string, insecure bool, dial string, v an
 	return resp.Header, nil
 }
 
+// httpClient is how the checks ask servers, through the proxy if one is
+// set, unless dial (host:port) says where to connect.
+func httpClient(insecure bool, dial string) *http.Client {
+	tr := &http.Transport{Proxy: http.ProxyFromEnvironment, TLSClientConfig: &tls.Config{InsecureSkipVerify: insecure, RootCAs: rootCAs}}
+	if dial != "" {
+		tr.Proxy = nil
+		tr.DialContext = func(ctx context.Context, network, _ string) (net.Conn, error) {
+			return (&net.Dialer{}).DialContext(ctx, network, dial)
+		}
+	}
+	return &http.Client{Timeout: 10 * time.Second, Transport: tr}
+}
+
 // clientChecks looks at this server as apps do.
 func clientChecks(ctx context.Context, c *config.Config) []Finding {
 	if !c.Installed() {
 		return nil
 	}
-	return clientProbe(ctx, c, true)
+	out, _ := clientProbe(ctx, c, true)
+	return out
 }
 
 // clientProbe looks at a server as apps do: /.well-known/matrix/client
@@ -201,7 +211,7 @@ func clientChecks(ctx context.Context, c *config.Config) []Finding {
 // in; Element X needs more than older apps: sliding sync, OAuth 2.0 logins
 // (MAS), and for calls Matrix RTC. own says it's the server interzone set
 // up, whose settings explain what's missing.
-func clientProbe(ctx context.Context, c *config.Config, own bool) []Finding {
+func clientProbe(ctx context.Context, c *config.Config, own bool) ([]Finding, string) {
 	var out []Finding
 	add := func(name string, l Level, format string, a ...any) {
 		out = append(out, Finding{Group: "Clients", Name: name, Level: l, Detail: fmt.Sprintf(format, a...)})
@@ -246,7 +256,7 @@ func clientProbe(ctx context.Context, c *config.Config, own bool) []Finding {
 	}
 	if _, err := getJSON(ctx, base+"/_matrix/client/versions", insecure, &versions); err != nil {
 		add("Client API", Fail, "%s/_matrix/client/versions %s", base, err)
-		return out
+		return out, base
 	}
 	newest := "no spec versions"
 	if n := len(versions.Versions); n > 0 {
@@ -305,20 +315,26 @@ func clientProbe(ctx context.Context, c *config.Config, own bool) []Finding {
 	} else if !own {
 		add("Support", Pass, "no /.well-known/matrix/support (optional)")
 	}
-	return out
+	return out, base
 }
 
 // ProbeServer looks at any Matrix server from here, as other servers and
-// apps do.
-func ProbeServer(ctx context.Context, domain string) []Finding {
+// apps do, then at the network and TLS on the way to it and at the server
+// itself (probe.go). playbookDir, if set, is the playbook whose pinned
+// versions say whether its software is out of date.
+func ProbeServer(ctx context.Context, domain, playbookDir string) []Finding {
 	c := &config.Config{Domain: domain, SSL: config.SSL{Mode: "letsencrypt"}}
 	var fed, cl []Finding
+	var fr fedResult
+	var base string
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() { defer wg.Done(); fed = federationProbe(ctx, domain) }()
-	go func() { defer wg.Done(); cl = clientProbe(ctx, c, false) }()
+	go func() { defer wg.Done(); fed, fr = federationProbe(ctx, domain) }()
+	go func() { defer wg.Done(); cl, base = clientProbe(ctx, c, false) }()
 	wg.Wait()
-	return append(fed, cl...)
+	outdated(fed, fr, playbookDir)
+	network, server := moreProbes(ctx, domain, fr, base)
+	return append(append(append(network, fed...), cl...), server...)
 }
 
 // ServerName is the Matrix server a user ID, URL or name points at:

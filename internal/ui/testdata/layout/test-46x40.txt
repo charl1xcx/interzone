@@ -7,7 +7,18 @@
  ▌  a server name, a user ID like             
  ▌  @alice:example.org, or a URL.             
                                               
- ✗ example.org  1 failed, 1 warning           
+ ✗ example.org  1 failed, 2 warnings          
+   Network                                    
+   ✓  DNS                                     
+      matrix.example.org → 192.0.2.1 (Tehran, 
+      Asiatech)                               
+   !  IPv4 and IPv6                           
+      matrix.example.org:443: IPv4 connects,  
+      IPv6 timed out                          
+   TLS                                        
+   ✓  Certificate                             
+      matrix.example.org:443: TLS 1.3, Let's  
+      Encrypt R11, 62 days left               
    Federation                                 
    ✓  Delegation                              
       /.well-known/matrix/server sends        
@@ -24,17 +35,6 @@
       https://matrix.example.org, but without 
       the CORS header web apps need           
    ✓  Client API                              
-      https://matrix.example.org answers,     
-      spec up to v1.12                        
-   ✗  Element X sync                          
-      the homeserver doesn't offer sliding    
-      sync, which Element X needs             
-                                              
- ⠋ matrix.org  testing…                       
-                                              
-                                              
-                                              
-                                              
-                                              
+   ↓ 9 more · ↑↓ scroll                       
                                               
     ‹ back       ≡ menu       test ›      ⋯  
