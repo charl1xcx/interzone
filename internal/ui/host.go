@@ -67,7 +67,7 @@ type hostScreen struct {
 
 func newHostScreen() *hostScreen {
 	f := newForm(
-		toggleField("part:oci", "Host the container images (about 16 GB)", true,
+		toggleField("part:oci", "Host the container images (about 12 GB)", true,
 			"Host any mix of parts. All four let other servers set up from scratch through yours; "+
 				"new publishes replace the old one every hour."),
 		toggleField("part:packages", "Host the OS, Docker and Python packages (about 3.7 GB)", true, ""),

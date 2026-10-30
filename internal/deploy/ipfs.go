@@ -184,7 +184,7 @@ func (r *Runner) ipfsHost(ctx context.Context) error {
 
 // followScript installs and starts ipfs-follow's service and hourly timer.
 // PartGB is roughly how big each part of a publish is, in GB.
-var PartGB = map[string]float64{"oci": 16, "packages": 3.7, "git": 0.05, "bin": 0.23}
+var PartGB = map[string]float64{"oci": 12.2, "packages": 3.7, "git": 0.05, "bin": 0.23}
 
 func followScript(parts string) string {
 	return `set -e

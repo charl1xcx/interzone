@@ -8,7 +8,7 @@
 │                        ││   on TCP port 4001 (open it in the firewall), and the swarm's members can see that it      │
 │ ▸ Test                 ││   holds Matrix software.                                                                   │
 │                        ││                                                                                            │
-│ ▾ Host                 ││   ▌  ●  Host the container images (about 16 GB)  on                                        │
+│ ▾ Host                 ││   ▌  ●  Host the container images (about 12 GB)  on                                        │
 │ ▌ ✓ Host for IPFS      ││   ▌  Host any mix of parts. All four let other servers set up from scratch through         │
 │                        ││   ▌  yours; new publishes replace the old one every hour.                                  │
 │ ▾ Servers              ││                                                                                            │
@@ -17,7 +17,8 @@
 │                        ││                                                                                            │
 │                        ││   ✓ hosting. It keeps going without interzone; enter sets it up again.                     │
 │                        ││     installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)                          │
-│                        ││     the server is downloading about 19 GB in the background and shares it as it arrives    │
+│                        ││     the server is downloading about 16.2 GB in the background and shares it as it          │
+│                        ││   arrives                                                                                  │
 │                        ││                                                                                            │
 │                        ││   ◆ Hosting on this machine ────────────────────────────────────────────────────────────   │
 │                        ││     Status      ● sharing · 3 peers · images, packages, git, programs                      │
@@ -28,8 +29,7 @@
 │                        ││     Swarm       gave 290 MB (1200 blocks) · got 6.0 GB (25000 blocks)                      │
 │                        ││     Disk        6.0 GB used · 80.0 GB free                                                 │
 │                        ││     Updates     updating now · the publish of 0000-00-00 00:00:00 UTC                      │
-│                        ││     Last        fetching bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi       │
-│ ◫ auto (wide)  ctrl+l  ││                                                                                            │
+│ ◫ auto (wide)  ctrl+l  ││     Last        fetching bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi       │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
