@@ -2,11 +2,13 @@
 
 **Guides:** [Setup guide](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Setup-guide) ·
 [Blackout mode](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Blackout-mode) ·
-[Components](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Components)
+[Components](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Components) ·
+[Screenshots](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Screenshots)
 
 **راهنماها:** [راهنمای نصب](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Setup-guide-fa) ·
 [حالت قطعی](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Blackout-mode-fa) ·
-[مؤلفه‌ها](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Components-fa)
+[مؤلفه‌ها](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Components-fa) ·
+[تصاویر برنامه](https://itsjustadream.g0th.ir/vvvomit/interzone/wiki/Screenshots-fa)
 
 Also on [GitHub's wiki](https://github.com/charl1xcx/interzone/wiki).
 
