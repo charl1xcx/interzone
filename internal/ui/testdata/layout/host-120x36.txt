@@ -19,16 +19,16 @@
 │                        ││     installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)                          │
 │                        ││     the server is downloading about 19 GB in the background and shares it as it arrives    │
 │                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
-│                        ││                                                                                            │
+│                        ││   ◆ Hosting on this machine ────────────────────────────────────────────────────────────   │
+│                        ││     Status      ● sharing · 3 peers · everything                                           │
+│                        ││     Copy        ███████░░░░░░░░░░░░░░  32% · 6.0 GB of 19.0 GB                             │
+│                        ││     Parts       … packages 3.0 GB  … images 15.0 GB  ✓ git 200 MB  ✓ programs 300 MB       │
+│                        ││     Download    ▁▄▇▆█                 9.5 MB/s · 6.0 GB in all                             │
+│                        ││     Upload      ▁▁▃█▆                 195 KB/s · 300 MB in all                             │
+│                        ││     Swarm       gave 290 MB (1200 blocks) · got 6.0 GB (25000 blocks)                      │
+│                        ││     Disk        6.0 GB used · 80.0 GB free                                                 │
+│                        ││     Updates     updating now · the publish of 0000-00-00 00:00:00 UTC                      │
+│                        ││     Last        fetching bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi       │
 │ ◫ auto (wide)  ctrl+l  ││                                                                                            │
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │

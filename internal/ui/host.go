@@ -3,7 +3,9 @@ package ui
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -28,6 +30,19 @@ type hostEventMsg struct {
 
 func (hostEventMsg) owner() string { return "Host" }
 
+// hostStatsMsg is a reading of the hosting node; hostTickMsg asks for the next.
+type hostStatsMsg struct {
+	target string
+	stats  *deploy.HostStats
+	err    error
+}
+type hostTickMsg struct{ n int }
+
+func (hostStatsMsg) owner() string { return "Host" }
+func (hostTickMsg) owner() string  { return "Host" }
+
+const hostHistory = 60 // readings kept for the traffic sparklines
+
 type hostScreen struct {
 	form    *form
 	events  <-chan deploy.Event
@@ -39,6 +54,13 @@ type hostScreen struct {
 	log     []string
 	spin    spinner.Model
 	scroll  int
+
+	visible  bool
+	polling  bool
+	stats    *deploy.HostStats
+	statsFor string    // the target the stats are of
+	ticks    int       // the newest tick asked for; older ones are dropped
+	in, out  []float64 // recent rates, bytes a second
 }
 
 func newHostScreen() *hostScreen {
@@ -64,11 +86,10 @@ func newHostScreen() *hostScreen {
 	return &hostScreen{form: f, spin: newSpinner()}
 }
 
-func (s *hostScreen) name() string         { return "Host" }
-func (s *hostScreen) title() string        { return "Host interzone's files over IPFS" }
-func (s *hostScreen) typing() bool         { return !s.running }
-func (s *hostScreen) leave(*config.Config) {}
-func (s *hostScreen) activeForm() *form    { return s.form }
+func (s *hostScreen) name() string      { return "Host" }
+func (s *hostScreen) title() string     { return "Host interzone's files over IPFS" }
+func (s *hostScreen) typing() bool      { return !s.running }
+func (s *hostScreen) activeForm() *form { return s.form }
 func (s *hostScreen) keys() [][2]string {
 	if s.running {
 		return [][2]string{{"ctrl+x", "stop"}, {"↑↓", "scroll"}}
@@ -76,7 +97,8 @@ func (s *hostScreen) keys() [][2]string {
 	return [][2]string{{"enter", "start hosting"}, {"↑↓", "move"}}
 }
 
-// enter offers the active server's SSH details, the likeliest machine.
+// enter offers the active server's SSH details, the likeliest machine,
+// and reads the node there if it hosts.
 func (s *hostScreen) enter(c *config.Config) tea.Cmd {
 	if s.form.value("host") == "" && c.Target.Mode == "ssh" {
 		s.form.get("mode").choice = 1
@@ -84,17 +106,50 @@ func (s *hostScreen) enter(c *config.Config) tea.Cmd {
 			s.form.get(k).input.SetValue(v)
 		}
 	}
-	return nil
+	s.visible = true
+	return s.poll()
+}
+
+func (s *hostScreen) leave(*config.Config) { s.visible = false }
+
+func (s *hostScreen) target() config.Target {
+	f := s.form
+	t := config.Target{Mode: f.value("mode"), Host: strings.TrimSpace(f.value("host")), User: f.value("user"),
+		Port: f.value("port"), SSHKey: f.value("key"), BecomePass: f.value("become")}
+	if t.User == "" {
+		t.User = "root"
+	}
+	return t
+}
+
+func targetKey(t config.Target) string { return t.Mode + " " + t.User + "@" + t.Host + ":" + t.Port }
+
+// poll reads the node's numbers, unless a reading is on its way. This
+// machine is only asked if it hosts; an SSH server once its address is in.
+func (s *hostScreen) poll() tea.Cmd {
+	t := s.target()
+	if s.polling || t.Mode == "ssh" && t.Host == "" {
+		return nil
+	}
+	if t.Mode != "ssh" {
+		if _, err := os.Stat("/etc/systemd/system/interzone-ipfs.service"); err != nil {
+			return nil
+		}
+	}
+	s.polling = true
+	key := targetKey(t)
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		st, err := deploy.ReadHostStats(ctx, t)
+		return hostStatsMsg{key, st, err}
+	}
 }
 
 func (s *hostScreen) start() tea.Cmd {
-	f := s.form
 	cfg := config.Default()
-	cfg.Target = config.Target{Mode: f.value("mode"), Host: strings.TrimSpace(f.value("host")), User: f.value("user"),
-		Port: f.value("port"), SSHKey: f.value("key"), BecomePass: f.value("become")}
-	if cfg.Target.User == "" {
-		cfg.Target.User = "root"
-	}
+	cfg.Target = s.target()
+	f := s.form
 	if cfg.Target.Mode == "ssh" && cfg.Target.Host == "" {
 		s.err = fmt.Errorf("type the server's address first")
 		return nil
@@ -129,10 +184,35 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 			s.err = m.ev.Err
 		case m.ev.Done:
 			s.done = true
+			return tea.Batch(s.wait(), s.poll())
 		case m.ev.Line != "":
 			s.log = append(s.log, m.ev.Line)
 		}
 		return s.wait()
+	case hostStatsMsg:
+		s.polling = false
+		if m.target != s.statsFor {
+			s.in, s.out = nil, nil
+		}
+		if m.target != targetKey(s.target()) {
+			return s.tick(0) // the form moved on meanwhile
+		}
+		s.stats, s.statsFor = m.stats, m.target
+		if m.err != nil || !m.stats.Installed {
+			s.stats = nil
+			return nil // nothing hosted there: no need to keep asking
+		}
+		s.in = append(s.in, m.stats.RateIn)[max(0, len(s.in)+1-hostHistory):]
+		s.out = append(s.out, m.stats.RateOut)[max(0, len(s.out)+1-hostHistory):]
+		if !s.visible {
+			return nil
+		}
+		return s.tick(5 * time.Second)
+	case hostTickMsg:
+		if s.visible && m.n == s.ticks {
+			return s.poll()
+		}
+		return nil
 	case spinner.TickMsg:
 		return spinning(s.running, &s.spin, m)
 	case tea.KeyMsg:
@@ -155,7 +235,18 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 	if s.running {
 		return nil
 	}
-	return s.form.Update(msg)
+	cmd := s.form.Update(msg)
+	if _, ok := msg.(tea.KeyMsg); ok && targetKey(s.target()) != s.statsFor {
+		return tea.Batch(cmd, s.tick(time.Second)) // once typing pauses
+	}
+	return cmd
+}
+
+// tick asks for a reading after d, replacing any tick asked for before.
+func (s *hostScreen) tick(d time.Duration) tea.Cmd {
+	s.ticks++
+	n := s.ticks
+	return tea.Tick(d, func(time.Time) tea.Msg { return hostTickMsg{n} })
 }
 
 func (s *hostScreen) view(w, h int) string {
@@ -174,10 +265,87 @@ func (s *hostScreen) view(w, h int) string {
 	for _, l := range s.log {
 		status = append(status, strings.Split(sMuted.Width(min(w, maxFormWidth)).Render("  "+l), "\n")...)
 	}
+	status = append(status, s.statsView(w)...)
 	bottom := strings.Join(status, "\n")
 	formH := max(6, h-lipgloss.Height(intro)-lipgloss.Height(bottom)-3)
 	if s.running || s.done {
 		formH = min(formH, 6)
 	}
 	return intro + "\n\n" + s.form.View(w, formH) + "\n\n" + bottom
+}
+
+// statsView is the hosting node's numbers, when the form's target hosts.
+func (s *hostScreen) statsView(w int) []string {
+	st := s.stats
+	if st == nil || !st.Installed || s.statsFor != targetKey(s.target()) {
+		return nil
+	}
+	w = min(w, maxFormWidth)
+	rows := []string{"", sectionHeading("Hosting on "+map[bool]string{true: "this machine", false: s.target().Host}[s.target().Mode != "ssh"], w)}
+	row := func(label, value string) {
+		rows = append(rows, "  "+lipgloss.NewStyle().Width(12).Render(sMuted.Render(label))+value)
+	}
+	if !st.Active {
+		row("Status", sBad.Render("● stopped")+sFaint.Render("  enter starts it again"))
+		return rows
+	}
+	state := sGood.Render("● sharing") + sMuted.Render(fmt.Sprintf(" · %s · %s", plural(st.Peers, "peer"), map[string]string{"all": "everything", "images": "images only"}[st.Parts]))
+	row("Status", state)
+	if st.Wanted > 0 {
+		frac := float64(st.Received) / float64(st.Wanted)
+		note := "all here"
+		if st.Received < st.Wanted {
+			note = fmt.Sprintf("%.0f%%", frac*100)
+		}
+		row("Copy", meter(frac, min(24, w/4))+sMuted.Render(fmt.Sprintf("  %s · %s of %s", note, humanBytes(st.Received), humanBytes(st.Wanted))))
+		var parts []string
+		for _, p := range st.PublishedParts {
+			if st.Parts != "all" && p.Name != "oci" {
+				continue
+			}
+			mark := sFaint.Render("…")
+			if p.Pinned {
+				mark = sGood.Render("✓")
+			}
+			parts = append(parts, mark+" "+map[string]string{"oci": "images", "packages": "packages", "git": "git", "bin": "programs"}[p.Name]+" "+sFaint.Render(humanBytes(p.Size)))
+		}
+		row("Parts", strings.Join(parts, "  "))
+	}
+	spark := func(vals []float64) string {
+		top := 1.0
+		for _, v := range vals {
+			top = max(top, v)
+		}
+		scaled := make([]float64, len(vals))
+		for i, v := range vals {
+			scaled[i] = v / top
+		}
+		return lipgloss.NewStyle().Width(20).Render(sparkline(scaled, 20)) // fills in as readings come
+	}
+	row("Download", sAccent.Render(spark(s.in))+sMuted.Render(fmt.Sprintf("  %s/s · %s in all", humanBytes(int64(st.RateIn)), humanBytes(st.TotalIn))))
+	row("Upload", sAccent.Render(spark(s.out))+sMuted.Render(fmt.Sprintf("  %s/s · %s in all", humanBytes(int64(st.RateOut)), humanBytes(st.TotalOut))))
+	row("Swarm", sMuted.Render(fmt.Sprintf("gave %s (%d blocks) · got %s (%d blocks)",
+		humanBytes(st.DataSent), st.BlocksSent, humanBytes(st.DataReceived), st.BlocksReceived)))
+	row("Disk", sMuted.Render(fmt.Sprintf("%s used · %s free", humanBytes(st.RepoSize), humanBytes(st.DiskFree))))
+	if st.DiskFree > 0 && st.Wanted > st.Received && st.DiskFree < st.Wanted-st.Received {
+		row("", sBad.Render("✗ not enough free space for the rest"))
+	}
+	update := sMuted.Render("waiting")
+	switch {
+	case st.Following:
+		update = sAccent.Render("updating now")
+	case st.Failed:
+		update = sBad.Render("the last update failed")
+	}
+	if !st.NextCheck.IsZero() && !st.Following {
+		update += sFaint.Render(" · next check in " + max(0, time.Until(st.NextCheck)).Round(time.Minute).String())
+	}
+	if st.Published != "" {
+		update += sFaint.Render(" · the publish of " + strings.NewReplacer("T", " ", "Z", " UTC").Replace(st.Published))
+	}
+	row("Updates", update)
+	if st.Last != "" {
+		row("Last", sFaint.Render(truncate(st.Last, max(10, w-16))))
+	}
+	return rows
 }

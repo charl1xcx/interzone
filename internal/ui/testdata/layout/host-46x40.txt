@@ -22,16 +22,16 @@
    the server is downloading about 19 GB in   
  the background and shares it as it arrives   
                                               
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
-                                              
+ ◆ Hosting on this machine ────────────────── 
+   Status      ● sharing · 3 peers · everythi 
+   Copy        ███░░░░░░░░  32% · 6.0 GB of 1 
+   Parts       … packages 3.0 GB  … images 15 
+   Download    ▁▄▇▆█                 9.5 MB/s 
+   Upload      ▁▁▃█▆                 195 KB/s 
+   Swarm       gave 290 MB (1200 blocks) · go 
+   Disk        6.0 GB used · 80.0 GB free     
+   Updates     updating now · the publish of  
+   Last        fetching bafybeigdyrzt5sfp7…   
                                               
                                               
                                               

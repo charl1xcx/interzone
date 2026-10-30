@@ -104,6 +104,14 @@ func TestLayout(t *testing.T) {
 			hs := a.cur().(*hostScreen)
 			hs.done, hs.log = true, []string{"installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)",
 				"the server is downloading about 19 GB in the background and shares it as it arrives"}
+			hs.statsFor = targetKey(hs.target())
+			hs.in, hs.out = []float64{0, 4e6, 9e6, 7e6, 10e6}, []float64{0, 0, 1e5, 3e5, 2e5}
+			hs.stats = &deploy.HostStats{Installed: true, Active: true, Following: true, Parts: "all", Peers: 3,
+				RepoSize: 6 << 30, DiskFree: 80 << 30, RateIn: 10e6, RateOut: 2e5, TotalIn: 6 << 30, TotalOut: 300 << 20,
+				BlocksSent: 1200, DataSent: 290 << 20, BlocksReceived: 25000, DataReceived: 6 << 30,
+				Published: "2026-10-29T03:00:00Z", Wanted: 19 << 30, Received: 6 << 30,
+				PublishedParts: []deploy.HostPart{{Name: "packages", Size: 3 << 30, Pinned: false}, {Name: "oci", Size: 15 << 30, Pinned: false}, {Name: "git", Size: 200 << 20, Pinned: true}, {Name: "bin", Size: 300 << 20, Pinned: true}},
+				Last:           "fetching bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"}
 		}},
 		{"maintenance", func(a *App) { deliver(a, maintainMsg("vacuum")) }},
 		{"users-bridge", func(a *App) {
