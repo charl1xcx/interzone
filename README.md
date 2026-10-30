@@ -414,7 +414,16 @@ make            # static binary ./interzone
 ```
 
 To build without internet, run `go mod vendor` while you still have access
-and build with `go build -mod=vendor`. The resulting binary is static and has
+and build with `go build -mod=vendor`. In a blackout, interzone's mirror has
+Go and every module it builds with (also in the IPFS swarm's packages part):
+
+```sh
+curl -O https://infamous.g0th.ir/go/dl/go1.27.1.linux-amd64.tar.gz   # or linux-arm64, darwin-…
+sudo tar -C /usr/local -xzf go1.27.1.linux-amd64.tar.gz && export PATH=/usr/local/go/bin:$PATH
+GOPROXY=https://infamous.g0th.ir/go GOSUMDB=off GOTOOLCHAIN=local make
+```
+
+`go.sum` still checks every module. The resulting binary is static and has
 no runtime dependencies besides `git`, `ssh` and Ansible (which interzone can
 install itself from a PyPI mirror).
 
