@@ -3,19 +3,19 @@
 │ ▸ Setup                ││                                                                                            │
 │                        ││   Rooms on example.org                                                                     │
 │ ▾ Manage example.org   ││                                                                                            │
-│   ⌂ Overview           ││   4 rooms · 30.0 MB of media    o  by size                                                 │
+│   ⌂ Overview           ││   4 rooms · 2.6 GB on disk    o  by size                                                   │
 │   @ Users              ││                                                                                            │
-│ ▌ # Rooms              ││   ▌ #  Lounge                214 members  ╭────────────────────────────────────────────╮   │
-│   ▦ Dashboard          ││     #  Matrix HQ            9120 members  │ #  Lounge                                  │   │
-│   ↻ What's new         ││     #  Book club               7 members  │    #lounge:example.org                     │   │
+│ ▌ # Rooms              ││   ▌ #  Matrix HQ                  2.3 GB  ╭────────────────────────────────────────────╮   │
+│   ▦ Dashboard          ││     #  Lounge                     334 MB  │ #  Matrix HQ                               │   │
+│   ↻ What's new         ││     #  Book club                  4.0 MB  │    #matrix:matrix.org                      │   │
 │   ◷ Backups            ││     ⊘  free crypto             3 members  │                                            │   │
-│   ⚑ Alerts             ││                                           │ Members    214  31 from here               │   │
-│   ↺ Restore            ││                                           │ Size       1840 state events               │   │
-│   ↶ Roll back          ││                                           │ Created    0000-00-00                      │   │
-│   ✎ Fine-tune          ││                                           │ Media      24.0 MB in 172 files            │   │
-│   ⚒ Maintenance        ││                                           │            public                          │   │
-│   ⇢ Move server        ││                                           │ Made by    @alice:example.org              │   │
-│   ▤ Servers            ││                                           │ ID         !kQx:example.org                │   │
+│   ⚑ Alerts             ││                                           │ Members    9120  2 from here               │   │
+│   ↺ Restore            ││                                           │ Size       2.3 GB on disk                  │   │
+│   ↶ Roll back          ││                                           │ History    2.2 GB in the database          │   │
+│   ✎ Fine-tune          ││                                           │ Created    0000-00-00                      │   │
+│   ⚒ Maintenance        ││                                           │ Media      6.0 MB in 31 files              │   │
+│   ⇢ Move server        ││                                           │            public                          │   │
+│   ▤ Servers            ││                                           │ ID         !Hw2:matrix.org                 │   │
 │                        ││                                           │                                            │   │
 │ ▸ Mirrors              ││                                           │  b  block    h  old history    x  delete   │   │
 │                        ││                                           ╰────────────────────────────────────────────╯   │

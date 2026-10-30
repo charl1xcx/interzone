@@ -13,7 +13,7 @@ func TestRoomsConfirmAndHistory(t *testing.T) {
 	openRooms(a)
 	rs := a.cur().(*roomsScreen)
 	rs.update(runes("x")) // deleting can't be undone: the word is typed
-	if rs.confirm != "delete" || rs.form == nil || !strings.Contains(rs.view(100, 30), "Delete Lounge?") {
+	if rs.confirm != "delete" || rs.form == nil || !strings.Contains(rs.view(100, 30), "Delete Matrix HQ?") {
 		t.Fatalf("confirm %q: %q", rs.confirm, rs.view(100, 30))
 	}
 	rs.update(runes("y"))

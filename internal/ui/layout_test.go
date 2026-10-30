@@ -213,12 +213,13 @@ func openRooms(a *App) {
 	day := func(y, m, d int) time.Time { return time.Date(y, time.Month(m), d, 12, 0, 0, 0, time.UTC) }
 	rs.list = []deploy.Room{
 		{ID: "!kQx:example.org", Name: "Lounge", Alias: "#lounge:example.org", Creator: "@alice:example.org", Members: 214, Local: 31, Events: 1840, Public: true, Federated: true,
-			Created: day(2024, 3, 9), MediaCount: 172, MediaBytes: 24 << 20},
+			Created: day(2024, 3, 9), MediaCount: 172, MediaBytes: 24 << 20, DataBytes: 310 << 20},
 		{ID: "!Hw2:matrix.org", Name: "Matrix HQ", Alias: "#matrix:matrix.org", Members: 9120, Local: 2, Events: 960, Public: true, Federated: true,
-			Created: day(2019, 6, 1), MediaCount: 31, MediaBytes: 6 << 20},
-		{ID: "!p0d:example.org", Name: "Book club", Members: 7, Local: 7, Events: 42, Encrypted: true, Created: day(2025, 11, 2)},
-		{ID: "!sp4m:spam.example", Name: "free crypto", Members: 3, Local: 1, Events: 12, Federated: true, Blocked: true, MediaCount: -1},
+			Created: day(2019, 6, 1), MediaCount: 31, MediaBytes: 6 << 20, DataBytes: 2300 << 20},
+		{ID: "!p0d:example.org", Name: "Book club", Members: 7, Local: 7, Events: 42, Encrypted: true, Created: day(2025, 11, 2), DataBytes: 4 << 20},
+		{ID: "!sp4m:spam.example", Name: "free crypto", Members: 3, Local: 1, Events: 12, Federated: true, Blocked: true, MediaCount: -1, DataBytes: -1},
 	}
+	rs.sortRooms("") // as loading does
 }
 
 // o sorts the rooms, keeping the cursor on the same room.
@@ -226,14 +227,14 @@ func TestRoomSort(t *testing.T) {
 	a := demoApp(t, 120, 36)
 	openRooms(a)
 	rs := a.cur().(*roomsScreen)
-	rs.cursor = 1 // Matrix HQ
+	rs.cursor = 0 // Matrix HQ, the biggest
 	order := func() (out []string) {
 		for _, r := range rs.list {
 			out = append(out, r.Name)
 		}
 		return out
 	}
-	for _, want := range []string{"Matrix HQ,Lounge,Book club,free crypto", "Book club,Lounge,Matrix HQ,free crypto", "Lounge,Matrix HQ,Book club,free crypto"} {
+	for _, want := range []string{"Matrix HQ,Lounge,Book club,free crypto", "Book club,Lounge,Matrix HQ,free crypto", "Lounge,Matrix HQ,Book club,free crypto", "Matrix HQ,Lounge,Book club,free crypto"} {
 		rs.update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("o")})
 		if got := strings.Join(order(), ","); got != want || rs.list[rs.cursor].Name != "Matrix HQ" {
 			t.Errorf("by %s: %s, cursor on %s", roomSorts[rs.sortBy], got, rs.list[rs.cursor].Name)

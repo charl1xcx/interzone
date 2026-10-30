@@ -286,12 +286,14 @@ The short list is in the [README](../README.md).
     admin's username: MAS issues the session.
   - **Rooms** (Synapse): every room the server knows of, biggest first,
     with its members (and how many are from this server), size, alias,
-    creator, when it was created, and its media: the files its messages
-    link to and their size on this server's disk (other servers' files as
-    far as they're cached), read from the database. An encrypted room's
-    files are hidden from the server, so there it says so, or "at least"
-    for files sent before it was encrypted. The total shows above the
-    list, and `o` sorts by size, members, newest or media. `b` blocks a room so nobody here can join it (or unblocks
+    creator, when it was created, and all it takes on the server's disk:
+    its history (its share of the database, each table with rooms in it
+    split among them by their rows there) and its media (the files its
+    messages link to, other servers' as far as they're cached), read
+    from the database. An encrypted room's files are hidden from the
+    server, so its media shows as hidden, or "at least" for files sent
+    before it was encrypted. The total shows above the list, and `o`
+    sorts by size on disk, members, newest or media. `b` blocks a room so nobody here can join it (or unblocks
     it), `h` deletes its messages older than so many days from this
     server's database, keeping those sent from here, and `x` deletes the
     room: everyone here is made to leave, it's purged and blocked. That

@@ -1,10 +1,10 @@
  ◢◤ ◆ Manage › Rooms                            
  Rooms on example.org                           
- 4 rooms · 30.0 MB of media    o  by size       
+ 4 rooms · 2.6 GB on disk    o  by size         
                                                 
- ▌ #  Lounge                        214 members 
-   #  Matrix HQ                    9120 members 
-   #  Book club                       7 members 
+ ▌ #  Matrix HQ                          2.3 GB 
+   #  Lounge                             334 MB 
+   #  Book club                          4.0 MB 
    ⊘  free crypto                     3 members 
                                                 
                                                 

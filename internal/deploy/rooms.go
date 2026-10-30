@@ -22,7 +22,12 @@ type Room struct {
 	Created                  time.Time // zero if the database couldn't say
 	MediaCount               int       // files its messages link to; -1 if unknown
 	MediaBytes               int64     // their size on this server's disk
+	DataBytes                int64     // its share of the database; -1 if unknown
 }
+
+// Bytes is all the room takes on this server's disk, as far as is known:
+// its share of the database and its media; 0 if unknown.
+func (r Room) Bytes() int64 { return max(0, r.DataBytes) + r.MediaBytes }
 
 // Title is the room's name, else its alias, else its ID.
 func (r Room) Title() string {
@@ -76,6 +81,7 @@ func parseRooms(out []byte) ([]Room, error) {
 			Blocked   bool    `json:"blocked"`
 			Created   int64   `json:"created"`
 			Media     []int64 `json:"media"`
+			Data      *int64  `json:"data"`
 		} `json:"rooms"`
 	}
 	if err := json.Unmarshal(out, &v); err != nil {
@@ -91,9 +97,12 @@ func parseRooms(out []byte) ([]Room, error) {
 	for _, r := range v.Rooms {
 		rooms = append(rooms, Room{ID: r.ID, Name: Printable(str(r.Name)), Alias: Printable(str(r.Alias)), Creator: Printable(r.Creator),
 			Members: r.Members, Local: r.Local, Events: r.Events, Public: r.Public,
-			Encrypted: str(r.Encrypted) != "", Federated: r.Federated, Blocked: r.Blocked, MediaCount: -1})
+			Encrypted: str(r.Encrypted) != "", Federated: r.Federated, Blocked: r.Blocked, MediaCount: -1, DataBytes: -1})
 		if rm := &rooms[len(rooms)-1]; len(r.Media) == 2 {
 			rm.Created, rm.MediaCount, rm.MediaBytes = msTime(r.Created), int(r.Media[0]), r.Media[1]
+		}
+		if r.Data != nil {
+			rooms[len(rooms)-1].DataBytes = *r.Data
 		}
 	}
 	return rooms, nil

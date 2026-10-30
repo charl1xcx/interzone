@@ -109,10 +109,11 @@ def appservices():
         pass
     return out
 def room_stats():
-    # Each room's creation time, and the files its messages link to, as
-    # count and bytes on this server's disk (remote ones as far as they're
-    # cached). The admin API lists a room's media but not their sizes, so
-    # this asks the database, read only. Encrypted messages hide their files.
+    # Each room's creation time; the files its messages link to, as count
+    # and bytes on this server's disk (remote ones as far as they're
+    # cached); and its share of the database. The admin API lists a room's
+    # media but not their sizes, so this asks the database, read only.
+    # Encrypted messages hide their files.
     import yaml, psycopg2
     cfg = yaml.safe_load(open("/data/homeserver.yaml"))
     args = {k: v for k, v in cfg["database"]["args"].items() if k not in ("cp_min", "cp_max")}
@@ -134,7 +135,21 @@ SELECT c.room_id, c.created, coalesce(m.n, 0), coalesce(m.bytes, 0)
 FROM (SELECT room_id, min(origin_server_ts) AS created FROM events WHERE type = 'm.room.create' AND state_key = '' GROUP BY room_id) c
 LEFT JOIN (SELECT room_id, count(len) AS n, sum(len) AS bytes FROM media GROUP BY room_id) m USING (room_id)
 """, {"me": cfg["server_name"]})
-    out = {room: (created, [int(n), int(size)]) for room, created, n, size in cur.fetchall()}
+    out = {room: [created, [int(n), int(size)], 0] for room, created, n, size in cur.fetchall()}
+    # Each table with rooms in it (10 MB or more, which is most of the
+    # database), split among them by their rows there: counting rows is
+    # quick, where measuring each row took minutes, and the shares add up
+    # to the table's size on disk, indexes included.
+    cur.execute("""SELECT c.relname, pg_total_relation_size(c.oid) FROM pg_class c
+      JOIN information_schema.columns i ON i.table_name = c.relname AND i.column_name = 'room_id' AND i.table_schema = 'public'
+      WHERE c.relkind = 'r' AND pg_total_relation_size(c.oid) > 10000000""")
+    for table, size in cur.fetchall():
+        cur.execute('SELECT room_id, count(*) FROM "%s" GROUP BY room_id' % table.replace('"', ''))
+        rows = cur.fetchall()
+        total = sum(n for _, n in rows) or 1
+        for room, n in rows:
+            if room in out:
+                out[room][2] += size * n // total
     db.close()
     return out
 def run(tok):
@@ -209,7 +224,7 @@ def run(tok):
             stats = room_stats()
             for r in rooms:
                 if r["room_id"] in stats:
-                    r["created"], r["media"] = stats[r["room_id"]]
+                    r["created"], r["media"], r["data"] = stats[r["room_id"]]
         except Exception:
             pass  # the list without dates and media
         return {"rooms": rooms}

@@ -21,9 +21,10 @@ import (
 // Every room Synapse knows of, biggest first, with who's in it. A room can
 // be blocked, deleted from the server, or have its old history deleted.
 // It signs in with the admin account the Users screen uses. o sorts by
-// Synapse's size, members, newest or media.
+// size on disk, members, newest or media.
 
-// roomSorts are what o steps through; Synapse lists rooms by size.
+// roomSorts are what o steps through. Size is all a room takes on disk;
+// without it, rooms stay in Synapse's order (by state events).
 var roomSorts = []string{"size", "members", "newest", "media"}
 
 type roomsMsg struct {
@@ -293,7 +294,7 @@ func (s *roomsScreen) sortRooms(keep string) {
 		case "media":
 			return a.MediaBytes > b.MediaBytes
 		}
-		return a.Events > b.Events
+		return a.Bytes() > b.Bytes()
 	})
 	for i, r := range s.list {
 		if r.ID == keep {
@@ -330,12 +331,12 @@ func (s *roomsScreen) view(w, h int) string {
 		return foot
 	}
 	top := sMuted.Render(plural(len(s.list), "room"))
-	var media int64
+	var total int64
 	for _, r := range s.list {
-		media += r.MediaBytes
+		total += r.Bytes()
 	}
-	if media > 0 {
-		top += sMuted.Render(" · " + humanBytes(media) + " of media")
+	if total > 0 {
+		top += sMuted.Render(" · " + humanBytes(total) + " on disk")
 	}
 	top += "   " + mark("key:o", keyChip("o")+sMuted.Render(" by ")+sAccent.Render(roomSorts[s.sortBy]))
 	listH := max(3, h-lipgloss.Height(top)-lipgloss.Height(foot)-4)
@@ -421,6 +422,10 @@ func (s *roomsScreen) rowLine(r deploy.Room, w int, on bool) string {
 	// What the list is sorted by, so the order makes sense at a glance.
 	right := sMuted.Render(plural(r.Members, "member"))
 	switch roomSorts[s.sortBy] {
+	case "size":
+		if r.DataBytes >= 0 {
+			right = sMuted.Render(humanBytes(r.Bytes()))
+		}
 	case "newest":
 		if !r.Created.IsZero() {
 			right = sMuted.Render(r.Created.Format("2006-01-02"))
@@ -469,7 +474,16 @@ func (s *roomsScreen) card(r deploy.Room, w int) string {
 	lines = append(lines, "")
 	kv := func(k, v string) { lines = append(lines, sMuted.Render(fmt.Sprintf("%-11s", k))+v) }
 	kv("Members", sTitle.Render(fmt.Sprint(r.Members))+sMuted.Render(fmt.Sprintf("  %d from here", r.Local)))
-	kv("Size", sTitle.Render(fmt.Sprint(r.Events))+sMuted.Render(" state events"))
+	if r.DataBytes >= 0 {
+		size := sTitle.Render(humanBytes(r.Bytes())) + sMuted.Render(" on disk")
+		if r.Encrypted {
+			size = sMuted.Render("at least ") + size // its encrypted messages' files are hidden
+		}
+		kv("Size", size)
+		kv("History", sTitle.Render(humanBytes(r.DataBytes))+sMuted.Render(" in the database"))
+	} else {
+		kv("Size", sTitle.Render(fmt.Sprint(r.Events))+sMuted.Render(" state events"))
+	}
 	if !r.Created.IsZero() {
 		kv("Created", sTitle.Render(r.Created.Format("2006-01-02")))
 	}

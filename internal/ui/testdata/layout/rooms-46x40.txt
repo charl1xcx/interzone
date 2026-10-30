@@ -1,24 +1,24 @@
  ◢◤ ◆ Manage › Rooms                          
  Rooms on example.org                         
                                               
- 4 rooms · 30.0 MB of media    o  by size     
+ 4 rooms · 2.6 GB on disk    o  by size       
                                               
  ╭──────────────────────────────────────────╮ 
- │ #  Lounge                                │ 
- │    #lounge:example.org                   │ 
+ │ #  Matrix HQ                             │ 
+ │    #matrix:matrix.org                    │ 
  │                                          │ 
- │ Members    214  31 from here             │ 
- │ Size       1840 state events             │ 
+ │ Members    9120  2 from here             │ 
+ │ Size       2.3 GB on disk                │ 
+ │ History    2.2 GB in the database        │ 
  │ Created    0000-00-00                    │ 
- │ Media      24.0 MB in 172 files          │ 
+ │ Media      6.0 MB in 31 files            │ 
  │            public                        │ 
- │ Made by    @alice:example.org            │ 
- │ ID         !kQx:example.org              │ 
+ │ ID         !Hw2:matrix.org               │ 
  │                                          │ 
  │  b  block    h  old history    x  delete │ 
  ╰──────────────────────────────────────────╯ 
-   #  Matrix HQ                  9120 members 
-   #  Book club                     7 members 
+   #  Lounge                           334 MB 
+   #  Book club                        4.0 MB 
    ⊘  free crypto                   3 members 
                                               
                                               
