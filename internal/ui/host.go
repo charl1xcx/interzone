@@ -47,7 +47,7 @@ type hostFrameMsg struct{}
 
 func (hostFrameMsg) owner() string { return "Host" }
 
-const hostFrame = 100 * time.Millisecond
+const hostFrame = 200 * time.Millisecond // five frames a second: each redraws most of the screen
 
 func (hostStatsMsg) owner() string { return "Host" }
 func (hostTickMsg) owner() string  { return "Host" }
