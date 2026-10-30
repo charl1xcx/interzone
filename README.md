@@ -47,10 +47,16 @@ interzone servers over IPFS.
 
 <table>
 <tr>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/server.png"><img src="docs/screenshots/server.png" alt="The Server step" width="400"></a></p>
+<b>Server:</b> where it runs, where downloads come from, HTTPS and networking, in one form.</td>
 <td width="50%" valign="top"><p align="center"><a href="docs/screenshots/components.png"><img src="docs/screenshots/components.png" alt="Picking bridges, clients and services" width="400"></a></p>
-<b>Set up:</b> pick a homeserver and any of 63 bridges, bots, clients and services.</td>
-<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/themes.png"><img src="docs/screenshots/themes.png" alt="The welcome screen in six of interzone's themes" width="400"></a></p>
-<b>Themes:</b> 13 of them, light and dark, switched with <code>ctrl+y</code>.</td>
+<b>Components:</b> 63 bridges, bots, clients and services.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/manage.png"><img src="docs/screenshots/manage.png" alt="The Manage menu" width="400"></a></p>
+<b>Manage the server:</b> updates, users, backups, rollback, logs and more.</td>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/users.png"><img src="docs/screenshots/users.png" alt="Managing the server's users" width="400"></a></p>
+<b>Users:</b> totals, a card per person, search, filter and sort.</td>
 </tr>
 </table>
 

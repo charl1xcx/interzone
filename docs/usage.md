@@ -50,8 +50,7 @@ at the bottom of the menu, cycles auto, compact and wide and remembers the
 choice; `-layout` picks one for a single run.
 
 `ctrl+y`, or `◐` under it, switches the colours between interzone,
-Catppuccin, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Rosé Pine,
-Everforest, Kanagawa, One Dark, Synthwave and mono; each has a light
+Catppuccin, Nord, Gruvbox, Dracula, Solarized and mono; each has a light
 and a dark variant that follows the terminal's background.
 
 | Key | Action |
