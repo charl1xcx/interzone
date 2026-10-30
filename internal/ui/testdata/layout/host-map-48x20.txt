@@ -1,6 +1,6 @@
  ◢◤ ⇄ Host                                      
  interzone-mirror's IPFS swarm                  
-             ⣹⡿⣿⣧⣖⣏⡏⠈  ⠻⡏⠢⣌⠑⢜⢦   ⠈⠂⢄   ⣆⠋⠁⠈⠉    
+             ⣹⡿⣿⣧⣖⣏⡏Caspian Sea  ⠈⠂⢄   ⣆⠋⠁⠈⠉    
        ▴DE⣀⢀⡼⣼⣗⡟⠏⢻⣟⣄⣀⠤⢄⡀⣇⡤⢾⠷⡮⣧⣣     ⠉⡒⣂⣈⢂⡀⡌⢦ ⣀⣀ 
  ⠄⠔⠁⢪⡶⠂⠑⠐⠁⢩⢻⢻⠛⡿⣵⣝⣯⣞●Tehran ×2⠟⡬Mashhad ⠈ ⠁ ⢜⠛⠉⠉ 
     ⠸⣄   ⢀⡸⢸⢺ ⡇⡜⢦⣺⠯⡿⣟◆you⡇⣔⢊⢾⢀⣇⣧⡏⠙⠁        ⡜  ⡤ 
@@ -8,7 +8,7 @@
      ⠩⢠⠒⠃⠒⢄⢀⢣⣱⡈⢢⡘⢻⢄⠈⡽⣷⡯⢥⠔Yazd⣏⡞⠨⢤     ⢀⡔⠢⠃    ⢐ 
      ⠠⠰⠂    ⠑⢷⡑⢄⣙⢾⣷⣦⢿⡟⢻Shiraz⠎⡈⢽Zahedan      ⡠⠆ 
    ⡸⡉         ⠉⠛⢝⡺⢧⣈⣉⣏⣏⣇⠤⢚⣿⣺⠅⢠⠇ ⠝⢬⡀⠈      ⡀⢀⠔⠂  
-    ⠱⡀           ⠈⠉⠒⡒⠚⠛▾?⣽⣵Bandar Abbas  ⠎⡈⠁    
+    ⠱⡀   Persian Gulf⠚⠛▾?⣽⣵Bandar Abbas  ⠎⡈⠁    
      ⠘⡄             ⢹⢹   ⡠⣘⡂⠚⠿⠦⠤⢴⠥⠤⠄⡤⠴⡄   ⠲     
  ◆ this node  ● peer  ⠒ coming in  ⠒ going out… 
  IP locations by DB-IP.com · borders by Natura… 

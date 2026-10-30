@@ -631,7 +631,16 @@ func swarmMap(sc mapScene, w, h int) []string {
 		sea := c.style(mix(cPurple, cFaint, 0.5), false)
 		for _, l := range geo.Seas {
 			x, y := c.project(l.Lon, l.Lat)
-			c.put(int(x)/2-len([]rune(l.Name))/2, int(y)/4, l.Name, layerSonar, sea)
+			cx, cy := int(x)/2-len([]rune(l.Name))/2, int(y)/4
+			// The Persian Gulf is narrow: if the coast or a town is in the way, the nearest spot that's free.
+		near:
+			for _, dy := range []int{0, 1, -1, 2, -2} {
+				for _, dx := range []int{0, 2, -2, 4, -4, 6, -6} {
+					if c.put(cx+dx, cy+dy, l.Name, layerSonar, sea) {
+						break near
+					}
+				}
+			}
 		}
 	}
 
