@@ -45,30 +45,12 @@ interzone servers over IPFS.
 
 ## Screenshots
 
-Click a screenshot to see it full size.
-
 <table>
 <tr>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/server.png"><img src="docs/screenshots/server.png" alt="The Server step" width="280"></a></p>
-<b>Server:</b> where it runs, where downloads come from, HTTPS and networking, in one form.</td>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/homeserver.png"><img src="docs/screenshots/homeserver.png" alt="Choosing a homeserver" width="280"></a></p>
-<b>Homeserver:</b> Synapse, Continuwuity, Tuwunel, Conduit or Dendrite.</td>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/components.png"><img src="docs/screenshots/components.png" alt="Picking bridges, clients and services" width="280"></a></p>
-<b>Components:</b> 63 bridges, bots, clients and services.</td>
-</tr>
-<tr>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/settings.png"><img src="docs/screenshots/settings.png" alt="Filling in the components' settings" width="280"></a></p>
-<b>…and their settings</b> on the Settings step.</td>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/manage.png"><img src="docs/screenshots/manage.png" alt="The Manage menu" width="280"></a></p>
-<b>Manage the server:</b> updates, users, backups, rollback, logs and more.</td>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/tuning.png"><img src="docs/screenshots/tuning.png" alt="Fine-tuning the playbook's roles" width="280"></a></p>
-<b>Fine-tune:</b> search and change the settings of every playbook role.</td>
-</tr>
-<tr>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/users.png"><img src="docs/screenshots/users.png" alt="Managing the server's users" width="280"></a></p>
-<b>Users:</b> totals, a card per person, bridge accounts grouped out of the way, search, filter and sort.</td>
-<td width="33%" valign="top"><p align="center"><a href="docs/screenshots/phone.png"><img src="docs/screenshots/phone.png" alt="The compact layout on a phone-sized terminal" width="280"></a></p>
-<b>On a phone</b> (Termux or any narrow terminal) the compact layout drops the sidebar and puts thumb-sized buttons along the bottom, so nothing needs ctrl or esc.</td>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/components.png"><img src="docs/screenshots/components.png" alt="Picking bridges, clients and services" width="400"></a></p>
+<b>Set up:</b> pick a homeserver and any of 63 bridges, bots, clients and services.</td>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/manage.png"><img src="docs/screenshots/manage.png" alt="The Manage menu" width="400"></a></p>
+<b>Manage:</b> updates, users, backups, rollback, logs and more.</td>
 </tr>
 </table>
 
