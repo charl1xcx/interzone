@@ -89,7 +89,10 @@ The short list is in the [README](../README.md).
   running. While it hosts, the Host screen shows its peers, download
   progress per part, traffic, what it gave the swarm, disk use and updates. It listens on TCP 4001 and
   shows the swarm that it holds Matrix software, like a sharing server.
-  To stop: `systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs`.
+  On the Host screen, with the machine's details in the form, `ctrl+x`
+  stops sharing (it stays off after a reboot; enter starts it again) and
+  `ctrl+d` removes the node and everything it downloaded. By hand:
+  `systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs`.
 
   Below the numbers, when the window is tall enough, a map of Iran shows
   the node and each peer it's connected to, placed by IP address without

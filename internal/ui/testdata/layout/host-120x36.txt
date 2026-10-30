@@ -33,4 +33,4 @@
 │ ◐ interzone  ctrl+y    ││                                                                                            │
 │ ◂ fold   ctrl+b menu   ││                                                                                            │
 ╰────────────────────────╯╰────────────────────────────────────────────────────────────────────────────────────────────╯
- enter start hosting   ·   ↑↓ move   ·   esc back   ·   ctrl+c quit                                                     
+ enter start hosting   ·   ↑↓ move   ·   ctrl+x stop sharing   ·   ctrl+d remove   ·   esc back   ·   ctrl+c quit       

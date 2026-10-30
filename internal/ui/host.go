@@ -50,7 +50,15 @@ func (hostFrameMsg) owner() string { return "Host" }
 const hostFrame = 200 * time.Millisecond // five frames a second: each redraws most of the screen
 
 func (hostStatsMsg) owner() string { return "Host" }
-func (hostTickMsg) owner() string  { return "Host" }
+
+// hostStoppedMsg is the end of stopping or removing the node.
+type hostStoppedMsg struct {
+	removed bool
+	err     error
+}
+
+func (hostStoppedMsg) owner() string { return "Host" }
+func (hostTickMsg) owner() string    { return "Host" }
 
 const hostHistory = 60 // readings kept for the traffic sparklines
 
@@ -87,6 +95,10 @@ type hostScreen struct {
 	placing  bool       // the user is picking home
 	placeIn  textinput.Model
 	placeSel int
+
+	confirmRemove bool   // ctrl+d asked to remove the node; y does it
+	stopping      bool   // stopping or removing it
+	note          string // how that went
 }
 
 // hostComing is a peer joining or leaving the swarm.
@@ -101,13 +113,19 @@ type hostComing struct {
 func (s *hostScreen) mapMode() bool { return !s.showForm && localMirror.Load() }
 
 func (s *hostScreen) handlesEsc() bool {
-	return s.placing || s.showForm && localMirror.Load() && !s.running
+	return s.placing || s.confirmRemove || s.showForm && localMirror.Load() && !s.running
 }
 
 // mirrorHere says the form's target runs interzone-mirror's node, which
 // already hosts everything.
 func (s *hostScreen) mirrorHere() bool {
 	return s.stats != nil && s.stats.Mirror != "" && s.statsFor == targetKey(s.target())
+}
+
+// hosting says the form's target runs a node interzone set up, which
+// ctrl+x can stop and ctrl+d remove.
+func (s *hostScreen) hosting() bool {
+	return s.stats != nil && s.stats.Installed && s.stats.Mirror == "" && s.statsFor == targetKey(s.target())
 }
 
 // moving says whether data is moving with any peer, so the map animates.
@@ -214,7 +232,17 @@ func (s *hostScreen) keys() [][2]string {
 	if s.mirrorHere() {
 		return append([][2]string{{"↑↓", "move"}}, back...)
 	}
-	return append([][2]string{{"enter", "start hosting"}, {"↑↓", "move"}}, back...)
+	if s.confirmRemove {
+		return [][2]string{{"y", "remove it"}, {"esc", "cancel"}}
+	}
+	keys := [][2]string{{"enter", "start hosting"}, {"↑↓", "move"}}
+	if s.hosting() && s.stats.Active {
+		keys = append(keys, [2]string{"ctrl+x", "stop sharing"})
+	}
+	if s.hosting() {
+		keys = append(keys, [2]string{"ctrl+d", "remove"})
+	}
+	return append(keys, back...)
 }
 
 // enter offers the active server's SSH details, the likeliest machine,
@@ -357,9 +385,30 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 			return s.poll()
 		}
 		return nil
+	case hostStoppedMsg:
+		s.stopping = false
+		switch {
+		case m.err != nil:
+			s.err = m.err
+		case m.removed:
+			s.note = "✓ removed, with everything it downloaded. enter sets hosting up again."
+		default:
+			s.note = "✓ stopped sharing; it stays off after a reboot."
+		}
+		return s.tick(0)
 	case spinner.TickMsg:
-		return spinning(s.running, &s.spin, m)
+		return spinning(s.running || s.stopping, &s.spin, m)
 	case tea.KeyMsg:
+		if s.stopping {
+			return nil
+		}
+		if s.confirmRemove {
+			s.confirmRemove = false
+			if m.String() == "y" {
+				return s.stop(true)
+			}
+			return nil
+		}
 		if s.running {
 			switch m.String() {
 			case "ctrl+x":
@@ -390,7 +439,15 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 			s.showForm, s.err = false, nil
 			return tea.Batch(s.tick(0), s.frame())
 		}
+		if m.String() == "ctrl+x" && s.hosting() && s.stats.Active {
+			return s.stop(false)
+		}
+		if m.String() == "ctrl+d" && s.hosting() {
+			s.confirmRemove, s.err, s.note = true, nil, ""
+			return nil
+		}
 		if m.String() == "enter" {
+			s.note = ""
 			if s.mirrorHere() {
 				s.err = fmt.Errorf("%s already hosts everything here: interzone-mirror's node, below", map[bool]string{true: "this machine", false: s.target().Host}[s.target().Mode != "ssh"])
 				return nil
@@ -407,6 +464,17 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 		return tea.Batch(cmd, s.tick(time.Second)) // once typing pauses
 	}
 	return cmd
+}
+
+// stop stops the node, or removes it, on the form's target.
+func (s *hostScreen) stop(remove bool) tea.Cmd {
+	t := s.target()
+	s.stopping, s.err, s.note = true, nil, ""
+	return tea.Batch(s.spin.Tick, func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		return hostStoppedMsg{remove, deploy.StopHosting(ctx, t, remove)}
+	})
 }
 
 // tick asks for a reading after d, replacing any tick asked for before.
@@ -427,8 +495,21 @@ func (s *hostScreen) view(w, h int) string {
 	switch {
 	case s.running:
 		status = append(status, s.spin.View()+sMuted.Render(" setting up… ctrl+x stops"))
+	case s.stopping:
+		status = append(status, s.spin.View()+sMuted.Render(" stopping the node…"))
+	case s.confirmRemove:
+		size := ""
+		if s.stats != nil && s.stats.RepoSize > 0 {
+			size = " (" + humanBytes(s.stats.RepoSize) + ")"
+		}
+		status = append(status, strings.Split(confirmView(min(w, maxFormWidth),
+			sWarn.Render("Remove hosting from "+map[bool]string{true: "this machine", false: s.target().Host}[s.target().Mode != "ssh"]+"?"),
+			sSub.Render("Stops the IPFS node and deletes it with everything it downloaded"+size+". A Matrix server installed there keeps running; a later deploy in IPFS mode installs the node again."),
+			"", confirmKeys("y", "remove it")), "\n")...)
 	case s.err != nil:
 		status = append(status, sBad.Render("✗ "+s.err.Error()))
+	case s.note != "":
+		status = append(status, sGood.Render(s.note))
 	case s.done:
 		status = append(status, sGood.Render("✓ hosting. It keeps going without interzone; enter sets it up again."))
 	}

@@ -78,3 +78,43 @@ func TestHostPlace(t *testing.T) {
 		t.Fatal("not cleared")
 	}
 }
+
+func TestHostStop(t *testing.T) {
+	s := newHostScreen()
+	s.form.get("mode").choice = 1
+	s.form.get("host").input.SetValue("192.0.2.1")
+	s.stats, s.statsFor = &deploy.HostStats{Installed: true, Active: true, RepoSize: 6 << 30}, targetKey(s.target())
+	has := func(key string) bool {
+		for _, k := range s.keys() {
+			if k[0] == key {
+				return true
+			}
+		}
+		return false
+	}
+	if !has("ctrl+x") || !has("ctrl+d") {
+		t.Fatalf("keys %v", s.keys())
+	}
+	s.update(tea.KeyMsg{Type: tea.KeyCtrlD})
+	if !s.confirmRemove || !strings.Contains(s.view(100, 40), "Remove hosting from 192.0.2.1?") {
+		t.Fatal("ctrl+d should ask first")
+	}
+	s.update(tea.KeyMsg{Type: tea.KeyEsc})
+	if s.confirmRemove || s.stopping {
+		t.Fatal("esc should keep it")
+	}
+	s.update(tea.KeyMsg{Type: tea.KeyCtrlD})
+	if cmd := s.update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")}); cmd == nil || !s.stopping {
+		t.Fatal("y should remove it") // the command isn't run: it would reach the target
+	}
+	s.update(hostStoppedMsg{removed: true})
+	if s.stopping || !strings.Contains(s.view(100, 40), "removed") {
+		t.Fatal("no word of the removal")
+	}
+
+	// interzone-mirror's node is docker's to stop, not interzone's.
+	s.stats.Mirror = "mirror-ipfs-1"
+	if has("ctrl+x") || has("ctrl+d") {
+		t.Fatalf("keys %v on the mirror's node", s.keys())
+	}
+}

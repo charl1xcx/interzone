@@ -100,6 +100,36 @@ func ReadHostStats(ctx context.Context, t config.Target) (*HostStats, error) {
 	return s, nil
 }
 
+// StopHosting stops the target's IPFS node and its hourly update, for
+// good: they stay off after a reboot. With remove it also deletes them and
+// everything they downloaded; a later IPFS deploy or Host run installs
+// them again.
+func StopHosting(ctx context.Context, t config.Target, remove bool) error {
+	cmd := targetCmd(ctx, t, asRoot("sh -c "+shellQuote(stopHostingScript(remove))))
+	cmd.Stdin = strings.NewReader(t.BecomePass + "\n")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s", lastLine(stderr.String(), err))
+	}
+	return nil
+}
+
+func stopHostingScript(remove bool) string {
+	// One unit at a time: disable gives up on all of them if one is missing.
+	s := `for u in interzone-ipfs-follow.timer interzone-ipfs-follow.service interzone-ipfs.service; do
+  systemctl disable --now $u 2>/dev/null || true
+done`
+	if remove {
+		s += `
+rm -f /etc/systemd/system/interzone-ipfs.service /etc/systemd/system/interzone-ipfs-follow.service /etc/systemd/system/interzone-ipfs-follow.timer
+systemctl daemon-reload
+rm -rf ` + ipfsRepo + ` ` + ipfsBin + ` /var/lib/interzone-ipfs-follow /var/lib/private/interzone-ipfs-follow
+userdel ` + ipfsUser + ` 2>/dev/null || true`
+	}
+	return s
+}
+
 // findMirrorNode sets c to interzone-mirror's IPFS container, if the
 // machine has one, running or not.
 const findMirrorNode = `c=$(docker ps -a --filter label=com.docker.compose.service=ipfs --format '{{.Names}} {{.Image}}' 2>/dev/null | awk '$2 ~ /kubo/ {print $1; exit}')`

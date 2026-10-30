@@ -180,3 +180,13 @@ func TestServerName(t *testing.T) {
 		}
 	}
 }
+
+func TestStopHostingScript(t *testing.T) {
+	stop, remove := stopHostingScript(false), stopHostingScript(true)
+	if !strings.Contains(stop, "disable --now $u") || strings.Contains(stop, "rm ") {
+		t.Fatalf("stop:\n%s", stop)
+	}
+	if !strings.HasPrefix(remove, stop) || !strings.Contains(remove, "rm -rf /var/lib/interzone-ipfs ") {
+		t.Fatalf("remove:\n%s", remove)
+	}
+}

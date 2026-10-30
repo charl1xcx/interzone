@@ -225,7 +225,7 @@ func (r *Runner) ipfsHost(ctx context.Context) error {
 	}
 	r.note(StepHost, fmt.Sprintf("the server is downloading about %.1f GB in the background", gb)+" and shares it as it arrives; "+
 		"it checks for a new publish every hour. Progress: journalctl -u interzone-ipfs-follow")
-	r.note(StepHost, "to stop hosting: systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs")
+	r.note(StepHost, "to stop hosting: ctrl+x on this screen, or systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs")
 	return nil
 }
 
