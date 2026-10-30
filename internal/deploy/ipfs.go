@@ -39,8 +39,34 @@ const (
 
 // ipfsRun is what a run set up on the server and must undo.
 type ipfsRun struct {
-	tunnel *exec.Cmd
-	seed   bool
+	tunnel  *exec.Cmd
+	seed    bool
+	mirror  string // interzone-mirror's container, when the run uses its node
+	gateway string // the node's gateway on the server
+}
+
+// cli is the server's ipfs command, talking to the run's node.
+func (n *ipfsRun) cli() string {
+	if n.mirror != "" {
+		return "docker exec " + n.mirror + " ipfs"
+	}
+	return "runuser -u " + ipfsUser + " -- env IPFS_PATH=" + ipfsRepo + " " + ipfsBin + "/ipfs --api " + ipfsAPI
+}
+
+// mirrorNode finds interzone-mirror's running IPFS node on the server and
+// its gateway there.
+func (r *Runner) mirrorNode(ctx context.Context) (string, string, error) {
+	out, err := r.output(ctx, r.cfg.Target, findMirrorNode+`
+[ -n "$c" ] && docker inspect -f '{{.State.Running}}' "$c" | grep -q true || exit 0
+echo "$c" $(docker port "$c" 8080/tcp | grep -m1 -oE '[0-9.]+:[0-9]+$')`)
+	f := strings.Fields(out)
+	switch {
+	case err != nil || len(f) == 0:
+		return "", "", nil
+	case len(f) < 2:
+		return "", "", fmt.Errorf("interzone-mirror's IPFS node %s runs on the server but publishes no gateway port", f[0])
+	}
+	return f[0], strings.Replace(f[1], "0.0.0.0:", "127.0.0.1:", 1), nil
 }
 
 // usesDownloads says whether a plan fetches anything the swarm provides.
@@ -64,11 +90,11 @@ func (r *Runner) ipfsSetup(ctx context.Context) error {
 	if err := r.registryBinary(ctx, StepIPFS, arch, idx); err != nil {
 		return err
 	}
-	if _, err := r.output(ctx, t, registryScript(idx.Parts.OCI)); err != nil {
+	if _, err := r.output(ctx, t, registryScript(r.ipfs.gateway, idx.Parts.OCI)); err != nil {
 		return fmt.Errorf("starting the image registry on the server: %w", err)
 	}
 
-	gateway := ipfsGateway
+	gateway := r.ipfs.gateway
 	if t.Mode == "ssh" {
 		if gateway, err = r.ipfsTunnel(ctx); err != nil {
 			return err
@@ -76,7 +102,7 @@ func (r *Runner) ipfsSetup(ctx context.Context) error {
 	}
 	saved := r.cfg.Sources
 	saved.IPFSVersion = idx.Version
-	onServer := "http://" + ipfsGateway + "/ipfs/"
+	onServer := "http://" + r.ipfs.gateway + "/ipfs/"
 	here := "http://" + gateway + "/ipfs/"
 	s := &r.cfg.Sources
 	s.Blackout = false
@@ -94,10 +120,10 @@ func (r *Runner) ipfsSetup(ctx context.Context) error {
 	return nil
 }
 
-// ipfsJoin installs and starts the IPFS daemon on the server and finds the
-// newest publish; it returns that and the server's arch.
+// ipfsJoin installs and starts the IPFS daemon on the server, or finds
+// interzone-mirror's there, and finds the newest publish; it returns that
+// and the server's arch.
 func (r *Runner) ipfsJoin(ctx context.Context, step Step, seed bool) (*ipfs.Index, string, error) {
-	t := r.cfg.Target
 	facts, err := probe(ctx, r.cfg)
 	if err != nil {
 		return nil, "", fmt.Errorf("can't log in to the server: %w", err)
@@ -106,32 +132,23 @@ func (r *Runner) ipfsJoin(ctx context.Context, step Step, seed bool) (*ipfs.Inde
 	if arch != "amd64" && arch != "arm64" {
 		return nil, "", fmt.Errorf("IPFS needs an amd64 or arm64 server, not %s", facts["arch"])
 	}
-	r.ipfs = &ipfsRun{seed: seed}
+	r.ipfs = &ipfsRun{seed: seed, gateway: ipfsGateway}
 
+	// A server running interzone-mirror already has a node that holds and
+	// shares every part: a second one would fight it for port 4001.
+	mirror, gateway, err := r.mirrorNode(ctx)
+	if err != nil {
+		return nil, "", err
+	}
+	if mirror != "" && step == StepHost {
+		return nil, "", fmt.Errorf("the server runs interzone-mirror's IPFS node (%s), which already hosts every part", mirror)
+	}
 	fromWeb, webErr := indexFromWeb(ctx)
-	want := ipfs.KuboVersion
-	if fromWeb != nil {
-		want = fromWeb.Kubo
-	}
-	have, _ := r.output(ctx, t, ipfsBin+"/ipfs version --number 2>/dev/null || true")
-	if have = strings.TrimSpace(have); "v"+have != want {
-		bin, from, err := kuboBinary(ctx, arch, want, fromWeb)
-		switch {
-		case err == nil:
-			r.note(step, fmt.Sprintf("installing IPFS %s (from %s)", want, from))
-			if err := r.upload(ctx, ipfsBin+"/ipfs", bin); err != nil {
-				return nil, "", err
-			}
-		case have != "":
-			r.note(step, "! couldn't get IPFS "+want+" ("+err.Error()+"); keeping "+have)
-		default:
-			return nil, "", fmt.Errorf("couldn't get the IPFS daemon for the server: %w. An offline bundle carries it", err)
-		}
-	}
-
-	r.note(step, "starting the IPFS daemon in interzone's swarm"+map[bool]string{true: ", seeding for others", false: ""}[seed])
-	if _, err := r.output(ctx, t, ipfsConfigScript(seed)); err != nil {
-		return nil, "", fmt.Errorf("starting IPFS on the server: %w", err)
+	if mirror != "" {
+		r.ipfs.mirror, r.ipfs.gateway, r.ipfs.seed = mirror, gateway, false
+		r.note(step, "using interzone-mirror's IPFS node on the server ("+mirror+"), which already shares everything")
+	} else if err := r.ipfsInstall(ctx, step, arch, seed, fromWeb); err != nil {
+		return nil, "", err
 	}
 
 	idx := fromWeb
@@ -150,6 +167,36 @@ func (r *Runner) ipfsJoin(ctx context.Context, step Step, seed bool) (*ipfs.Inde
 	r.note(step, fmt.Sprintf("using the publish of %s: playbook %s, interzone %s", idx.Created, short(idx.Playbook.Commit), idx.Interzone))
 
 	return idx, arch, nil
+}
+
+// ipfsInstall installs or updates the IPFS daemon on the server and starts it.
+func (r *Runner) ipfsInstall(ctx context.Context, step Step, arch string, seed bool, fromWeb *ipfs.Index) error {
+	t := r.cfg.Target
+	want := ipfs.KuboVersion
+	if fromWeb != nil {
+		want = fromWeb.Kubo
+	}
+	have, _ := r.output(ctx, t, ipfsBin+"/ipfs version --number 2>/dev/null || true")
+	if have = strings.TrimSpace(have); "v"+have != want {
+		bin, from, err := kuboBinary(ctx, arch, want, fromWeb)
+		switch {
+		case err == nil:
+			r.note(step, fmt.Sprintf("installing IPFS %s (from %s)", want, from))
+			if err := r.upload(ctx, ipfsBin+"/ipfs", bin); err != nil {
+				return err
+			}
+		case have != "":
+			r.note(step, "! couldn't get IPFS "+want+" ("+err.Error()+"); keeping "+have)
+		default:
+			return fmt.Errorf("couldn't get the IPFS daemon for the server: %w. An offline bundle carries it", err)
+		}
+	}
+
+	r.note(step, "starting the IPFS daemon in interzone's swarm"+map[bool]string{true: ", seeding for others", false: ""}[seed])
+	if _, err := r.output(ctx, t, ipfsConfigScript(seed)); err != nil {
+		return fmt.Errorf("starting IPFS on the server: %w", err)
+	}
+	return nil
 }
 
 // ipfsHost makes the target a seeder that keeps the newest publish (the
@@ -229,7 +276,7 @@ func (r *Runner) ipfsDone() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	stop := "systemctl stop interzone-registry 2>/dev/null; true"
-	if !r.ipfs.seed {
+	if !r.ipfs.seed && r.ipfs.mirror == "" {
 		stop += "; systemctl disable --now interzone-ipfs 2>/dev/null; true"
 	}
 	_, _ = r.output(ctx, r.cfg.Target, stop)
@@ -287,11 +334,11 @@ i=0; until ipfs --api ` + ipfsAPI + ` id >/dev/null 2>&1; do i=$((i+1)); [ $i -l
 }
 
 // registryScript runs serve-registry for the run, as a throwaway user.
-func registryScript(oci string) string {
+func registryScript(gateway, oci string) string {
 	return `set -e
 systemctl stop interzone-registry 2>/dev/null || true
 systemctl reset-failed interzone-registry 2>/dev/null || true
-systemd-run --quiet --unit=interzone-registry --property=DynamicUser=yes ` + ipfsBin + `/interzone serve-registry -layout http://` + ipfsGateway + `/ipfs/` + oci + ` -listen ` + ipfsRegistry + `
+systemd-run --quiet --unit=interzone-registry --property=DynamicUser=yes ` + ipfsBin + `/interzone serve-registry -layout http://` + gateway + `/ipfs/` + oci + ` -listen ` + ipfsRegistry + `
 i=0; until ss -ltn | grep -q ' ` + ipfsRegistry + ` '; do
   i=$((i+1)); systemctl is-active -q interzone-registry || { journalctl -u interzone-registry -n 5 --no-pager >&2; exit 1; }
   [ $i -lt 300 ] || { echo "the image list didn't arrive from the swarm within 5 minutes" >&2; exit 1; }; sleep 1
@@ -347,7 +394,7 @@ func indexFromWeb(ctx context.Context) (*ipfs.Index, error) {
 // indexFromSwarm resolves the IPNS name on the server's daemon.
 func (r *Runner) indexFromSwarm(ctx context.Context) (*ipfs.Index, error) {
 	out, err := r.output(ctx, r.cfg.Target, `set -e
-ipfs() { runuser -u `+ipfsUser+` -- env IPFS_PATH=`+ipfsRepo+` `+ipfsBin+`/ipfs --api `+ipfsAPI+` "$@"; }
+ipfs() { `+r.ipfs.cli()+` "$@"; }
 root=$(ipfs name resolve --timeout=90s -r /ipns/`+ipfs.Name+`)
 ipfs cat --timeout=60s "$root/index.json.sig" | head -c 4096
 echo "#"
@@ -466,7 +513,7 @@ func (r *Runner) registryBinary(ctx context.Context, step Step, arch string, idx
 	}
 	r.note(step, "fetching interzone "+idx.Interzone+" for the server from the swarm")
 	_, err := r.output(ctx, t, `set -e
-runuser -u `+ipfsUser+` -- env IPFS_PATH=`+ipfsRepo+` `+ipfsBin+`/ipfs --api `+ipfsAPI+` cat --timeout=10m /ipfs/`+idx.Parts.Bin+`/`+name+` > `+ipfsBin+`/interzone.new
+`+r.ipfs.cli()+` cat --timeout=10m /ipfs/`+idx.Parts.Bin+`/`+name+` > `+ipfsBin+`/interzone.new
 echo "`+want+`  `+ipfsBin+`/interzone.new" | sha256sum -c --quiet
 chmod 755 `+ipfsBin+`/interzone.new && mv `+ipfsBin+`/interzone.new `+ipfsBin+`/interzone`)
 	return err
@@ -496,7 +543,7 @@ func (r *Runner) ipfsTunnel(ctx context.Context) (string, error) {
 	}
 	local := l.Addr().String()
 	l.Close()
-	forwards := []string{"-L", local + ":" + ipfsGateway}
+	forwards := []string{"-L", local + ":" + r.ipfs.gateway}
 	if l, err := net.Listen("tcp", ipfsRegistry); err == nil {
 		l.Close()
 		forwards = append(forwards, "-L", ipfsRegistry+":"+ipfsRegistry)

@@ -259,7 +259,7 @@ func (s *serverScreen) enter(c *config.Config) tea.Cmd {
 	}
 	online := func() bool { return f.value("net") != "blackout" }
 	ipfs := func() bool { return f.value("net") == "ipfs" }
-	f.get("ipfsSeed").hidden = func() bool { return !ipfs() }
+	f.get("ipfsSeed").hidden = func() bool { return !ipfs() || mirrorNodeHere(f.value("mode")) }
 	for _, k := range []string{"git", "roles", "useRegistry"} {
 		f.get(k).hidden = ipfs
 	}
@@ -380,6 +380,9 @@ func (s *serverScreen) leaveSources(c *config.Config) {
 	}
 	if c.Sources.IPFS {
 		c.Sources.IPFSSeed = f.value("ipfsSeed")
+		if mirrorNodeHere(f.value("mode")) {
+			c.Sources.IPFSSeed = "no" // the run uses the mirror's node, which shares anyway
+		}
 	}
 	if !c.Sources.Blackout {
 		c.Sources.DockerPackageURL, c.Sources.APTMirror, c.Sources.PyPIIndex = "", "", ""

@@ -3,8 +3,11 @@
 package ui
 
 import (
+	"context"
 	"slices"
 	"strings"
+	"sync/atomic"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -73,7 +76,20 @@ type App struct {
 	animOn    bool // a frame tick is on its way (anim.go)
 }
 
+// localMirror is set once this machine is found running interzone-mirror's
+// IPFS node: a deploy here uses it instead of starting its own.
+var localMirror atomic.Bool
+
+// mirrorNodeHere says a target in this mode is this machine, running the
+// mirror's node.
+func mirrorNodeHere(mode string) bool { return mode != "ssh" && localMirror.Load() }
+
 func New(cfg *config.Config, loaded bool) *App {
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		localMirror.Store(deploy.LocalMirrorNode(ctx) != "")
+	}()
 	zone.NewGlobal()
 	loadTheme()
 	deploy.Backfill(cfg)
