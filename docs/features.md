@@ -208,8 +208,9 @@ The short list is in the [README](../README.md).
   `/.well-known/matrix/server` and `/client` (and its CORS header), SRV
   records, the signing keys and which homeserver software and version
   answer, the client API and its spec versions, ways to log in,
-  `/.well-known/matrix/support`, and what Element X needs (sliding sync,
-  OAuth 2.0 logins, a call server). It also checks the way there: each
+  `/.well-known/matrix/support` (each contact the owner lists, by role,
+  with their Matrix ID and email, and the support page), and what Element
+  X needs (sliding sync, OAuth 2.0 logins, a call server). It also checks the way there: each
   name's addresses and whether Iran's filter answers for them
   (10.10.34.x), where each server is (a town and network in Iran, else a
   country), whether IPv4 and IPv6 both connect, and how long the name,

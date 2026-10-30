@@ -306,12 +306,34 @@ func clientProbe(ctx context.Context, c *config.Config, own bool) ([]Finding, st
 		add("Element X calls", Warn, "the well-known names no call server, so Element X can't call")
 	}
 
+	// Who to ask for help, as the server's owner says (MSC1929).
 	var support struct {
-		Contacts []json.RawMessage `json:"contacts"`
-		Page     string            `json:"support_page"`
+		Contacts []struct {
+			Role  string `json:"role"`
+			MXID  string `json:"matrix_id"`
+			Email string `json:"email_address"`
+		} `json:"contacts"`
+		Page string `json:"support_page"`
 	}
 	if _, err := getJSON(ctx, scheme+c.Domain+"/.well-known/matrix/support", insecure, &support); err == nil && (len(support.Contacts) > 0 || support.Page != "") {
-		add("Support", Pass, "/.well-known/matrix/support lists %d contact(s) %s", len(support.Contacts), support.Page)
+		for _, ct := range support.Contacts {
+			role := strings.TrimPrefix(strings.TrimPrefix(ct.Role, "m.role."), "org.matrix.msc1929.")
+			if role == "" {
+				role = "contact"
+			}
+			var ways []string
+			for _, w := range []string{ct.MXID, ct.Email} {
+				if w != "" {
+					ways = append(ways, w)
+				}
+			}
+			if len(ways) > 0 {
+				add("Support", Pass, "%s: %s", role, strings.Join(ways, ", "))
+			}
+		}
+		if support.Page != "" {
+			add("Support", Pass, "page: %s", support.Page)
+		}
 	} else if !own {
 		add("Support", Pass, "no /.well-known/matrix/support (optional)")
 	}

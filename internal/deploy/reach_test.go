@@ -97,6 +97,9 @@ func TestProbeServer(t *testing.T) {
 			fmt.Fprint(w, `{"versions": ["v1.11", "v1.12"], "unstable_features": {"org.matrix.simplified_msc3575": true}}`)
 		case "/_matrix/client/v3/login":
 			fmt.Fprint(w, `{"flows": [{"type": "m.login.password"}, {"type": "m.login.sso"}]}`)
+		case "/.well-known/matrix/support":
+			fmt.Fprint(w, `{"contacts": [{"role": "m.role.admin", "matrix_id": "@admin:example.org", "email_address": "admin@example.org"},
+				{"role": "m.role.security", "email_address": "security@example.org"}], "support_page": "https://example.org/help"}`)
 		case "/_matrix/client/v1/auth_metadata":
 			fmt.Fprint(w, `{}`)
 		case "/_matrix/client/v3/register":
@@ -124,7 +127,7 @@ func TestProbeServer(t *testing.T) {
 	all := strings.Join(lines, "\n")
 	for _, want := range []string{"0 Delegation: the name has a port", "0 Federation API: " + name + " answers as " + name,
 		"0 Well-known: sends apps to " + srv.URL, "spec up to v1.12", "0 Logins: password, sso",
-		"0 Element X sync", "0 Element X login", "0 Element X calls", "0 Support: no /.well-known/matrix/support",
+		"0 Element X sync", "0 Element X login", "0 Element X calls", "0 Support: admin: @admin:example.org, admin@example.org", "0 Support: security: security@example.org", "0 Support: page: https://example.org/help",
 		"1 Software: Synapse 1.140.0: older than 1.163.2", "1 DNS: 127.0.0.1 → 127.0.0.1 (this computer)",
 		"0 IPv4 and IPv6: " + name + ": IPv4 connects, no IPv6 address", "0 Speed: connected", "0 Certificate: " + name + ": TLS 1.3",
 		"0 HSTS: not sent", "0 Sign-ups: open, with a captcha", "0 Public rooms: 7 rooms", "0 Features: ✗ spaces  ✗ threads  ✓ authenticated media"} {
