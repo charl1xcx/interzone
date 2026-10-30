@@ -1,6 +1,9 @@
 package deploy
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestParseHostStats(t *testing.T) {
 	s := parseHostStats(`installed yes
@@ -49,12 +52,14 @@ active active
 self /ip4/10.0.0.5/tcp/4001/p2p/me /ip4/2.176.0.9/tcp/4001/p2p/me /dns4/mirror.example/tcp/4001/p2p/me
 peer /ip4/5.160.0.1/tcp/4001/p2p/12D3a 300 9000
 peer /ip6/2a01::1/tcp/4001/p2p/12D3b
+swarm {"Peers":[{"Addr":"/ip4/5.160.0.1/tcp/4001","Peer":"12D3a","Latency":"41.5ms","Muxer":"","Direction":1,"Streams":null}]}
 `)
 	if len(s.Self) != 1 || s.Self[0].String() != "2.176.0.9" || len(s.selfNames) != 1 || s.selfNames[0] != "mirror.example" {
 		t.Fatalf("self %v names %v", s.Self, s.selfNames)
 	}
 	if len(s.PeerList) != 2 || s.PeerList[0].ID != "12D3a" || s.PeerList[0].Sent != 300 || s.PeerList[0].Recv != 9000 ||
-		s.PeerList[1].Addr.String() != "2a01::1" || s.PeerList[1].Sent != 0 {
+		s.PeerList[1].Addr.String() != "2a01::1" || s.PeerList[1].Sent != 0 ||
+		s.PeerList[0].Latency != 41500*time.Microsecond || !s.PeerList[0].Inbound || s.PeerList[1].Inbound {
 		t.Fatalf("%+v", s.PeerList)
 	}
 }

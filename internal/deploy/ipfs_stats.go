@@ -54,6 +54,8 @@ type Peer struct {
 	ID         string
 	Addr       netip.Addr
 	Sent, Recv int64
+	Latency    time.Duration // 0 if not measured yet
+	Inbound    bool          // it connected to the node, not the other way
 }
 
 // HostPart is one part of the newest publish on the node.
@@ -147,6 +149,7 @@ ipfs swarm peers | head -24 | while read -r a; do
   l=$(ipfs bitswap ledger --enc=json "${a##*/}" </dev/null)
   echo peer $a $(echo "$l" | grep -oE '"Sent":[0-9]+' | cut -d: -f2) $(echo "$l" | grep -oE '"Recv":[0-9]+' | cut -d: -f2)
 done
+echo swarm $(ipfs swarm peers --latency --direction --enc=json | head -c 65536)
 echo bitswap "{$(ipfs stats bitswap --enc=json | grep -oE '"(BlocksSent|DataSent|BlocksReceived|DataReceived)":[0-9]+' | paste -sd,)}"
 # The newest publish: ipfs-follow pins its root directly, the mirror's
 # publish recursively.
@@ -253,6 +256,22 @@ func parseHostStats(out string) *HostStats {
 				p.Sent, p.Recv = num(f[1]), num(f[2])
 			}
 			s.PeerList = append(s.PeerList, p)
+		case "swarm": // after the peer lines
+			var x struct {
+				Peers []struct {
+					Peer, Latency string
+					Direction     int
+				}
+			}
+			_ = json.Unmarshal([]byte(v), &x)
+			for _, sp := range x.Peers {
+				for i := range s.PeerList {
+					if s.PeerList[i].ID == sp.Peer {
+						s.PeerList[i].Latency, _ = time.ParseDuration(sp.Latency)
+						s.PeerList[i].Inbound = sp.Direction == 1
+					}
+				}
+			}
 		case "mirror":
 			s.Mirror = v
 		case "root":
