@@ -114,28 +114,7 @@ func TestLayout(t *testing.T) {
 				PublishedParts: []deploy.HostPart{{Name: "packages", Size: 3 << 30, Pinned: false}, {Name: "oci", Size: 15 << 30, Pinned: false}, {Name: "git", Size: 200 << 20, Pinned: true}, {Name: "bin", Size: 300 << 20, Pinned: true}},
 				Last:           "fetching bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi"}
 		}},
-		{"host-map", func(a *App) {
-			localMirror.Store(true) // shootAll clears it
-			a.jump(a.index("Host"))
-			hs := a.cur().(*hostScreen)
-			hs.statsFor, hs.phase = targetKey(hs.target()), 1.3
-			ip := netip.MustParseAddr
-			hs.stats = &deploy.HostStats{Installed: true, Active: true, Mirror: "ipfs", Parts: []string{"oci", "packages", "git", "bin"}, Peers: 4,
-				RepoSize: 19 << 30, DiskFree: 80 << 30, RateIn: 2e5, RateOut: 3e6, TotalIn: 6 << 30, TotalOut: 40 << 30,
-				DataSent: 38 << 30, DataReceived: 1 << 30, Published: "2026-10-29T03:00:00Z",
-				PublishedParts: []deploy.HostPart{{Name: "oci", Pinned: true}, {Name: "packages", Pinned: true}, {Name: "git", Pinned: true}, {Name: "bin", Pinned: true}},
-				Self:           []netip.Addr{ip("2.176.0.1")}, PeerList: []deploy.Peer{
-					{ID: "a", Addr: ip("5.160.0.1"), Sent: 9 << 30, Latency: 41 * time.Millisecond, Inbound: true},
-					{ID: "b", Addr: ip("81.169.145.1"), Sent: 2 << 30, Latency: 120 * time.Millisecond},
-					{ID: "c", Addr: ip("10.0.0.1"), Recv: 1 << 20},
-					{ID: "d", Addr: ip("2.176.200.1"), Latency: 18 * time.Millisecond}}}
-			hs.in, hs.out = []float64{0, 1e5, 2e5}, []float64{1e6, 4e6, 3e6}
-			hs.rates = map[string]peerRate{"a": {out: 2e6}, "b": {out: 1e6}}
-			hs.peerHist = map[string][]float64{"a": {1e6, 3e6, 2e6}, "b": {0, 1e6, 1e6}}
-			at := time.Date(2026, 10, 29, 14, 5, 0, 0, time.UTC)
-			hs.comings = []hostComing{{at, hs.stats.PeerList[3], true}, {at.Add(time.Minute), deploy.Peer{Addr: ip("8.8.8.8")}, false}}
-			hs.ripples = []ripple{{addr: ip("2.176.200.1"), start: 0.5, join: true}}
-		}},
+		{"host-map", openHostMap},
 		{"maintenance", func(a *App) { deliver(a, maintainMsg("vacuum")) }},
 		{"users-bridge", func(a *App) {
 			openUsers(a)
@@ -155,6 +134,29 @@ func TestLayoutWide(t *testing.T) {
 		name string
 		open func(a *App)
 	}{{"dashboard", openDashboard}, {"mirrors", openMirrors}, {"users", openUsers}})
+}
+
+func openHostMap(a *App) {
+	localMirror.Store(true) // shootAll clears it
+	a.jump(a.index("Host"))
+	hs := a.cur().(*hostScreen)
+	hs.statsFor, hs.phase = targetKey(hs.target()), 1.3
+	ip := netip.MustParseAddr
+	hs.stats = &deploy.HostStats{Installed: true, Active: true, Mirror: "ipfs", Parts: []string{"oci", "packages", "git", "bin"}, Peers: 4,
+		RepoSize: 19 << 30, DiskFree: 80 << 30, RateIn: 2e5, RateOut: 3e6, TotalIn: 6 << 30, TotalOut: 40 << 30,
+		DataSent: 38 << 30, DataReceived: 1 << 30, Published: "2026-10-29T03:00:00Z",
+		PublishedParts: []deploy.HostPart{{Name: "oci", Pinned: true}, {Name: "packages", Pinned: true}, {Name: "git", Pinned: true}, {Name: "bin", Pinned: true}},
+		Self:           []netip.Addr{ip("2.176.0.1")}, PeerList: []deploy.Peer{
+			{ID: "a", Addr: ip("5.160.0.1"), Sent: 9 << 30, Latency: 41 * time.Millisecond, Inbound: true},
+			{ID: "b", Addr: ip("81.169.145.1"), Sent: 2 << 30, Latency: 120 * time.Millisecond},
+			{ID: "c", Addr: ip("10.0.0.1"), Recv: 1 << 20},
+			{ID: "d", Addr: ip("2.176.200.1"), Latency: 18 * time.Millisecond}}}
+	hs.in, hs.out = []float64{0, 1e5, 2e5}, []float64{1e6, 4e6, 3e6}
+	hs.rates = map[string]peerRate{"a": {out: 2e6}, "b": {out: 1e6}}
+	hs.peerHist = map[string][]float64{"a": {1e6, 3e6, 2e6}, "b": {0, 1e6, 1e6}}
+	at := time.Date(2026, 10, 29, 14, 5, 0, 0, time.UTC)
+	hs.comings = []hostComing{{at, hs.stats.PeerList[3], true}, {at.Add(time.Minute), deploy.Peer{Addr: ip("8.8.8.8")}, false}}
+	hs.ripples = []ripple{{addr: ip("2.176.200.1"), start: 0.5, join: true}}
 }
 
 func openDashboard(a *App) {

@@ -10,8 +10,8 @@
 #   scripts/screenshots/shots.sh grab NAME [WIDTH]   save the session's screen as NAME.png
 #                                                    (1400 px wide; phone shots: WIDTH 0)
 #   scripts/screenshots/shots.sh phone A B C         join three phone shots into phone.png
-#   scripts/screenshots/shots.sh users               draw users.png from the layout tests'
-#                                                    sample people (no server needed)
+#   scripts/screenshots/shots.sh users               draw users.png, dashboard.png and host-map.png
+#                                                    from the layout tests' sample data (no server needed)
 #   scripts/screenshots/shots.sh stop
 #
 # Drive the session between grabs with tmux send-keys or tmux attach -t shot.
@@ -77,7 +77,9 @@ phone() {
 users() {
 	mkdir -p "$work/raw"
 	(cd "$repo" && INTERZONE_SHOT="$work/raw" go test ./internal/ui -run '^TestShot$' -count=1 >/dev/null)
-	python3 "$repo/scripts/screenshots/render.py" "$work/raw/users.ans" "$out/users.png" 1400
+	for n in users dashboard host-map; do
+		python3 "$repo/scripts/screenshots/render.py" "$work/raw/$n.ans" "$out/$n.png" 1400
+	done
 }
 
 stop() {

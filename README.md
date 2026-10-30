@@ -58,6 +58,12 @@ interzone servers over IPFS.
 <td width="50%" valign="top"><p align="center"><a href="docs/screenshots/users.png"><img src="docs/screenshots/users.png" alt="Managing the server's users" width="400"></a></p>
 <b>Users:</b> totals, a card per person, search, filter and sort.</td>
 </tr>
+<tr>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/dashboard.png"><img src="docs/screenshots/dashboard.png" alt="The server's dashboard" width="400"></a></p>
+<b>Dashboard:</b> CPU, memory, disk, containers and certificates, live.</td>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/host-map.png"><img src="docs/screenshots/host-map.png" alt="The IPFS swarm's map of Iran" width="400"></a></p>
+<b>IPFS swarm:</b> every node sharing the mirror, placed on a map of Iran, with what each sends and receives.</td>
+</tr>
 </table>
 
 ## Community

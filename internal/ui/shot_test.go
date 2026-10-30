@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"net/netip"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +29,32 @@ func TestShot(t *testing.T) {
 		open func(*App)
 	}{
 		{"users", openUsers},
+		{"dashboard", openDashboard},
+		// The README's map: the sample swarm with more nodes across Iran.
+		{"host-map", func(a *App) {
+			openHostMap(a)
+			hs := a.cur().(*hostScreen)
+			ip := netip.MustParseAddr
+			for i, p := range []struct {
+				addr          string
+				ms            time.Duration
+				sent, in, out float64
+			}{
+				{"2.180.0.1", 62, 7e9, 0, 4e6}, {"2.182.32.1", 55, 5e9, 0, 2e6}, {"2.182.214.1", 48, 4e9, 3e5, 1e6},
+				{"2.182.169.1", 30, 3e9, 0, 0}, {"2.183.156.1", 70, 2e9, 2e6, 0}, {"2.183.80.1", 38, 2e9, 0, 5e5},
+				{"2.184.160.1", 90, 1e9, 0, 0}, {"2.181.112.1", 110, 8e8, 1e6, 0}, {"2.183.131.1", 75, 6e8, 0, 0},
+				{"2.187.32.1", 66, 4e8, 0, 3e5}, {"2.183.0.1", 58, 3e8, 0, 0},
+			} {
+				id := string(rune('e' + i))
+				hs.stats.PeerList = append(hs.stats.PeerList, deploy.Peer{ID: id, Addr: ip(p.addr), Sent: int64(p.sent), Latency: p.ms * time.Millisecond, Inbound: i%3 == 0})
+				if p.in+p.out > 0 {
+					hs.rates[id] = peerRate{in: p.in, out: p.out}
+					hs.peerHist[id] = []float64{p.out / 2, p.in + p.out, (p.in + p.out) * 0.8}
+				}
+			}
+			hs.stats.Peers = len(hs.stats.PeerList)
+			hs.ripples = append(hs.ripples, ripple{addr: ip("2.183.80.1"), start: 0.2, join: true})
+		}},
 		// The wiki's guide, on the Friends & family preset.
 		{"wiki-confirm", func(a *App) {
 			a.cfg.Target = config.Target{Mode: "ssh", Host: "192.0.2.1", User: "root"}
@@ -124,6 +151,7 @@ func TestShot(t *testing.T) {
 		}
 	}
 	lipgloss.SetColorProfile(termenv.Ascii)
+	localMirror.Store(false)
 }
 
 // fakeDeploy shows a first install part way through, or finished, without
