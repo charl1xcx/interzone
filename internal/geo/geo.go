@@ -30,8 +30,27 @@ type Place struct {
 	Country  string // ISO 3166 code
 	Town     string // in Iran only
 	Province string
+	ISP      string // the network, in Iran only
 	Lat, Lon float64
 }
+
+// Label is a named spot drawn on the map.
+type Label struct {
+	Name     string
+	Lat, Lon float64
+}
+
+// Cities are the biggest, so the map reads at a glance.
+var Cities = []Label{
+	{"Tehran", 35.69, 51.39}, {"Mashhad", 36.30, 59.61}, {"Isfahan", 32.65, 51.67}, {"Karaj", 35.83, 50.99},
+	{"Shiraz", 29.59, 52.58}, {"Tabriz", 38.08, 46.29}, {"Qom", 34.64, 50.88}, {"Ahvaz", 31.32, 48.67},
+	{"Kermanshah", 34.31, 47.07}, {"Urmia", 37.55, 45.08}, {"Rasht", 37.28, 49.58}, {"Zahedan", 29.50, 60.86},
+	{"Kerman", 30.28, 57.08}, {"Yazd", 31.90, 54.37}, {"Bandar Abbas", 27.18, 56.27}, {"Hamadan", 34.80, 48.51},
+	{"Sari", 36.56, 53.06}, {"Bushehr", 28.97, 50.84}, {"Birjand", 32.87, 59.22}, {"Ardabil", 38.25, 48.29},
+}
+
+// Seas are the waters on the map.
+var Seas = []Label{{"Caspian Sea", 39.4, 51.2}, {"Persian Gulf", 27.0, 51.6}, {"Gulf of Oman", 25.0, 58.6}}
 
 //go:embed ip.bin
 var raw []byte
@@ -42,10 +61,12 @@ type span struct {
 }
 
 type table struct {
-	places    []Place
-	countries []Place
-	ir4, ir6  []span
-	world     []span
+	places     []Place
+	countries  []Place
+	ir4, ir6   []span
+	world      []span
+	isps       []string
+	isp4, isp6 []span
 }
 
 var (
@@ -94,6 +115,10 @@ func load() *table {
 			return out
 		}
 		t.ir4, t.ir6, t.world = spans(), spans(), spans()
+		for n := u(); n > 0; n-- {
+			t.isps = append(t.isps, str())
+		}
+		t.isp4, t.isp6 = spans(), spans()
 		data = t
 	})
 	return data
@@ -117,7 +142,11 @@ func Locate(a netip.Addr) (Place, bool) {
 	if a.Is4() {
 		ip := uint64(binary.BigEndian.Uint32(a.AsSlice()))
 		if i, ok := find(t.ir4, ip); ok {
-			return t.places[i], true
+			p := t.places[i]
+			if j, ok := find(t.isp4, ip); ok {
+				p.ISP = t.isps[j]
+			}
+			return p, true
 		}
 		if i, ok := find(t.world, ip); ok {
 			return t.countries[i], true
@@ -125,8 +154,13 @@ func Locate(a netip.Addr) (Place, bool) {
 		return Place{}, false
 	}
 	b := a.As16()
-	if i, ok := find(t.ir6, binary.BigEndian.Uint64(b[:8])); ok {
-		return t.places[i], true
+	ip := binary.BigEndian.Uint64(b[:8])
+	if i, ok := find(t.ir6, ip); ok {
+		p := t.places[i]
+		if j, ok := find(t.isp6, ip); ok {
+			p.ISP = t.isps[j]
+		}
+		return p, true
 	}
 	return Place{}, false
 }

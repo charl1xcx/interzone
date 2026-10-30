@@ -25,6 +25,12 @@ func TestLocate(t *testing.T) {
 			t.Errorf("%s: %+v, want none", ip, p)
 		}
 	}
+	if p, _ := Locate(netip.MustParseAddr("2.176.0.1")); p.ISP != "TCI" {
+		t.Errorf("2.176.0.1 is TCI's, not %q", p.ISP)
+	}
+	if len(Provinces) < 31 {
+		t.Errorf("%d provinces", len(Provinces))
+	}
 	if len(Shapes) == 0 || Shapes[0].Country != "IR" {
 		t.Fatal("Iran's border should come first")
 	}
