@@ -108,6 +108,35 @@ def appservices():
     except Exception:
         pass
     return out
+def room_stats():
+    # Each room's creation time, and the files its messages link to, as
+    # count and bytes on this server's disk (remote ones as far as they're
+    # cached). The admin API lists a room's media but not their sizes, so
+    # this asks the database, read only. Encrypted messages hide their files.
+    import yaml, psycopg2
+    cfg = yaml.safe_load(open("/data/homeserver.yaml"))
+    args = {k: v for k, v in cfg["database"]["args"].items() if k not in ("cp_min", "cp_max")}
+    db = psycopg2.connect(**args)
+    db.set_session(readonly=True)
+    cur = db.cursor()
+    cur.execute("""
+WITH urls AS (
+  SELECT DISTINCT e.room_id, substr(ej.json::jsonb #>> '{content,url}', 7) AS mxc
+  FROM events e JOIN event_json ej USING (event_id)
+  WHERE e.contains_url AND ej.json::jsonb #>> '{content,url}' LIKE 'mxc://%%'
+), media AS (
+  SELECT u.room_id, coalesce(l.media_length, r.media_length) AS len
+  FROM urls u
+  LEFT JOIN local_media_repository l ON split_part(u.mxc, '/', 1) = %(me)s AND l.media_id = split_part(u.mxc, '/', 2)
+  LEFT JOIN remote_media_cache r ON r.media_origin = split_part(u.mxc, '/', 1) AND r.media_id = split_part(u.mxc, '/', 2)
+)
+SELECT c.room_id, c.created, coalesce(m.n, 0), coalesce(m.bytes, 0)
+FROM (SELECT room_id, min(origin_server_ts) AS created FROM events WHERE type = 'm.room.create' AND state_key = '' GROUP BY room_id) c
+LEFT JOIN (SELECT room_id, count(len) AS n, sum(len) AS bytes FROM media GROUP BY room_id) m USING (room_id)
+""", {"me": cfg["server_name"]})
+    out = {room: (created, [int(n), int(size)]) for room, created, n, size in cur.fetchall()}
+    db.close()
+    return out
 def run(tok):
     if req["op"] == "list":
         users, frm = [], "0"
@@ -176,6 +205,13 @@ def run(tok):
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(8) as pool:
             list(pool.map(blocked, rooms[:300]))
+        try:
+            stats = room_stats()
+            for r in rooms:
+                if r["room_id"] in stats:
+                    r["created"], r["media"] = stats[r["room_id"]]
+        except Exception:
+            pass  # the list without dates and media
         return {"rooms": rooms}
     if req["op"] == "call":
         return {"result": call(req["method"], req["path"], req.get("body"), token=tok)}

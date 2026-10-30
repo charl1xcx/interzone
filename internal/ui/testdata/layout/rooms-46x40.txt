@@ -1,7 +1,7 @@
  ◢◤ ◆ Manage › Rooms                          
  Rooms on example.org                         
                                               
- 4 rooms, biggest first                       
+ 4 rooms · 30.0 MB of media    o  by size     
                                               
  ╭──────────────────────────────────────────╮ 
  │ #  Lounge                                │ 
@@ -9,6 +9,8 @@
  │                                          │ 
  │ Members    214  31 from here             │ 
  │ Size       1840 state events             │ 
+ │ Created    0000-00-00                    │ 
+ │ Media      24.0 MB in 172 files          │ 
  │            public                        │ 
  │ Made by    @alice:example.org            │ 
  │ ID         !kQx:example.org              │ 
@@ -18,8 +20,6 @@
    #  Matrix HQ                  9120 members 
    #  Book club                     7 members 
    ⊘  free crypto                   3 members 
-                                              
-                                              
                                               
                                               
                                               

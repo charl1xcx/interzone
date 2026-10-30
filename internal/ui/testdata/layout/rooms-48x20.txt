@@ -1,6 +1,6 @@
  ◢◤ ◆ Manage › Rooms                            
  Rooms on example.org                           
- 4 rooms, biggest first                         
+ 4 rooms · 30.0 MB of media    o  by size       
                                                 
  ▌ #  Lounge                        214 members 
    #  Matrix HQ                    9120 members 

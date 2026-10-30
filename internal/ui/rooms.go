@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -19,7 +20,11 @@ import (
 //
 // Every room Synapse knows of, biggest first, with who's in it. A room can
 // be blocked, deleted from the server, or have its old history deleted.
-// It signs in with the admin account the Users screen uses.
+// It signs in with the admin account the Users screen uses. o sorts by
+// Synapse's size, members, newest or media.
+
+// roomSorts are what o steps through; Synapse lists rooms by size.
+var roomSorts = []string{"size", "members", "newest", "media"}
 
 type roomsMsg struct {
 	server string
@@ -47,6 +52,7 @@ type roomsScreen struct {
 	form    *form  // how much history to delete
 	confirm string // "delete" or "block", for the room under the cursor
 	narrow  bool
+	sortBy  int
 
 	busy bool
 	gen  int
@@ -80,7 +86,7 @@ func (s *roomsScreen) keys() [][2]string {
 		keys = append(keys, [2]string{"b", map[bool]string{true: "unblock", false: "block"}[r.Blocked]},
 			[2]string{"h", "delete old history"}, [2]string{"x", "delete room"})
 	}
-	return append(keys, [2]string{"r", "reload"})
+	return append(keys, [2]string{"o", "sort"}, [2]string{"r", "reload"})
 }
 
 func (s *roomsScreen) enter(c *config.Config) tea.Cmd {
@@ -183,6 +189,7 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 		if m.err == nil {
 			s.list, s.loaded = m.list, true
 			s.cursor = min(s.cursor, max(0, len(s.list)-1))
+			s.sortRooms("")
 		}
 		return nil
 	case roomOpMsg:
@@ -242,6 +249,12 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 		return nil
 	}
 	_, ok = s.current()
+	if k.String() == "o" { // sorting needs no server
+		r, _ := s.current()
+		s.sortBy = (s.sortBy + 1) % len(roomSorts)
+		s.sortRooms(r.ID)
+		return nil
+	}
 	switch k.String() {
 	case "r":
 		return s.reload()
@@ -265,6 +278,28 @@ func (s *roomsScreen) update(msg tea.Msg) tea.Cmd {
 		}
 	}
 	return nil
+}
+
+// sortRooms orders the list by roomSorts[sortBy], keeping the cursor on
+// the room with the given ID.
+func (s *roomsScreen) sortRooms(keep string) {
+	sort.SliceStable(s.list, func(i, j int) bool {
+		a, b := s.list[i], s.list[j]
+		switch roomSorts[s.sortBy] {
+		case "members":
+			return a.Members > b.Members
+		case "newest":
+			return a.Created.After(b.Created)
+		case "media":
+			return a.MediaBytes > b.MediaBytes
+		}
+		return a.Events > b.Events
+	})
+	for i, r := range s.list {
+		if r.ID == keep {
+			s.cursor = i
+		}
+	}
 }
 
 func (s *roomsScreen) click(id string) (tea.Cmd, bool) {
@@ -294,7 +329,15 @@ func (s *roomsScreen) view(w, h int) string {
 	if !s.loaded {
 		return foot
 	}
-	top := sMuted.Render(fmt.Sprintf("%d rooms, biggest first", len(s.list)))
+	top := sMuted.Render(plural(len(s.list), "room"))
+	var media int64
+	for _, r := range s.list {
+		media += r.MediaBytes
+	}
+	if media > 0 {
+		top += sMuted.Render(" · " + humanBytes(media) + " of media")
+	}
+	top += "   " + mark("key:o", keyChip("o")+sMuted.Render(" by ")+sAccent.Render(roomSorts[s.sortBy]))
 	listH := max(3, h-lipgloss.Height(top)-lipgloss.Height(foot)-4)
 	var body string
 	switch {
@@ -375,10 +418,42 @@ func (s *roomsScreen) rowLine(r deploy.Room, w int, on bool) string {
 	if r.Blocked {
 		name = sFaint
 	}
-	right := sMuted.Render(fmt.Sprintf("%d members", r.Members))
+	// What the list is sorted by, so the order makes sense at a glance.
+	right := sMuted.Render(plural(r.Members, "member"))
+	switch roomSorts[s.sortBy] {
+	case "newest":
+		if !r.Created.IsZero() {
+			right = sMuted.Render(r.Created.Format("2006-01-02"))
+		}
+	case "media":
+		right = sMuted.Render(roomMedia(r, true))
+	}
 	room := w - 3 - lipgloss.Width(right) - 2
 	left := roomDot(r) + "  " + name.Render(truncate(r.Title(), max(6, room)))
 	return left + strings.Repeat(" ", max(1, w-lipgloss.Width(left)-lipgloss.Width(right))) + right
+}
+
+// roomMedia is the size of the files a room's messages link to. An
+// encrypted room's are hidden from the server, so there it's at least.
+func roomMedia(r deploy.Room, short bool) string {
+	switch {
+	case r.MediaCount < 0:
+		return "media unknown"
+	case r.MediaCount == 0 && r.Encrypted:
+		if short {
+			return "encrypted"
+		}
+		return sMuted.Render("hidden: encrypted")
+	case r.MediaCount == 0:
+		return "no media"
+	case short:
+		return humanBytes(r.MediaBytes)
+	}
+	out := sTitle.Render(humanBytes(r.MediaBytes)) + sMuted.Render(" in "+plural(r.MediaCount, "file"))
+	if r.Encrypted {
+		out = sMuted.Render("at least ") + out // its encrypted messages' files are hidden
+	}
+	return out
 }
 
 func (s *roomsScreen) card(r deploy.Room, w int) string {
@@ -395,6 +470,12 @@ func (s *roomsScreen) card(r deploy.Room, w int) string {
 	kv := func(k, v string) { lines = append(lines, sMuted.Render(fmt.Sprintf("%-11s", k))+v) }
 	kv("Members", sTitle.Render(fmt.Sprint(r.Members))+sMuted.Render(fmt.Sprintf("  %d from here", r.Local)))
 	kv("Size", sTitle.Render(fmt.Sprint(r.Events))+sMuted.Render(" state events"))
+	if !r.Created.IsZero() {
+		kv("Created", sTitle.Render(r.Created.Format("2006-01-02")))
+	}
+	if r.MediaCount >= 0 {
+		kv("Media", roomMedia(r, false))
+	}
 	var tags []string
 	for _, t := range []struct {
 		on   bool

@@ -19,6 +19,9 @@ type Room struct {
 	Events                   int // state events: what Synapse sorts rooms by size with
 	Public, Encrypted        bool
 	Federated, Blocked       bool
+	Created                  time.Time // zero if the database couldn't say
+	MediaCount               int       // files its messages link to; -1 if unknown
+	MediaBytes               int64     // their size on this server's disk
 }
 
 // Title is the room's name, else its alias, else its ID.
@@ -71,6 +74,8 @@ func parseRooms(out []byte) ([]Room, error) {
 			Encrypted *string `json:"encryption"`
 			Federated bool    `json:"federatable"`
 			Blocked   bool    `json:"blocked"`
+			Created   int64   `json:"created"`
+			Media     []int64 `json:"media"`
 		} `json:"rooms"`
 	}
 	if err := json.Unmarshal(out, &v); err != nil {
@@ -86,7 +91,10 @@ func parseRooms(out []byte) ([]Room, error) {
 	for _, r := range v.Rooms {
 		rooms = append(rooms, Room{ID: r.ID, Name: Printable(str(r.Name)), Alias: Printable(str(r.Alias)), Creator: Printable(r.Creator),
 			Members: r.Members, Local: r.Local, Events: r.Events, Public: r.Public,
-			Encrypted: str(r.Encrypted) != "", Federated: r.Federated, Blocked: r.Blocked})
+			Encrypted: str(r.Encrypted) != "", Federated: r.Federated, Blocked: r.Blocked, MediaCount: -1})
+		if rm := &rooms[len(rooms)-1]; len(r.Media) == 2 {
+			rm.Created, rm.MediaCount, rm.MediaBytes = msTime(r.Created), int(r.Media[0]), r.Media[1]
+		}
 	}
 	return rooms, nil
 }
