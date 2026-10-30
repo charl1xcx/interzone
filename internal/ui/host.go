@@ -129,14 +129,17 @@ func (s *hostScreen) target() config.Target {
 func targetKey(t config.Target) string { return t.Mode + " " + t.User + "@" + t.Host + ":" + t.Port }
 
 // poll reads the node's numbers, unless a reading is on its way. This
-// machine is only asked if it hosts; an SSH server once its address is in.
+// machine is only asked if it hosts or runs Docker (interzone-mirror's
+// node); an SSH server once its address is in.
 func (s *hostScreen) poll() tea.Cmd {
 	t := s.target()
 	if s.polling || t.Mode == "ssh" && t.Host == "" {
 		return nil
 	}
 	if t.Mode != "ssh" {
-		if _, err := os.Stat("/etc/systemd/system/interzone-ipfs.service"); err != nil {
+		_, unit := os.Stat("/etc/systemd/system/interzone-ipfs.service")
+		_, docker := os.Stat("/var/run/docker.sock")
+		if unit != nil && docker != nil {
 			return nil
 		}
 	}
@@ -294,12 +297,21 @@ func (s *hostScreen) statsView(w int) []string {
 		return nil
 	}
 	w = min(w, maxFormWidth)
-	rows := []string{"", sectionHeading("Hosting on "+map[bool]string{true: "this machine", false: s.target().Host}[s.target().Mode != "ssh"], w)}
+	where := map[bool]string{true: "this machine", false: s.target().Host}[s.target().Mode != "ssh"]
+	heading := "Hosting on " + where
+	if st.Mirror != "" {
+		heading = "interzone-mirror's node on " + where
+	}
+	rows := []string{"", sectionHeading(heading, w)}
 	row := func(label, value string) {
 		rows = append(rows, "  "+lipgloss.NewStyle().Width(12).Render(sMuted.Render(label))+value)
 	}
 	if !st.Active {
-		row("Status", sBad.Render("● stopped")+sFaint.Render("  enter starts it again"))
+		again := "  enter starts it again"
+		if st.Mirror != "" {
+			again = "  docker start " + st.Mirror + " starts it again"
+		}
+		row("Status", sBad.Render("● stopped")+sFaint.Render(again))
 		return rows
 	}
 	state := sGood.Render("● sharing") + sMuted.Render(fmt.Sprintf(" · %s · %s", plural(st.Peers, "peer"), strings.Join(partNames(st.Parts), ", ")))
@@ -344,6 +356,9 @@ func (s *hostScreen) statsView(w int) []string {
 		row("", sBad.Render("✗ not enough free space for the rest"))
 	}
 	update := sMuted.Render("waiting")
+	if st.Mirror != "" {
+		update = sMuted.Render("publishes after each images run")
+	}
 	switch {
 	case st.Following:
 		update = sAccent.Render("updating now")

@@ -2,8 +2,10 @@ package deploy
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -23,6 +25,7 @@ type HostStats struct {
 	NextCheck time.Time
 	Parts     []string // what it hosts, from PartNames
 	Last      string   // ipfs-follow's last log line
+	Mirror    string   // the container, when the node is interzone-mirror's entry node
 
 	Peers            int
 	RepoSize         int64
@@ -48,16 +51,37 @@ type HostPart struct {
 
 // ReadHostStats asks the target's IPFS node for its numbers.
 func ReadHostStats(ctx context.Context, t config.Target) (*HostStats, error) {
-	r := &Runner{cfg: &config.Config{Target: t}}
-	out, err := r.output(ctx, t, hostStatsScript)
+	// interzone-mirror's node is read through docker, which needs no sudo;
+	// nothing hosted needs none either.
+	cmd := targetCmd(ctx, t, mirrorStatsScript+`
+[ -f /etc/systemd/system/interzone-ipfs.service ] || { echo installed no; exit 0; }
+`+asRoot("sh -c "+shellQuote(hostStatsScript)))
+	cmd.Stdin = strings.NewReader(t.BecomePass + "\n")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s", lastLine(stderr.String(), err))
 	}
-	return parseHostStats(out), nil
+	return parseHostStats(string(out)), nil
 }
 
-const hostStatsScript = `[ -f /etc/systemd/system/interzone-ipfs.service ] || { echo installed no; exit 0; }
+// mirrorStatsScript finds interzone-mirror's compose service ipfs (see its
+// IPFS.md), which publishes every part, and reads it like a hosting node.
+const mirrorStatsScript = `c=$(docker ps -a --filter label=com.docker.compose.service=ipfs --format '{{.Names}} {{.Image}}' 2>/dev/null | awk '$2 ~ /kubo/ {print $1; exit}')
+if [ -n "$c" ]; then
 echo installed yes
+echo mirror $c
+echo active $(docker inspect -f '{{if .State.Running}}active{{end}}' $c)
+echo parts all
+echo free $(df -B1 --output=avail "$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/data/ipfs"}}{{.Source}}{{end}}{{end}}' $c)" | tail -1)
+docker inspect -f '{{.State.Running}}' $c | grep -q true || exit 0
+ipfs() { docker exec $c ipfs --timeout=10s "$@"; }
+` + ipfsStatsScript + `
+exit 0
+fi`
+
+const hostStatsScript = `echo installed yes
 echo active $(systemctl is-active interzone-ipfs)
 echo follow $(systemctl is-active interzone-ipfs-follow.service)
 echo result $(systemctl show interzone-ipfs-follow.service -p Result --value)
@@ -68,15 +92,20 @@ echo last $(journalctl -u interzone-ipfs-follow -n 1 -o cat --no-pager 2>/dev/nu
 echo free $(df -B1 --output=avail ` + ipfsRepo + ` | tail -1)
 systemctl is-active -q interzone-ipfs || exit 0
 ipfs() { runuser -u ` + ipfsUser + ` -- env IPFS_PATH=` + ipfsRepo + ` ` + ipfsBin + `/ipfs --api ` + ipfsAPI + ` --timeout=10s "$@"; }
-echo peers $(ipfs swarm peers | wc -l)
+` + ipfsStatsScript
+
+// ipfsStatsScript reads a running node through the shell function ipfs.
+const ipfsStatsScript = `echo peers $(ipfs swarm peers | wc -l)
 echo repo $(ipfs repo stat --size-only --enc=json)
 echo bw $(ipfs stats bw)
 echo bitswap "{$(ipfs stats bitswap --enc=json | grep -oE '"(BlocksSent|DataSent|BlocksReceived|DataReceived)":[0-9]+' | paste -sd,)}"
-# The publish ipfs-follow works on: the newest root it pinned directly.
-root=$(for r in $(ipfs pin ls --type=direct --quiet); do
+# The newest publish: ipfs-follow pins its root directly, the mirror's
+# publish recursively.
+root=$(for r in $(ipfs pin ls --type=direct --quiet; ipfs pin ls --type=recursive --quiet); do
   echo "$(ipfs cat --offline "$r/index.json" 2>/dev/null | grep -o '"version": *[0-9]*' | grep -o '[0-9]*$') $r"
 done | sort -n | tail -1 | cut -d' ' -f2)
 [ -n "$root" ] || exit 0
+echo root $root
 echo index $(ipfs cat --offline "$root/index.json" | head -c 65536)
 echo pins $(ipfs pin ls --type=recursive --quiet)
 echo links $(ipfs dag get "$root" | head -c 65536)`
@@ -86,7 +115,8 @@ var siUnits = map[string]float64{"B": 1, "kB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 
 
 func parseHostStats(out string) *HostStats {
 	s := &HostStats{}
-	var pinned []string // printed before links
+	var root string
+	var pinned []string // both printed before links
 	sc := bufio.NewScanner(strings.NewReader(out))
 	sc.Buffer(make([]byte, 128<<10), 128<<10)
 	num := func(v string) int64 { n, _ := strconv.ParseInt(strings.TrimSpace(v), 10, 64); return n }
@@ -145,6 +175,10 @@ func parseHostStats(out string) *HostStats {
 			var x struct{ Created string }
 			_ = json.Unmarshal([]byte(v), &x)
 			s.Published = x.Created
+		case "mirror":
+			s.Mirror = v
+		case "root":
+			root = v
 		case "pins":
 			pinned = strings.Fields(v)
 		case "links": // the root's own block, so sizes are known before the parts arrive
@@ -161,7 +195,7 @@ func parseHostStats(out string) *HostStats {
 			for _, l := range x.Links {
 				switch l.Name {
 				case "packages", "oci", "git", "bin":
-					s.PublishedParts = append(s.PublishedParts, HostPart{Name: l.Name, Size: l.Tsize, Pinned: slices.Contains(pinned, l.Hash.Link)})
+					s.PublishedParts = append(s.PublishedParts, HostPart{Name: l.Name, Size: l.Tsize, Pinned: slices.Contains(pinned, l.Hash.Link) || slices.Contains(pinned, root)})
 				}
 			}
 		}

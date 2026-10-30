@@ -26,6 +26,18 @@ links {"Data":{"/":{"bytes":"CAE"}},"Links":[{"Hash":{"/":"bafypkg"},"Name":"pac
 	if s.Wanted != 10000 || s.Received != 5000 || len(s.PublishedParts) != 3 || !s.PublishedParts[2].Pinned || s.PublishedParts[1].Pinned {
 		t.Fatalf("wanted %d received %d parts %v", s.Wanted, s.Received, s.PublishedParts)
 	}
+	// interzone-mirror's node pins only the root: every part under it is kept.
+	m := parseHostStats(`installed yes
+mirror interzone-mirror-ipfs-1
+active active
+parts all
+root bafyroot
+pins bafyroot
+links {"Links":[{"Hash":{"/":"bafypkg"},"Name":"packages","Tsize":3000},{"Hash":{"/":"bafyoci"},"Name":"oci","Tsize":10000}]}
+`)
+	if m.Mirror != "interzone-mirror-ipfs-1" || len(m.Parts) != 4 || m.Wanted != 13000 || m.Received != 13000 {
+		t.Fatalf("%+v", m)
+	}
 	if s := parseHostStats("installed no\n"); s.Installed || s.Active {
 		t.Fatalf("%+v", s)
 	}
