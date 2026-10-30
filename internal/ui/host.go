@@ -71,12 +71,30 @@ type hostScreen struct {
 	ticks    int       // the newest tick asked for; older ones are dropped
 	in, out  []float64 // recent rates, bytes a second
 
-	ledger    map[string][2]int64 // each peer's bitswap sent and received, at ledgerAt
+	ledger    map[string]deploy.Peer // each peer, with its bitswap totals, at ledgerAt
 	ledgerAt  time.Time
 	rates     map[string]peerRate
-	phase     float64 // seconds into the map's animation
-	animating bool    // a hostFrameMsg is on its way
+	peerHist  map[string][]float64 // each peer's recent rates, in and out together
+	ripples   []ripple
+	comings   []hostComing // newest last
+	phase     float64      // seconds into the map's animation
+	animating bool         // a hostFrameMsg is on its way
+
+	showForm bool // on a machine running interzone-mirror's node, s shows the form over the map
 }
+
+// hostComing is a peer joining or leaving the swarm.
+type hostComing struct {
+	at   time.Time
+	peer deploy.Peer
+	join bool
+}
+
+// mapMode says the screen is the big map of interzone-mirror's node on
+// this machine, which needs no setting up.
+func (s *hostScreen) mapMode() bool { return !s.showForm && localMirror.Load() }
+
+func (s *hostScreen) handlesEsc() bool { return s.showForm && localMirror.Load() && !s.running }
 
 // mirrorHere says the form's target runs interzone-mirror's node, which
 // already hosts everything.
@@ -95,25 +113,42 @@ func (s *hostScreen) moving() bool {
 }
 
 func (s *hostScreen) frame() tea.Cmd {
-	if s.animating || !s.visible || !s.moving() {
+	if s.animating || !s.visible || !s.moving() && !s.mapMode() {
 		return nil
 	}
 	s.animating = true
 	return tea.Tick(hostFrame, func(time.Time) tea.Msg { return hostFrameMsg{} })
 }
 
-// readLedgers turns the peers' bitswap totals into rates since the last reading.
+// readLedgers turns the peers' bitswap totals into rates since the last
+// reading, and notes who joined and left.
 func (s *hostScreen) readLedgers(st *deploy.HostStats, now time.Time) {
 	secs := now.Sub(s.ledgerAt).Seconds()
-	next := map[string][2]int64{}
+	next := map[string]deploy.Peer{}
+	hist := map[string][]float64{}
 	s.rates = map[string]peerRate{}
+	came := func(p deploy.Peer, join bool) {
+		s.comings = append(s.comings, hostComing{now, p, join})[max(0, len(s.comings)+1-50):]
+		s.ripples = append(s.ripples, ripple{addr: p.Addr, start: s.phase, join: join})
+	}
 	for _, p := range st.PeerList {
-		next[p.ID] = [2]int64{p.Sent, p.Recv}
-		if was, ok := s.ledger[p.ID]; ok && secs > 0 {
-			s.rates[p.ID] = peerRate{in: max(0, float64(p.Recv-was[1])/secs), out: max(0, float64(p.Sent-was[0])/secs)}
+		next[p.ID] = p
+		was, ok := s.ledger[p.ID]
+		switch {
+		case ok && secs > 0:
+			r := peerRate{in: max(0, float64(p.Recv-was.Recv)/secs), out: max(0, float64(p.Sent-was.Sent)/secs)}
+			s.rates[p.ID] = r
+			hist[p.ID] = append(s.peerHist[p.ID], r.in+r.out)[max(0, len(s.peerHist[p.ID])+1-16):]
+		case !ok && s.ledger != nil:
+			came(p, true)
 		}
 	}
-	s.ledger, s.ledgerAt = next, now
+	for id, p := range s.ledger {
+		if _, ok := next[id]; !ok {
+			came(p, false)
+		}
+	}
+	s.ledger, s.ledgerAt, s.peerHist = next, now, hist
 }
 
 func newHostScreen() *hostScreen {
@@ -141,18 +176,30 @@ func newHostScreen() *hostScreen {
 	return &hostScreen{form: f, spin: newSpinner()}
 }
 
-func (s *hostScreen) name() string      { return "Host" }
-func (s *hostScreen) title() string     { return "Host interzone's files over IPFS" }
-func (s *hostScreen) typing() bool      { return !s.running }
+func (s *hostScreen) name() string { return "Host" }
+func (s *hostScreen) title() string {
+	if s.mapMode() {
+		return "interzone-mirror's IPFS swarm"
+	}
+	return "Host interzone's files over IPFS"
+}
+func (s *hostScreen) typing() bool      { return !s.running && !s.mapMode() }
 func (s *hostScreen) activeForm() *form { return s.form }
 func (s *hostScreen) keys() [][2]string {
 	if s.running {
 		return [][2]string{{"ctrl+x", "stop"}, {"↑↓", "scroll"}}
 	}
-	if s.mirrorHere() {
-		return [][2]string{{"↑↓", "move"}}
+	if s.mapMode() {
+		return [][2]string{{"s", "set up hosting elsewhere"}}
 	}
-	return [][2]string{{"enter", "start hosting"}, {"↑↓", "move"}}
+	back := [][2]string{}
+	if localMirror.Load() {
+		back = [][2]string{{"esc", "the map"}}
+	}
+	if s.mirrorHere() {
+		return append([][2]string{{"↑↓", "move"}}, back...)
+	}
+	return append([][2]string{{"enter", "start hosting"}, {"↑↓", "move"}}, back...)
 }
 
 // enter offers the active server's SSH details, the likeliest machine,
@@ -165,12 +212,15 @@ func (s *hostScreen) enter(c *config.Config) tea.Cmd {
 		}
 	}
 	s.visible = true
-	return s.poll()
+	return tea.Batch(s.poll(), s.frame())
 }
 
 func (s *hostScreen) leave(*config.Config) { s.visible = false }
 
 func (s *hostScreen) target() config.Target {
+	if s.mapMode() {
+		return config.Target{Mode: "local", User: "root"}
+	}
 	f := s.form
 	t := config.Target{Mode: f.value("mode"), Host: strings.TrimSpace(f.value("host")), User: f.value("user"),
 		Port: f.value("port"), SSHKey: f.value("key"), BecomePass: f.value("become")}
@@ -262,7 +312,7 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 	case hostStatsMsg:
 		s.polling = false
 		if m.target != s.statsFor {
-			s.in, s.out, s.ledger, s.rates = nil, nil, nil, nil
+			s.in, s.out, s.ledger, s.rates, s.peerHist, s.comings, s.ripples = nil, nil, nil, nil, nil, nil, nil
 		}
 		if m.target != targetKey(s.target()) {
 			return s.tick(0) // the form moved on meanwhile
@@ -282,6 +332,10 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 	case hostFrameMsg:
 		s.animating = false
 		s.phase += hostFrame.Seconds()
+		s.ripples = slices.DeleteFunc(s.ripples, func(r ripple) bool { return s.phase-r.start > rippleSecs })
+		if s.mapMode() && s.statsFor != targetKey(s.target()) {
+			return tea.Batch(s.frame(), s.poll()) // the mirror was found after the screen opened
+		}
 		return s.frame()
 	case hostTickMsg:
 		if s.visible && m.n == s.ticks {
@@ -301,6 +355,17 @@ func (s *hostScreen) update(msg tea.Msg) tea.Cmd {
 				s.scroll++
 			}
 			return nil
+		}
+		if s.mapMode() {
+			if m.String() == "s" {
+				s.showForm = true
+				return s.tick(0)
+			}
+			return nil
+		}
+		if m.String() == "esc" && s.handlesEsc() {
+			s.showForm, s.err = false, nil
+			return tea.Batch(s.tick(0), s.frame())
 		}
 		if m.String() == "enter" {
 			if s.mirrorHere() {
@@ -329,6 +394,9 @@ func (s *hostScreen) tick(d time.Duration) tea.Cmd {
 }
 
 func (s *hostScreen) view(w, h int) string {
+	if s.mapMode() {
+		return s.mapView(w, h)
+	}
 	intro := sSub.Width(min(w, maxFormWidth)).Render("Help servers set up and update during a blackout: the machine keeps the newest " +
 		"signed copy of what interzone downloads and shares it with interzone's IPFS swarm. It listens on TCP port 4001 " +
 		"(open it in the firewall), and the swarm's members can see that it holds Matrix software.")
@@ -348,7 +416,7 @@ func (s *hostScreen) view(w, h int) string {
 	// The swarm map, below the numbers, if it still leaves the form 8 rows.
 	if room := h - lipgloss.Height(intro) - len(status) - 3 - 8 - 1; s.statsActive() && room >= 12 {
 		status = append(status, "")
-		status = append(status, swarmMap(s.stats, s.rates, s.phase, min(w, maxFormWidth), min(room, 24))...)
+		status = append(status, swarmMap(mapScene{st: s.stats, rates: s.rates, phase: s.phase, ripples: s.ripples}, min(w, maxFormWidth), min(room, 24))...)
 	}
 	bottom := strings.Join(status, "\n")
 	formH := max(6, h-lipgloss.Height(intro)-lipgloss.Height(bottom)-3)
@@ -409,19 +477,8 @@ func (s *hostScreen) statsView(w int) []string {
 		}
 		row("Parts", strings.Join(parts, "  "))
 	}
-	spark := func(vals []float64) string {
-		top := 1.0
-		for _, v := range vals {
-			top = max(top, v)
-		}
-		scaled := make([]float64, len(vals))
-		for i, v := range vals {
-			scaled[i] = v / top
-		}
-		return lipgloss.NewStyle().Width(20).Render(sparkline(scaled, 20)) // fills in as readings come
-	}
-	row("Download", sAccent.Render(spark(s.in))+sMuted.Render(fmt.Sprintf("  %s/s · %s in all", humanBytes(int64(st.RateIn)), humanBytes(st.TotalIn))))
-	row("Upload", sAccent.Render(spark(s.out))+sMuted.Render(fmt.Sprintf("  %s/s · %s in all", humanBytes(int64(st.RateOut)), humanBytes(st.TotalOut))))
+	row("Download", sAccent.Render(sparkOf(s.in, 20))+sMuted.Render(fmt.Sprintf("  %s/s · %s in all", humanBytes(int64(st.RateIn)), humanBytes(st.TotalIn))))
+	row("Upload", sAccent.Render(sparkOf(s.out, 20))+sMuted.Render(fmt.Sprintf("  %s/s · %s in all", humanBytes(int64(st.RateOut)), humanBytes(st.TotalOut))))
 	row("Swarm", sMuted.Render(fmt.Sprintf("gave %s (%d blocks) · got %s (%d blocks)",
 		humanBytes(st.DataSent), st.BlocksSent, humanBytes(st.DataReceived), st.BlocksReceived)))
 	row("Disk", sMuted.Render(fmt.Sprintf("%s used · %s free", humanBytes(st.RepoSize), humanBytes(st.DiskFree))))
@@ -446,7 +503,7 @@ func (s *hostScreen) statsView(w int) []string {
 		update += sFaint.Render(" · next check in " + in)
 	}
 	if st.Published != "" {
-		update += sFaint.Render(" · the publish of " + strings.NewReplacer("T", " ", "Z", " UTC").Replace(st.Published))
+		update += sFaint.Render(" · the publish of " + publishDate(st.Published))
 	}
 	row("Updates", update)
 	if st.Last != "" {

@@ -1,0 +1,40 @@
+ ◢◤ ⇄ Host                                    
+ interzone-mirror's IPFS swarm                
+                                              
+  ⠈⠒⣦⣄⣐⢇⡀ ⢀⡄Caspian Sea                 ⠈⠢⣀   
+   ⢳⠅⠑⡬⠧⢷⡺⠕⠼⠅⡰⠁       ⠃⢆                   ⠑⠤ 
+   ⢸⠂⠴⠁⠤Tabriz         ⠸  ⡠⠤⠴⠶⢦⣀              
+ ⠄⠤⠠⢫⡘Urmia⣒⢄⢌⠶⠒⣄⣀⠤⢄⡀  ⢸⠴⠋⠄⠠⡅ ⠄⢉⠏⠉⠴⢀⡀         
+  ◂DE⢧⢄⣬⣤⣟⡤⡄⠄⠼⠇⡔●Tehran ×2⠐⠌⠓⡏⠁⠔⠃⠄ Mashhad  ⢀ 
+   ⠐ ⠈⠑⣖⠆ ⠌⠿⠽⢝⣽⠶⠾⡟◆you⠟⠁⠄ ⠄ ⠄⠁⠄ ⠄ ⠄ ⠄ ⣽⡀⡀⢀⡂⠒⠁ 
+    ⠈⢀⣠⠞⠡⠔⢣⡞⠠⣤⠧⢧⡤⣍⢹⡕⢀⠝ ⠄ ⠄ ⢄⠜⠎⠁⠆ ⠄ ⠄ ⣄⠇ ⠈⠉    
+      ⢇⠄⢄⣨⡞⠡⠤⣔⣄ ⢎⡹⠖⡯⠅⠈⠍⠉⠍⠉⢭⠉⠄⠠⠅ ⠄⠒⠄⠢⠄⡍        
+      ⠈⢧⡂⠅⢤⢄⢀⡌⢨⠍⠁⠄⠂⢯⠭⠄ ⠄ ⡔⠈⠄ ⠄⠁⡅⡠⠍⡀Birjand    
+        ⠉⠓⣆⠃⠄⠈⠍⢇⠆⠣⢜⢸⠬⡏⠅⠂⠅ ⠄ ⠄⡀⠄ ⡇ ⠄ ⠄⠱        
+          ⢈⠦⢀Ahvaz⠧⡔⡧⠯⢬⠄⠈Yazd⠄⠁⠞⢄⡄ ⠄ ⠼⣄⣀      
+          ⠐⢰⠔⣀⡄⠓⠄⠨⢧⠔⢯⠬⠬⠥⠴ ⠅⠁⠄ ⠄ ⠄⠈⠅⠤⠤⠄⣆⠜      
+ ⠉⠢⣀     ⡴⠒⣺⡷⠋⠓⡫⡑⠮ ⠌⣸Shiraz⠄ ⠄Kerman ⠬Zahedan 
+    ⠑⠒⠤⠤⠴⠥⢌⠨⡀   ⠬⡄⠌⡄⠤⡯⠌⠌⠌⢩⠄⢀⠄ ⠄ ⠄ ⠴ ⠄⠈⠝⣌⠈⠉⠉⠉⠁ 
+          ⠐⠊⢡    ⠘⡄⠜⠄⢧⠅⠥⠈⠄⢱⠕⢄⢤ ⠄ ⢔⠌⠄ ⠄ ⠌⠐⢦    
+             ⠡⡄   ⠈⢈⠸⢽⣬⣨⠤⠱⠍⠄⣄Bandar Abbas⢨⣀   
+              ⠈⠲⡀   ⠠ ⡏⠖⠪⠤⠷⠛⢅⠘⡌⠞⠂⢔ ⠄ ⠄ ⠄⣠⠤⠼   
+               ⠘⡼⠔⢑   ▾? ⠅⠈⡤⠟⠄⠡⡤⣍⢙⢄ ⠄⡀⠄⡼      
+                ⠘⡇⢘    ⠈⠄⡘⠌⣬⢸⠈⠄   ⠉⠉⠉⠑⠒⠓⠒⠂⠒⠋⠉ 
+ ◆ this node  ● peer  ⠒ coming in  ⠒ going o… 
+ IP locations by DB-IP.com · borders by Natu… 
+                                              
+ ◆ The node ───────────────────────────────── 
+ ● sharing · 4 peers, 1 came to it            
+ ↓ ▁▅█                      195 KB/s          
+ ↑ ▃█▆                      2.9 MB/s          
+ in all ↓ 6.0 GB  ↑ 40.0 GB                   
+ swarm gave 38.0 GB, got 1.0 GB               
+ disk 19.0 GB used, 80.0 GB free              
+ published 0000-00-00 00:00:00 UTC            
+ ✓images ✓packages ✓git ✓programs             
+                                              
+ ◆ 4 peers ────────────────────────────────── 
+ place     network      ms traffic  now       
+ and 4 more                                   
+                                              
+       ‹ back             ≡ menu          ⋯  

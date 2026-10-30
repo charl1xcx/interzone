@@ -1,0 +1,20 @@
+ ◢◤ ⇄ Host                                      
+ interzone-mirror's IPFS swarm                  
+             ⢩⠷⣽⣦⣔⣄⡎⠈  ⠻⡆        ⠈⠂⢄   ⣆⠋⠁⠈⠉    
+       ▴DE⣀⢀⡀⣨⣖⡁⠏⢻⣟⣄⣀⠤⢄⡀⣇⡤⢶⠖⠦⡤⡀     ⠉⡒⣂⣈⢂⡀⡌⢦ ⣀⣀ 
+ ⠄⠔⠁⢪⡶⠂⠑⠐⠁⢩⠋⠙⠚⠻⣵⣝⣯⣞●Tehran ×2⠇⠠Mashhad ⠈ ⠁ ⢜⠛⠉⠉ 
+    ⠸⣄   ⢀⡸ ⠂  ⡜⢦⣺⠯⡿⣟◆you⡇⣔⢊⠖⢀⢄⢠⡏⠙⠁        ⡜  ⡤ 
+    ⢸⠁⣀⠴⡚⠁   ⠈ ⡹⣙⢥⢯⣿⡎⣽⡅⢄⡜⠔⠂⠜⢢⡔Birjand    ⠌⠌⠁  ⢯ 
+     ⠩⢠⠒⠃⠒⢄⢀    ⠘⢻⢄⠈⡽⣷⡯⢥⠔Yazd⢁⡄⠨⢤     ⢀⡔⠢⠃    ⢐ 
+     ⠠⠰⠂    ⠑⢄  ⢀⢼⡷⢦⢿⡟⢻Shiraz⠄⡈⢽Zahedan      ⡠⠆ 
+   ⡸⡉         ⠉⠉⠑⠪⢇ ⠈⢏⢎⡮⠍⠜⣶⣠⠄⢠⠇ ⠝⢬⡀⠈      ⡀⢀⠔⠂  
+    ⠱⡀            ⠈⠒⡀⠈⠙▾?⣼⣵Bandar Abbas  ⠎⡈⠁    
+     ⠘⡄             ⢹⢹ ⠈⠬⡨⣹⡂⠚⠿⠦⠤⢴⠥⠤⠄⡤⠴⡄   ⠲     
+ ◆ this node  ● peer  ⠒ coming in  ⠒ going out… 
+ IP locations by DB-IP.com · borders by Natura… 
+                                                
+ ◆ The node ─────────────────────────────────── 
+ ● sharing · 4 peers, 1 came to it              
+ ↓ ▁▅█                      195 KB/s            
+ ↑ ▃█▆                      2.9 MB/s            
+       ‹ back               ≡ menu          ⋯  

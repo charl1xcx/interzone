@@ -98,8 +98,14 @@ The short list is in the [README](../README.md).
   in or out. The node only knows its own links: the dotted lines between
   peers are a guess. A machine that runs
   [interzone-mirror](https://itsjustadream.g0th.ir/vvvomit/interzone-mirror)'s
-  IPFS node shows that node here, and interzone won't set up a second one
-  on it: Host refuses, and an IPFS deploy to it uses the mirror's node.
+  IPFS node needs no setting up, so on that machine Host is a big map
+  instead: provinces, cities and seas, a radar sweeping out from the node,
+  comets along the links, and a ripple wherever a peer comes (mint) or goes
+  (red). Beside it are the node's numbers, each peer's town, network
+  (TCI, MCI, Irancell…), latency and traffic, and who came and went. `s`
+  shows the form, to host on another server, and esc returns to the map.
+  interzone won't set up a second node there: Host refuses, and an IPFS
+  deploy to it uses the mirror's node.
 
   The swarm is private: its key ships with interzone, which keeps the
   public IPFS network out but isn't a secret. Its entry node is at

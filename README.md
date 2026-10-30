@@ -111,6 +111,6 @@ bundles and where files live: [docs/usage.md](docs/usage.md).
 
 MIT, see [LICENSE](LICENSE). The playbook interzone drives,
 [matrix-docker-ansible-deploy](https://github.com/spantaleev/matrix-docker-ansible-deploy),
-is AGPL-3.0 and keeps its own license. The Host map's IP locations are
+is AGPL-3.0 and keeps its own license. The Host map's IP locations and networks are
 [DB-IP Lite](https://db-ip.com/db/lite.php) (CC BY 4.0) and its borders
 [Natural Earth](https://www.naturalearthdata.com/) (public domain).

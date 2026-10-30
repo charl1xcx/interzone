@@ -17,7 +17,7 @@ func TestSwarmMap(t *testing.T) {
 		{ID: "b", Addr: netip.MustParseAddr("81.169.145.1")}, // Germany: on the edge
 		{ID: "c", Addr: netip.MustParseAddr("10.0.0.1")},     // nowhere: "?"
 	}}
-	rows := swarmMap(st, map[string]peerRate{"b": {out: 1e6}}, 0.5, 80, 24)
+	rows := swarmMap(mapScene{st: st, rates: map[string]peerRate{"b": {out: 1e6}}, phase: 0.5}, 80, 24)
 	if len(rows) != 24 {
 		t.Fatalf("%d rows, want 24", len(rows))
 	}
@@ -44,5 +44,12 @@ func TestReadLedgers(t *testing.T) {
 	}
 	if _, ok := s.rates["b"]; ok || !s.moving() {
 		t.Fatalf("a new peer has no rate yet: %+v", s.rates)
+	}
+	s.readLedgers(&deploy.HostStats{PeerList: []deploy.Peer{{ID: "b", Recv: 50}}}, t0.Add(10*time.Second))
+	if len(s.comings) != 2 || !s.comings[0].join || s.comings[0].peer.ID != "b" || s.comings[1].join || s.comings[1].peer.ID != "a" {
+		t.Fatalf("b came, then a left: %+v", s.comings)
+	}
+	if len(s.ripples) != 2 || len(s.peerHist["b"]) != 1 {
+		t.Fatalf("ripples %+v, history %+v", s.ripples, s.peerHist)
 	}
 }
