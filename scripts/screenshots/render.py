@@ -4,6 +4,9 @@
 #     README's screenshots are.
 # render.py --join OUT.png A.png B.png …
 #     Puts already rendered windows side by side (docs/screenshots/phone.png).
+# render.py --slices OUT.png theme-A.png theme-B.png …
+#     One window cut into vertical slices, each from the next picture of the
+#     same screen, named after the file in the title bar (themes.png).
 #
 # Needs Pillow, fontTools and the DejaVu and Noto symbol fonts.
 import glob, os, re, sys, unicodedata
@@ -26,6 +29,8 @@ FONTS = [font("DejaVuSansMono.ttf"), font("DejaVuSansMono-Bold.ttf")]
 FALLBACK = [font("DejaVuSans.ttf"), font("NotoSansSymbols2-Regular.ttf"), font("NotoSansMath-Regular.ttf")]
 EMOJI = font("NotoColorEmoji.ttf")  # a bitmap font: drawn at 109 px, then scaled
 BG, FG = (21, 19, 30), (220, 216, 235)
+if os.environ.get("BG"):  # a theme's own background, for themes.png
+    BG = tuple(bytes.fromhex(os.environ["BG"].lstrip("#")))
 
 reg = ImageFont.truetype(FONTS[0], SIZE)
 bold = ImageFont.truetype(FONTS[1], SIZE)
@@ -83,6 +88,26 @@ if sys.argv[1] == "--join":
     for p in parts:
         out.paste(p, (x, 0)); x += p.width + GAP
     finish(out, sys.argv[2], 1400)  # as wide as the other shots
+    sys.exit()
+
+if sys.argv[1] == "--slices":
+    paths = sys.argv[3:]
+    parts = [Image.open(p).convert("RGB") for p in paths]
+    out = parts[0].copy()
+    d = ImageDraw.Draw(out)
+    x0, x1 = 40, out.width - 40  # the window, inside the margin render draws
+    step = (x1 - x0) / len(parts)
+    for i, (p, part) in enumerate(zip(paths, parts)):
+        a, b = round(x0 + i * step), round(x0 + (i + 1) * step)
+        out.paste(part.crop((a, 0, b, out.height)), (a, 0))
+        if i:
+            d.line([(a, 40 + 54), (a, out.height - 41)], fill=(13, 12, 19), width=3)
+        name = os.path.basename(p)[:-4].removeprefix("theme-")
+        w = bold.getlength(name)
+        cx = (a + b) / 2 if i else max((a + b) / 2, 150 + w / 2)  # clear of the window's dots
+        d.rounded_rectangle([cx - w / 2 - 14, 52, cx + w / 2 + 14, 52 + CH + 4], 12, fill=(58, 54, 80))
+        d.text((cx - w / 2, 54), name, font=bold, fill=FG)
+    finish(out, sys.argv[2], 1400)
     sys.exit()
 
 lines = open(sys.argv[1], encoding="utf-8").read().rstrip("\n").split("\n")

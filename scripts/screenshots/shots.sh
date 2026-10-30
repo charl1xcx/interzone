@@ -12,6 +12,8 @@
 #   scripts/screenshots/shots.sh phone A B C         join three phone shots into phone.png
 #   scripts/screenshots/shots.sh users               draw users.png from the layout tests'
 #                                                    sample people (no server needed)
+#   scripts/screenshots/shots.sh themes              from the running session, on Welcome: the
+#                                                    screen in a slice of each of THEMES (themes.png)
 #   scripts/screenshots/shots.sh stop
 #
 # Drive the session between grabs with tmux send-keys or tmux attach -t shot.
@@ -80,6 +82,28 @@ users() {
 	python3 "$repo/scripts/screenshots/render.py" "$work/raw/users.ans" "$out/users.png" 1400
 }
 
+# themes cycles every theme with ctrl+y on Welcome, grabbing the screen in
+# the ones named here, and ends on the first theme again. Up and down
+# clear the "theme: …" note that takes the place of the key hints.
+THEMES="interzone catppuccin nord gruvbox everforest synthwave"
+themes() {
+	pngs=()
+	for t in $("$work/iz" -help 2>&1 | sed -n 's/.*the colours for this run: \(.*\); ctrl+y.*/\1/p' | tr -d ,); do
+		waitfor "◐ $t "
+		waitfor "◉  Manage the server"
+		waitfor "enter continue"
+		if [[ " $THEMES " == *" $t "* ]]; then
+			# the window in the theme's own background, its dark panel colour
+			BG=$(sed -n "/{\"$t\",/,/}},/p" "$repo/internal/ui/theme.go" | grep -o 'Dark: "#[0-9A-Fa-f]*"' | sed -n '9s/.*"\(#.*\)"/\1/p') \
+				grab "theme-$t" 0
+			pngs+=("$work/raw/theme-$t.png")
+		fi
+		press C-y
+		press Up && press Down
+	done
+	python3 "$repo/scripts/screenshots/render.py" --slices "$out/themes.png" "${pngs[@]}"
+}
+
 stop() {
 	tmux kill-session -t shot 2>/dev/null || true
 }
@@ -116,7 +140,9 @@ press() {
 	before=$(screen)
 	tmux send-keys -t shot "$1"
 	for _ in $(seq 20); do
-		[ "$(screen)" != "$before" ] && return
+		now=$(screen)
+		# a step change blanks the screen for a moment: that isn't the new one yet
+		[ "$now" != "$before" ] && [ -n "${now//[[:space:]]/}" ] && return
 		sleep 0.1
 	done
 }
@@ -147,6 +173,7 @@ all() {
 	press Escape
 	waitfor "Manage the server"
 	grab welcome
+	themes
 	toHomeserver server
 	grab homeserver
 	press Down && press Down && press Down
@@ -191,12 +218,12 @@ all() {
 
 cmd=${1:-}
 case $cmd in
-start | grab | phone | users | stop | all)
+start | grab | phone | users | themes | stop | all)
 	shift
 	"$cmd" "$@"
 	;;
 *)
-	sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
 	exit 1
 	;;
 esac

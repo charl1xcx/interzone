@@ -49,8 +49,8 @@ interzone servers over IPFS.
 <tr>
 <td width="50%" valign="top"><p align="center"><a href="docs/screenshots/components.png"><img src="docs/screenshots/components.png" alt="Picking bridges, clients and services" width="400"></a></p>
 <b>Set up:</b> pick a homeserver and any of 63 bridges, bots, clients and services.</td>
-<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/manage.png"><img src="docs/screenshots/manage.png" alt="The Manage menu" width="400"></a></p>
-<b>Manage:</b> updates, users, backups, rollback, logs and more.</td>
+<td width="50%" valign="top"><p align="center"><a href="docs/screenshots/themes.png"><img src="docs/screenshots/themes.png" alt="The welcome screen in six of interzone's themes" width="400"></a></p>
+<b>Themes:</b> 13 of them, light and dark, switched with <code>ctrl+y</code>.</td>
 </tr>
 </table>
 
