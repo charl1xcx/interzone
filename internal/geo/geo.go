@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/netip"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -163,4 +164,24 @@ func Locate(a netip.Addr) (Place, bool) {
 		return p, true
 	}
 	return Place{}, false
+}
+
+// Find is Iran's towns matching q, those starting with it first, n at most.
+func Find(q string, n int) []Place {
+	q = strings.ToLower(strings.TrimSpace(q))
+	if q == "" {
+		return nil
+	}
+	var starts, has []Place
+	for _, p := range load().places {
+		t := strings.ToLower(p.Town)
+		switch {
+		case strings.HasPrefix(t, q):
+			starts = append(starts, p)
+		case strings.Contains(t, q) || strings.Contains(strings.ToLower(p.Province), q):
+			has = append(has, p)
+		}
+	}
+	out := append(starts, has...)
+	return out[:min(n, len(out))]
 }

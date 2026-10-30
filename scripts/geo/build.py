@@ -7,6 +7,10 @@
 #         mean position);
 #       Natural Earth's 1:50m countries and 1:10m provinces (public domain):
 #         Iran's border, its neighbours' and its provinces', simplified.
+#     Where DB-IP doesn't know an Iranian range's town it puts it at one of a
+#     few points in Tehran (58% of Iran's IPv4). A network whose other ranges
+#     mostly sit in one other province is regional: its unknown ranges go to
+#     its commonest place there (AS48944, Khalij Fars, to Bushehr).
 #     Run it from the repository's root; refresh now and then, as IPs move.
 import bisect, csv, gzip, io, json, math, re, struct, sys, unicodedata
 from collections import defaultdict
@@ -30,6 +34,7 @@ def short(asn, org):
         return SHORT[asn]
     org = re.sub(r'"|\(.*?\)|\b(PJSC?|P\.?J\.?S\.?|LLC|Ltd|LTD|PLC|Co\.?|Company|Private Joint Stock)\b', "", org)
     return " ".join(org.split()[:2]).strip(" ,.-") or "AS" + asn
+FALLBACK = {(35.7219, 51.3347), (35.7607, 51.4043)}  # DB-IP's "somewhere in Iran"
 BOX = (40.0, 22.0, 67.0, 42.0)  # lon/lat the map can show, with room around Iran
 
 
@@ -61,7 +66,7 @@ def text(s):
 
 
 places, place_ids, sums = [], {}, defaultdict(lambda: [0.0, 0.0, 0])
-ir4, ir6 = [], []
+ir4, ir6, fb4, fb6 = [], [], set(), set()
 with gzip.open(city_csv, "rt", encoding="utf-8") as f:
     for row in csv.reader(f):
         start, end, _, cc, prov, city, lat, lon = row
@@ -78,6 +83,9 @@ with gzip.open(city_csv, "rt", encoding="utf-8") as f:
         p = places[place_ids[key]]
         p[1] += lat; p[2] += lon; p[3] += 1
         a, b = ip_address(start), ip_address(end)
+        ir, fb = (ir4, fb4) if a.version == 4 else (ir6, fb6)
+        if (lat, lon) in FALLBACK:
+            fb.add(len(ir))
         if a.version == 4:
             ir4.append((int(a), int(b), place_ids[key]))
         else:
@@ -142,6 +150,34 @@ with gzip.open(asn_csv, "rt", encoding="utf-8") as f:
             isps.append(name)
         (asn4 if v4 else asn6).append((key, int(b) if v4 else int(b) >> 64, isp_ids[name]))
 
+def regional(ir, fb, nets):
+    """Moves fallback ranges of regional networks to their province; returns how many addresses moved."""
+    nets = sorted(nets)
+    starts = [a for a, _, _ in nets]
+    def net(a):
+        i = bisect.bisect_right(starts, a) - 1
+        return nets[i][2] if i >= 0 and nets[i][0] <= a <= nets[i][1] else None
+    known = defaultdict(lambda: defaultdict(int))  # network: place: addresses
+    for i, (a, b, v) in enumerate(ir):
+        if i not in fb and net(a) is not None:
+            known[net(a)][v] += b - a + 1
+    moved = 0
+    for i in fb:
+        a, b, _ = ir[i]
+        by_prov = defaultdict(int)
+        for v, n in known.get(net(a), {}).items():
+            by_prov[places[v][0][0]] += n
+        if not by_prov:
+            continue
+        prov = max(by_prov, key=by_prov.get)
+        if prov != "Tehran" and by_prov[prov] >= 0.7 * sum(by_prov.values()):
+            v = max((v for v in known[net(a)] if places[v][0][0] == prov), key=known[net(a)].get)
+            ir[i] = (a, b, v)
+            moved += b - a + 1
+    return moved
+moved = regional(ir4, fb4, asn4)
+regional(ir6, fb6, asn6)
+
 blob += ranges(ir4) + ranges(ir6) + ranges(world)
 blob += uvarint(len(isps)) + b"".join(text(n) for n in isps) + ranges(asn4) + ranges(asn6)
 with open("internal/geo/ip.bin", "wb") as f:
@@ -204,6 +240,7 @@ with open("internal/geo/shapes.go", "w") as f:
         pts = ", ".join(f"{{{x:.2f}, {y:.2f}}}" for x, y in ring)
         f.write(f'\t{{"{name}", [][2]float64{{{pts}}}}},\n')
     f.write("}\n")
+print(f"{moved} IPv4 addresses moved out of Tehran to their network's province", file=sys.stderr)
 print(f"{len(isps)} networks, {len(asn4)}+{len(asn6)} network rows, {len(provinces)} province rings", file=sys.stderr)
 print(f"{len(places)} places, {len(countries)} countries, {len(ir4)}+{len(ir6)} Iranian and {len(world)} world rows, "
       f"{len(shapes)} shapes", file=sys.stderr)

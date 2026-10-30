@@ -28,6 +28,13 @@ func TestLocate(t *testing.T) {
 	if p, _ := Locate(netip.MustParseAddr("2.176.0.1")); p.ISP != "TCI" {
 		t.Errorf("2.176.0.1 is TCI's, not %q", p.ISP)
 	}
+	// A regional network's range DB-IP only knows as "Iran" goes to its province.
+	if p, _ := Locate(netip.MustParseAddr("109.238.185.192")); p.Province != "Bushehr" {
+		t.Errorf("109.238.185.192 is Khalij Fars's, in Bushehr, not %+v", p)
+	}
+	if f := Find("bushe", 3); len(f) == 0 || f[0].Town != "Bushehr" {
+		t.Errorf("Find(bushe): %+v", f)
+	}
 	if len(Provinces) < 31 {
 		t.Errorf("%d provinces", len(Provinces))
 	}
