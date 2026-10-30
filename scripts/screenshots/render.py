@@ -1,13 +1,14 @@
-# render.py IN.ans OUT.png [WIDTH]
+# render.py IN.ans OUT.png [WIDTH | WIDTHxHEIGHT]
 #     Draws a tmux "capture-pane -e" dump as a terminal window. With WIDTH the
 #     image is scaled to that many pixels and reduced to 256 colours, as the
-#     README's screenshots are.
+#     README's screenshots are; with WIDTHxHEIGHT it is fitted into exactly
+#     that size, centred on black (the wiki's gallery is 1600x900).
 # render.py --join OUT.png A.png B.png …
 #     Puts already rendered windows side by side (docs/screenshots/phone.png).
 #
 # Needs Pillow, fontTools and the DejaVu and Noto symbol fonts.
 import glob, os, re, sys, unicodedata
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from fontTools.ttLib import TTFont
 
 def font(name):
@@ -69,7 +70,10 @@ def draw_emoji(img, ch, px, py):
     img.paste(e, (px + (2 * CW - e.width) // 2, py + 3), e)
 
 def finish(img, out, width=None):
-    if width:
+    if width and "x" in width:
+        img = ImageOps.pad(img.convert("RGB"), tuple(map(int, width.split("x"))), Image.LANCZOS, color=(0, 0, 0))
+    elif width:
+        width = int(width)
         img = img.resize((width, round(img.height * width / img.width)), Image.LANCZOS)
     img = img.convert("RGB").quantize(256, dither=Image.Dither.NONE)
     img.save(out, optimize=True)
@@ -82,7 +86,7 @@ if sys.argv[1] == "--join":
     x = 0
     for p in parts:
         out.paste(p, (x, 0)); x += p.width + GAP
-    finish(out, sys.argv[2], 1400)  # as wide as the other shots
+    finish(out, sys.argv[2], "1400")  # as wide as the other shots
     sys.exit()
 
 lines = open(sys.argv[1], encoding="utf-8").read().rstrip("\n").split("\n")
@@ -143,4 +147,4 @@ for y, row in enumerate(cells):
                 draw_emoji(img, ch, px, py); continue
             d.text((px, py + 1), ch, font=font_for(ch, b), fill=fg)
 bg = Image.new("RGBA", img.size, (0, 0, 0, 255))
-finish(Image.alpha_composite(bg, img), sys.argv[2], int(sys.argv[3]) if len(sys.argv) > 3 else None)
+finish(Image.alpha_composite(bg, img), sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)

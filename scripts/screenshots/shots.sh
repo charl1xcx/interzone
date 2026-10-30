@@ -12,6 +12,9 @@
 #   scripts/screenshots/shots.sh phone A B C         join three phone shots into phone.png
 #   scripts/screenshots/shots.sh users               draw users.png, dashboard.png and host-map.png
 #                                                    from the layout tests' sample data (no server needed)
+#   scripts/screenshots/shots.sh wiki DIR            draw the wiki's images from the same sample data into
+#                                                    DIR/images: the guides' (wiki-*) and the gallery's
+#                                                    (gallery/, 1600x900); the guides' live shots are taken by hand
 #   scripts/screenshots/shots.sh stop
 #
 # Drive the session between grabs with tmux send-keys or tmux attach -t shot.
@@ -79,6 +82,19 @@ users() {
 	(cd "$repo" && INTERZONE_SHOT="$work/raw" go test ./internal/ui -run '^TestShot$' -count=1 >/dev/null)
 	for n in users dashboard host-map; do
 		python3 "$repo/scripts/screenshots/render.py" "$work/raw/$n.ans" "$out/$n.png" 1400
+	done
+}
+
+wiki() {
+	mkdir -p "$work/raw" "$1/images/gallery"
+	(cd "$repo" && INTERZONE_PLAYBOOK="$playbook" INTERZONE_SHOT="$work/raw" go test ./internal/ui -run '^TestShot$' -count=1 >/dev/null)
+	for f in "$work"/raw/wiki-*.ans; do
+		n=$(basename "$f" .ans)
+		python3 "$repo/scripts/screenshots/render.py" "$f" "$1/images/${n#wiki-}.png" 1400
+	done
+	for f in "$work"/raw/gallery-*.ans; do
+		n=$(basename "$f" .ans)
+		python3 "$repo/scripts/screenshots/render.py" "$f" "$1/images/gallery/${n#gallery-}.png" 1600x900
 	done
 }
 
@@ -193,12 +209,12 @@ all() {
 
 cmd=${1:-}
 case $cmd in
-start | grab | phone | users | stop | all)
+start | grab | phone | users | wiki | stop | all)
 	shift
 	"$cmd" "$@"
 	;;
 *)
-	sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+	sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
 	exit 1
 	;;
 esac
