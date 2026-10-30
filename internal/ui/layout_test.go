@@ -103,7 +103,7 @@ func TestLayout(t *testing.T) {
 			a.jump(a.index("Host"))
 			hs := a.cur().(*hostScreen)
 			hs.done, hs.log = true, []string{"installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)",
-				"the server is downloading about 16.2 GB in the background and shares it as it arrives"}
+				"the server is downloading about 15.7 GB in the background and shares it as it arrives"}
 			hs.statsFor = targetKey(hs.target())
 			hs.in, hs.out = []float64{0, 4e6, 9e6, 7e6, 10e6}, []float64{0, 0, 1e5, 3e5, 2e5}
 			hs.stats = &deploy.HostStats{Installed: true, Active: true, Following: true, Parts: []string{"oci", "packages", "git", "bin"}, Peers: 3,

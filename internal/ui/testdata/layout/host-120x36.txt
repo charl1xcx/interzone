@@ -17,7 +17,7 @@
 │                        ││                                                                                            │
 │                        ││   ✓ hosting. It keeps going without interzone; enter sets it up again.                     │
 │                        ││     installing IPFS v0.43.1 (from https://infamous.g0th.ir/.ipfs)                          │
-│                        ││     the server is downloading about 16.2 GB in the background and shares it as it          │
+│                        ││     the server is downloading about 15.7 GB in the background and shares it as it          │
 │                        ││   arrives                                                                                  │
 │                        ││                                                                                            │
 │                        ││   ◆ Hosting on this machine ────────────────────────────────────────────────────────────   │
