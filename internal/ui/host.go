@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 	"interzone/internal/config"
 	"interzone/internal/deploy"
+	"interzone/internal/ipfs"
 )
 
 // ── Host ───────────────────────────────────────────────────────────
@@ -65,10 +67,12 @@ type hostScreen struct {
 
 func newHostScreen() *hostScreen {
 	f := newForm(
-		choiceField("parts", "What to host", []string{"all", "images"},
-			[]string{"Everything (about 19 GB)", "Container images only (about 15 GB)"}, "all",
-			"Everything lets other servers set up from scratch through yours: the playbook, OS, Docker and Python packages, and every image. "+
-				"New publishes replace the old one every hour."),
+		toggleField("part:oci", "Host the container images (about 16 GB)", true,
+			"Host any mix of parts. All four let other servers set up from scratch through yours; "+
+				"new publishes replace the old one every hour."),
+		toggleField("part:packages", "Host the OS, Docker and Python packages (about 3.7 GB)", true, ""),
+		toggleField("part:git", "Host the playbook and its roles in git (about 50 MB)", true, ""),
+		toggleField("part:bin", "Host interzone and IPFS themselves (about 230 MB)", true, ""),
 		choiceField("mode", "Host where?", []string{"local", "ssh"},
 			[]string{"This machine", "A server over SSH"}, "local",
 			"A Linux machine with systemd, x86 or ARM. It needs no homeserver."),
@@ -149,15 +153,24 @@ func (s *hostScreen) poll() tea.Cmd {
 func (s *hostScreen) start() tea.Cmd {
 	cfg := config.Default()
 	cfg.Target = s.target()
-	f := s.form
 	if cfg.Target.Mode == "ssh" && cfg.Target.Host == "" {
 		s.err = fmt.Errorf("type the server's address first")
+		return nil
+	}
+	var parts []string
+	for _, n := range ipfs.PartNames {
+		if s.form.get("part:" + n).on {
+			parts = append(parts, n)
+		}
+	}
+	if len(parts) == 0 {
+		s.err = fmt.Errorf("pick at least one thing to host")
 		return nil
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s.gen++
 	s.cancel, s.running, s.done, s.err, s.log, s.scroll = cancel, true, false, nil, nil, 0
-	s.events = deploy.Start(ctx, cfg, deploy.Options{Action: deploy.ActionHost, HostParts: f.value("parts")})
+	s.events = deploy.Start(ctx, cfg, deploy.Options{Action: deploy.ActionHost, HostParts: strings.Join(parts, ",")})
 	return tea.Batch(s.spin.Tick, s.wait())
 }
 
@@ -289,7 +302,7 @@ func (s *hostScreen) statsView(w int) []string {
 		row("Status", sBad.Render("● stopped")+sFaint.Render("  enter starts it again"))
 		return rows
 	}
-	state := sGood.Render("● sharing") + sMuted.Render(fmt.Sprintf(" · %s · %s", plural(st.Peers, "peer"), map[string]string{"all": "everything", "images": "images only"}[st.Parts]))
+	state := sGood.Render("● sharing") + sMuted.Render(fmt.Sprintf(" · %s · %s", plural(st.Peers, "peer"), strings.Join(partNames(st.Parts), ", ")))
 	row("Status", state)
 	if st.Wanted > 0 {
 		frac := float64(st.Received) / float64(st.Wanted)
@@ -300,14 +313,14 @@ func (s *hostScreen) statsView(w int) []string {
 		row("Copy", meter(frac, min(24, w/4))+sMuted.Render(fmt.Sprintf("  %s · %s of %s", note, humanBytes(st.Received), humanBytes(st.Wanted))))
 		var parts []string
 		for _, p := range st.PublishedParts {
-			if st.Parts != "all" && p.Name != "oci" {
+			if !slices.Contains(st.Parts, p.Name) {
 				continue
 			}
 			mark := sFaint.Render("…")
 			if p.Pinned {
 				mark = sGood.Render("✓")
 			}
-			parts = append(parts, mark+" "+map[string]string{"oci": "images", "packages": "packages", "git": "git", "bin": "programs"}[p.Name]+" "+sFaint.Render(humanBytes(p.Size)))
+			parts = append(parts, mark+" "+partNames([]string{p.Name})[0]+" "+sFaint.Render(humanBytes(p.Size)))
 		}
 		row("Parts", strings.Join(parts, "  "))
 	}
@@ -338,7 +351,11 @@ func (s *hostScreen) statsView(w int) []string {
 		update = sBad.Render("the last update failed")
 	}
 	if !st.NextCheck.IsZero() && !st.Following {
-		update += sFaint.Render(" · next check in " + max(0, time.Until(st.NextCheck)).Round(time.Minute).String())
+		in := "under a minute"
+		if d := time.Until(st.NextCheck); d >= time.Minute {
+			in = strings.TrimSuffix(d.Round(time.Minute).String(), "0s") // "1h0m", "45m"
+		}
+		update += sFaint.Render(" · next check in " + in)
 	}
 	if st.Published != "" {
 		update += sFaint.Render(" · the publish of " + strings.NewReplacer("T", " ", "Z", " UTC").Replace(st.Published))
@@ -348,4 +365,13 @@ func (s *hostScreen) statsView(w int) []string {
 		row("Last", sFaint.Render(truncate(st.Last, max(10, w-16))))
 	}
 	return rows
+}
+
+// partNames says what parts of a publish are, the way the form does.
+func partNames(parts []string) []string {
+	names := make([]string, len(parts))
+	for i, p := range parts {
+		names[i] = map[string]string{"oci": "images", "packages": "packages", "git": "git", "bin": "programs"}[p]
+	}
+	return names
 }

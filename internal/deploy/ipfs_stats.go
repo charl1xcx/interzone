@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"interzone/internal/config"
+	"interzone/internal/ipfs"
 )
 
 // HostStats is what a hosting node (ActionHost) is doing, read from the
@@ -20,8 +21,8 @@ type HostStats struct {
 	Following bool // ipfs-follow is fetching a publish right now
 	Failed    bool // its last run failed
 	NextCheck time.Time
-	Parts     string // all or images
-	Last      string // ipfs-follow's last log line
+	Parts     []string // what it hosts, from PartNames
+	Last      string   // ipfs-follow's last log line
 
 	Peers            int
 	RepoSize         int64
@@ -60,9 +61,9 @@ echo installed yes
 echo active $(systemctl is-active interzone-ipfs)
 echo follow $(systemctl is-active interzone-ipfs-follow.service)
 echo result $(systemctl show interzone-ipfs-follow.service -p Result --value)
-n=$(systemctl show interzone-ipfs-follow.timer -p NextElapseUSecRealtime --value)
+n=$(systemctl list-timers interzone-ipfs-follow.timer --no-pager --no-legend | awk '{print $2, $3, $4}')
 [ -n "$n" ] && echo next $(date -d "$n" +%s 2>/dev/null)
-echo parts $(grep -o -- '-parts [a-z]*' /etc/systemd/system/interzone-ipfs-follow.service | cut -d' ' -f2)
+echo parts $(grep -o -- '-parts [a-z,]*' /etc/systemd/system/interzone-ipfs-follow.service | cut -d' ' -f2)
 echo last $(journalctl -u interzone-ipfs-follow -n 1 -o cat --no-pager 2>/dev/null | tail -c 300)
 echo free $(df -B1 --output=avail ` + ipfsRepo + ` | tail -1)
 systemctl is-active -q interzone-ipfs || exit 0
@@ -105,7 +106,7 @@ func parseHostStats(out string) *HostStats {
 				s.NextCheck = time.Unix(n, 0)
 			}
 		case "parts":
-			s.Parts = v
+			s.Parts, _ = ipfs.Parts(v)
 		case "last":
 			s.Last = strings.TrimSpace(v)
 		case "free":
@@ -166,7 +167,7 @@ func parseHostStats(out string) *HostStats {
 		}
 	}
 	for _, p := range s.PublishedParts {
-		if s.Parts == "all" || p.Name == "oci" {
+		if slices.Contains(s.Parts, p.Name) {
 			s.Wanted += p.Size
 			if p.Pinned {
 				s.Received += p.Size

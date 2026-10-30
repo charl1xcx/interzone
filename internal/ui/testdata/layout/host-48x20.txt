@@ -8,11 +8,11 @@
  swarm's members can see that it holds Matrix   
  software.                                      
                                                 
- ▌  What to host                                
- ▌   ◉ Everything (about 19 GB)                 
- ▌   ○ Container images only (about 15 GB)      
- ▌  Everything lets other servers set up from   
- ▌  scratch through yours: the playbook, OS,    
+ ▌  ●  Host the container images (about 16 GB)  
+ ▌     on                                       
+ ▌  Host any mix of parts. All four let other   
+ ▌  servers set up from scratch through         
+ ▌  yours; new publishes replace the old one    
    ▼ more below                                 
                                                 
  ✓ hosting. It keeps going without interzone; e 

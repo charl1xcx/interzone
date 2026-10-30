@@ -152,14 +152,19 @@ func (r *Runner) ipfsJoin(ctx context.Context, step Step, seed bool) (*ipfs.Inde
 	return idx, arch, nil
 }
 
-// ipfsHost makes the target a seeder that keeps the newest publish (all of
-// it, or the images) without a homeserver: a timer runs ipfs-follow, which
+// ipfsHost makes the target a seeder that keeps the newest publish (the
+// parts in Options.HostParts) without a homeserver: a timer runs ipfs-follow, which
 // pins each new signed publish and lets the last one go.
 func (r *Runner) ipfsHost(ctx context.Context) error {
 	r.begin(StepHost)
 	parts := r.opts.HostParts
-	if parts != "all" && parts != "images" {
-		return fmt.Errorf("choose what to host: all or images")
+	names, err := ipfs.Parts(parts)
+	if err != nil {
+		return fmt.Errorf("choose what to host: %w", err)
+	}
+	var gb float64
+	for _, n := range names {
+		gb += PartGB[n]
 	}
 	idx, arch, err := r.ipfsJoin(ctx, StepHost, true)
 	if err != nil {
@@ -171,14 +176,16 @@ func (r *Runner) ipfsHost(ctx context.Context) error {
 	if _, err := r.output(ctx, r.cfg.Target, followScript(parts)); err != nil {
 		return fmt.Errorf("setting up the hourly update: %w", err)
 	}
-	size := map[string]string{"all": "about 19 GB", "images": "about 15 GB"}[parts]
-	r.note(StepHost, "the server is downloading "+size+" in the background and shares it as it arrives; "+
+	r.note(StepHost, fmt.Sprintf("the server is downloading about %.1f GB in the background", gb)+" and shares it as it arrives; "+
 		"it checks for a new publish every hour. Progress: journalctl -u interzone-ipfs-follow")
 	r.note(StepHost, "to stop hosting: systemctl disable --now interzone-ipfs-follow.timer interzone-ipfs")
 	return nil
 }
 
 // followScript installs and starts ipfs-follow's service and hourly timer.
+// PartGB is roughly how big each part of a publish is, in GB.
+var PartGB = map[string]float64{"oci": 16, "packages": 3.7, "git": 0.05, "bin": 0.23}
+
 func followScript(parts string) string {
 	return `set -e
 cat > /etc/systemd/system/interzone-ipfs-follow.service <<'EOF'

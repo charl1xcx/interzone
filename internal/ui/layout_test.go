@@ -106,7 +106,7 @@ func TestLayout(t *testing.T) {
 				"the server is downloading about 19 GB in the background and shares it as it arrives"}
 			hs.statsFor = targetKey(hs.target())
 			hs.in, hs.out = []float64{0, 4e6, 9e6, 7e6, 10e6}, []float64{0, 0, 1e5, 3e5, 2e5}
-			hs.stats = &deploy.HostStats{Installed: true, Active: true, Following: true, Parts: "all", Peers: 3,
+			hs.stats = &deploy.HostStats{Installed: true, Active: true, Following: true, Parts: []string{"oci", "packages", "git", "bin"}, Peers: 3,
 				RepoSize: 6 << 30, DiskFree: 80 << 30, RateIn: 10e6, RateOut: 2e5, TotalIn: 6 << 30, TotalOut: 300 << 20,
 				BlocksSent: 1200, DataSent: 290 << 20, BlocksReceived: 25000, DataReceived: 6 << 30,
 				Published: "2026-10-29T03:00:00Z", Wanted: 19 << 30, Received: 6 << 30,

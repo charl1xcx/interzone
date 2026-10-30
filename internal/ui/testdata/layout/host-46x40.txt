@@ -9,11 +9,11 @@
  firewall), and the swarm's members can see   
  that it holds Matrix software.               
                                               
- ▌  What to host                              
- ▌   ◉ Everything (about 19 GB)               
- ▌   ○ Container images only (about 15 GB)    
- ▌  Everything lets other servers set up      
- ▌  from scratch through yours: the           
+ ▌  ●  Host the container images (about 16    
+ ▌     GB)                                    
+ ▌     on                                     
+ ▌  Host any mix of parts. All four let       
+ ▌  other servers set up from scratch         
    ▼ more below                               
                                               
  ✓ hosting. It keeps going without interzone; 
@@ -23,7 +23,7 @@
  the background and shares it as it arrives   
                                               
  ◆ Hosting on this machine ────────────────── 
-   Status      ● sharing · 3 peers · everythi 
+   Status      ● sharing · 3 peers · images,  
    Copy        ███░░░░░░░░  32% · 6.0 GB of 1 
    Parts       … packages 3.0 GB  … images 15 
    Download    ▁▄▇▆█                 9.5 MB/s 

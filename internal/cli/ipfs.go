@@ -37,7 +37,7 @@ func ServeRegistry(args []string) error {
 func IPFSFollow(args []string) error {
 	fs := flag.NewFlagSet("ipfs-follow", flag.ExitOnError)
 	api := fs.String("api", "http://127.0.0.1:45001", "the IPFS daemon's RPC API")
-	parts := fs.String("parts", "all", "what to host: all, or images")
+	parts := fs.String("parts", "all", "what to host: all, images, or some of oci,packages,git,bin")
 	state := fs.String("state", filepath.Join(os.Getenv("STATE_DIRECTORY"), "follow.json"), "where to remember what is pinned")
 	parse(fs, args)
 	return ipfs.Follow(context.Background(), *api, *parts, *state, func(s string) { fmt.Println(s) })

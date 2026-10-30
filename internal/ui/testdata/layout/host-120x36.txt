@@ -8,11 +8,11 @@
 │                        ││   on TCP port 4001 (open it in the firewall), and the swarm's members can see that it      │
 │ ▸ Test                 ││   holds Matrix software.                                                                   │
 │                        ││                                                                                            │
-│ ▾ Host                 ││   ▌  What to host                                                                          │
-│ ▌ ✓ Host for IPFS      ││   ▌   ◉ Everything (about 19 GB)    ○ Container images only (about 15 GB)                  │
-│                        ││   ▌  Everything lets other servers set up from scratch through yours: the playbook,        │
-│ ▾ Servers              ││   ▌  OS, Docker and Python packages, and every image. New publishes replace the old        │
-│   ● example.org        ││   ▌  one every hour.                                                                       │
+│ ▾ Host                 ││   ▌  ●  Host the container images (about 16 GB)  on                                        │
+│ ▌ ✓ Host for IPFS      ││   ▌  Host any mix of parts. All four let other servers set up from scratch through         │
+│                        ││   ▌  yours; new publishes replace the old one every hour.                                  │
+│ ▾ Servers              ││                                                                                            │
+│   ● example.org        ││      ●  Host the OS, Docker and Python packages (about 3.7 GB)  on                         │
 │                        ││     ▼ more below                                                                           │
 │                        ││                                                                                            │
 │                        ││   ✓ hosting. It keeps going without interzone; enter sets it up again.                     │
@@ -20,7 +20,7 @@
 │                        ││     the server is downloading about 19 GB in the background and shares it as it arrives    │
 │                        ││                                                                                            │
 │                        ││   ◆ Hosting on this machine ────────────────────────────────────────────────────────────   │
-│                        ││     Status      ● sharing · 3 peers · everything                                           │
+│                        ││     Status      ● sharing · 3 peers · images, packages, git, programs                      │
 │                        ││     Copy        ███████░░░░░░░░░░░░░░  32% · 6.0 GB of 19.0 GB                             │
 │                        ││     Parts       … packages 3.0 GB  … images 15.0 GB  ✓ git 200 MB  ✓ programs 300 MB       │
 │                        ││     Download    ▁▄▇▆█                 9.5 MB/s · 6.0 GB in all                             │
